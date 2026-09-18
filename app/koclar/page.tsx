@@ -6,9 +6,9 @@ import { COACHES_DATA } from "@/data/coaches";
 import { ArrowRight, Check, Award, GraduationCap } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Eğitmen Kadromuz & Kişisel Antrenörler",
+  title: "Kurucu & Baş Antrenörümüz | İlker Yüksel",
   description:
-    "Nişantaşı Core & Fit Private Sport Studio uzman antrenör kadrosu: Mert Aksoy, Selin Yılmaz, Can Demir ve 1:1 koçluk yaklaşımları.",
+    "Nişantaşı Core & Fit Private Sport Studio kurucusu ve tek yetkili baş antrenörü İlker Yüksel ile 1:1 bilimsel biyomekanik koçluğu.",
 };
 
 export default function KoclarPage() {
@@ -18,20 +18,20 @@ export default function KoclarPage() {
       <section className="py-16 sm:py-20 border-b border-[#191B20] bg-[#0D0F12]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <span className="text-xs font-mono uppercase tracking-[0.2em] text-[#E8FF36] block mb-3">
-            [ UZMANLIK & BİYOMEKANİK ]
+            [ KURUCU & BAŞ ANTRENÖR ]
           </span>
           <h1 className="text-4xl sm:text-6xl font-extrabold uppercase font-display leading-[1.05] mb-4">
-            Eğitmen Kadromuz
+            İlker Yüksel
           </h1>
           <p className="text-sm sm:text-base text-[#A5A7AD] max-w-2xl leading-relaxed">
-            Core & Fit koçları yalnızca egzersiz gösteren kişiler değil; hareket anatomisini, sinir sistemini ve antrenman periyotlamasını derinlemesine yöneten spor bilimcilerdir.
+            Core & Fit Studio&apos;nun kurucusu ve tek yetkili baş antrenörü olan İlker Yüksel; hareket anatomisini, biyomekaniği ve antrenman periyotlamasını kişiye özel 1:1 seanslarla yönetmektedir.
           </p>
         </div>
       </section>
 
       {/* Coaches List */}
       <section className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="max-w-xl mx-auto">
           {COACHES_DATA.map((coach) => (
             <div
               key={coach.id}

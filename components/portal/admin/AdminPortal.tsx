@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import {
   ShieldCheck,
-  ArrowLeft,
+  User,
   Users,
   Calendar,
   DollarSign,
@@ -59,7 +59,7 @@ export const AdminPortal: React.FC = () => {
   } = useMember();
 
   // Role switch & Display Mode
-  const [selectedRole, setSelectedRole] = useState<string>("Genel Stüdyo Yöneticisi");
+  const [selectedRole, setSelectedRole] = useState<string>("İlker Yüksel");
   const [adminTab, setAdminTab] = useState<AdminTab>("overview");
   const [viewMode, setViewMode] = useState<"responsive" | "app_frame">("responsive");
   const [isScannerOpen, setIsScannerOpen] = useState<boolean>(false);
@@ -71,7 +71,7 @@ export const AdminPortal: React.FC = () => {
   const [memberSearch, setMemberSearch] = useState<string>("");
 
   // Turnstile check-in simulator state
-  const [turnstileCoach, setTurnstileCoach] = useState<string>("Mert Aksoy");
+  const [turnstileCoach, setTurnstileCoach] = useState<string>("İlker Yüksel");
   const [turnstileSessionType, setTurnstileSessionType] = useState<string>("1:1 Kuvvet & Postür");
   const [turnstileNote, setTurnstileNote] = useState<string>("Deadlift & squat form kontrolleri yapıldı.");
   const [turnstileMetric, setTurnstileMetric] = useState<string>("RPE 8 • 5 Set");
@@ -123,7 +123,7 @@ export const AdminPortal: React.FC = () => {
       total: totalSessions,
       status: "Aktif",
       phone: user?.phone || "+90 532 555 0124",
-      coach: "Mert Aksoy",
+      coach: "İlker Yüksel",
     },
     {
       id: "mem-2",
@@ -134,7 +134,7 @@ export const AdminPortal: React.FC = () => {
       total: 12,
       status: "Aktif",
       phone: "+90 533 421 8899",
-      coach: "Can Demir",
+      coach: "İlker Yüksel",
     },
     {
       id: "mem-3",
@@ -145,7 +145,7 @@ export const AdminPortal: React.FC = () => {
       total: 24,
       status: "Aktif",
       phone: "+90 530 112 3344",
-      coach: "Selin Yılmaz",
+      coach: "İlker Yüksel",
     },
     {
       id: "mem-4",
@@ -156,7 +156,7 @@ export const AdminPortal: React.FC = () => {
       total: 8,
       status: "Yenileme Bekliyor",
       phone: "+90 542 998 7766",
-      coach: "Mert Aksoy",
+      coach: "İlker Yüksel",
     },
   ];
 
@@ -317,25 +317,15 @@ export const AdminPortal: React.FC = () => {
                   <span>Saat & Mola Düzenle</span>
                 </button>
 
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs text-[#64748B] font-medium">Koç:</span>
-                  <select
-                    value={coachFilter}
-                    onChange={(e) => setCoachFilter(e.target.value)}
-                    className="p-2 border border-black/[0.08] rounded-xl text-xs font-medium bg-[#F8FAFC] text-[#0F172A]"
-                  >
-                    <option value="all">Tüm Koçlar</option>
-                    <option value="Mert Aksoy">Mert Aksoy</option>
-                    <option value="Selin Yılmaz">Selin Yılmaz</option>
-                    <option value="Can Demir">Can Demir</option>
-                  </select>
+                <div className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 rounded-xl text-xs font-semibold text-[#0F172A]">
+                  <User className="w-3.5 h-3.5 text-[#64748B]" />
+                  <span>Antrenör: İlker Yüksel</span>
                 </div>
               </div>
             </div>
 
             <div className="space-y-3">
               {bookedSessions
-                .filter((s) => coachFilter === "all" || s.coachName === coachFilter)
                 .map((sess) => (
                   <div
                     key={sess.id}
@@ -453,17 +443,14 @@ export const AdminPortal: React.FC = () => {
                 <form onSubmit={handleTurnstileSubmit} className="space-y-3.5 text-xs font-sans">
                   <div>
                     <label className="text-[10px] font-bold text-[#64748B] uppercase block mb-1">
-                      EŞLİK EDEN KOÇ
+                      EŞLİK EDEN KOÇ / ANTRENÖR
                     </label>
-                    <select
-                      value={turnstileCoach}
-                      onChange={(e) => setTurnstileCoach(e.target.value)}
-                      className="w-full p-2.5 bg-[#F8FAFC] border border-black/[0.08] rounded-xl text-xs font-semibold text-[#0F172A]"
-                    >
-                      <option value="Mert Aksoy">Mert Aksoy (Baş Antrenör)</option>
-                      <option value="Selin Yılmaz">Selin Yılmaz (Performans Koçu)</option>
-                      <option value="Can Demir">Can Demir (Kondisyon Koçu)</option>
-                    </select>
+                    <div className="w-full p-2.5 bg-[#F8FAFC] border border-black/[0.08] rounded-xl text-xs font-semibold text-[#0F172A] flex items-center justify-between">
+                      <span>İlker Yüksel (Kurucu & Baş Antrenör)</span>
+                      <span className="text-[10px] px-2 py-0.5 bg-emerald-50 text-emerald-700 font-bold rounded-md">
+                        1:1 Birebir
+                      </span>
+                    </div>
                   </div>
 
                   <div>
@@ -712,42 +699,47 @@ export const AdminPortal: React.FC = () => {
     <div className="min-h-screen bg-[#F5F5F7] text-[#0F172A] font-sans antialiased pb-28">
       {/* Top Admin Header Bar - Apple Frosted Liquid Glass */}
       <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-2xl border-b border-black/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.03)] transition-all">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <a
-              href="/portal"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-black/[0.04] hover:bg-black/[0.08] rounded-full text-xs font-semibold text-[#0F172A] border border-black/[0.04] transition-all"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Üye Paneline Dön</span>
-            </a>
-
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
-              <h1 className="font-bold text-xs sm:text-sm tracking-tight uppercase text-[#0F172A]">
-                CORE & FIT STUDIO OS <span className="text-[#64748B] font-normal hidden sm:inline">| Yönetici & Koç Portalı</span>
-              </h1>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-3.5 flex items-center justify-between gap-3">
+          {/* Brand & Studio Status */}
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="w-8 h-8 rounded-xl bg-[#0F172A] text-white flex items-center justify-center font-black text-xs tracking-tight shadow-2xs shrink-0">
+              CF
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.7)] animate-pulse shrink-0" />
+                <h1 className="font-bold text-xs sm:text-sm tracking-tight uppercase text-[#0F172A]">
+                  CORE & FIT STUDIO OS
+                </h1>
+                <span className="hidden sm:inline-block text-[10px] px-2 py-0.5 bg-slate-100 text-[#64748B] font-semibold rounded-full border border-black/[0.05]">
+                  Yönetim Paneli
+                </span>
+              </div>
+              <p className="text-[10px] text-[#64748B] hidden sm:block font-medium mt-0.5">
+                Nişantaşı Private Studio • İlker Yüksel
+              </p>
             </div>
           </div>
 
-          {/* Header Actions: Manual Session, Auto QR Scanner & View Mode Toggle */}
-          <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
+          {/* Header Actions: Manual Session, Auto QR Scanner, View Mode & Solo Coach Profile */}
+          <div className="flex items-center gap-2 sm:gap-2.5">
             {/* Quick Manual Session Create Button */}
             <button
               onClick={() => setIsCreateSessionOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#0F172A] hover:bg-black text-white font-bold text-xs rounded-full shadow-sm transition-all active:scale-98"
+              className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 bg-[#0F172A] hover:bg-black text-white font-bold text-xs rounded-full shadow-xs transition-all active:scale-98"
             >
               <Plus className="w-3.5 h-3.5 text-emerald-400" />
-              <span>+ Manuel Seans</span>
+              <span className="hidden sm:inline">+ Manuel Seans</span>
+              <span className="sm:hidden">+ Seans</span>
             </button>
 
             {/* Quick Auto QR Scanner Button */}
             <button
               onClick={() => setIsScannerOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200/80 font-bold text-xs rounded-full transition-all active:scale-98"
+              className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-950 border border-emerald-200/80 font-bold text-xs rounded-full transition-all active:scale-98 shadow-2xs"
             >
               <Zap className="w-3.5 h-3.5 text-emerald-600 fill-emerald-600" />
-              <span>⚡ Turnike QR Tara</span>
+              <span>Turnike QR</span>
             </button>
 
             {/* View Mode Switcher (Desktop Only) */}
@@ -759,27 +751,37 @@ export const AdminPortal: React.FC = () => {
               {viewMode === "app_frame" ? (
                 <>
                   <Monitor className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Geniş Ekran</span>
+                  <span>Geniş</span>
                 </>
               ) : (
                 <>
                   <Smartphone className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>iPhone Görünümü</span>
+                  <span>iPhone</span>
                 </>
               )}
             </button>
 
-            {/* Role selector dropdown */}
-            <select
-              value={selectedRole}
-              onChange={(e) => setSelectedRole(e.target.value)}
-              className="bg-white/90 hover:bg-white border border-black/[0.08] text-[#0F172A] text-xs font-medium rounded-full px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-black/10 shadow-2xs"
-            >
-              <option value="Genel Stüdyo Yöneticisi">👑 Genel Stüdyo Yöneticisi</option>
-              <option value="Mert Aksoy (Baş Antrenör)">🏋️ Mert Aksoy (Baş Antrenör)</option>
-              <option value="Selin Yılmaz (Performans Koçu)">🤸 Selin Yılmaz (Performans Koçu)</option>
-              <option value="Can Demir (Kondisyon Koçu)">🏃 Can Demir (Kondisyon Koçu)</option>
-            </select>
+            {/* Solo Owner & Head Coach Profile Badge (Apple Style) */}
+            <div className="flex items-center gap-2 pl-2 sm:pl-3 border-l border-black/[0.08]">
+              <div className="relative shrink-0">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="https://images.unsplash.com/photo-1567013127542-490d757e51fc?auto=format&fit=crop&w=120&q=80"
+                  alt="İlker Yüksel"
+                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover ring-2 ring-emerald-500/30 shadow-2xs"
+                />
+                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white" />
+              </div>
+              <div className="text-left leading-tight hidden md:block">
+                <div className="text-xs font-bold text-[#0F172A] flex items-center gap-1">
+                  <span>İlker Yüksel</span>
+                  <span className="text-[9px] px-1.5 py-0.2 bg-emerald-50 text-emerald-800 font-bold rounded-md">
+                    Kurucu
+                  </span>
+                </div>
+                <div className="text-[10px] text-[#64748B] font-medium">Baş Antrenör</div>
+              </div>
+            </div>
           </div>
         </div>
       </header>
@@ -956,14 +958,14 @@ export const AdminPortal: React.FC = () => {
       <AdminCreateSessionModal
         isOpen={isCreateSessionOpen}
         onClose={() => setIsCreateSessionOpen(false)}
-        defaultCoachName={selectedRole}
+        defaultCoachName="İlker Yüksel"
       />
 
       {/* MODAL 1: Auto Optical QR Scanner Terminal */}
       <AdminQrScannerModal
         isOpen={isScannerOpen}
         onClose={() => setIsScannerOpen(false)}
-        defaultCoach={selectedRole.includes("Mert") ? "Mert Aksoy" : selectedRole.includes("Selin") ? "Selin Yılmaz" : selectedRole.includes("Can") ? "Can Demir" : "Mert Aksoy"}
+        defaultCoach="İlker Yüksel"
       />
 
       {/* MODAL 2: Complete Session & Coach Note */}

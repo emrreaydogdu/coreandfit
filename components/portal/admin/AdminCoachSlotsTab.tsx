@@ -122,42 +122,39 @@ export const AdminCoachSlotsTab: React.FC = () => {
           </div>
         </div>
 
-        {/* Coach Profiles Tabs */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {COACHES_DATA.map((coach) => {
-            const isSelected = selectedCoachId === coach.id;
-            return (
-              <button
-                key={coach.id}
-                type="button"
-                onClick={() => setSelectedCoachId(coach.id)}
-                className={`p-3.5 rounded-2xl border text-left transition-all flex items-center gap-3.5 ${
-                  isSelected
-                    ? "border-[#0F172A] bg-slate-50 ring-2 ring-[#0F172A]/15 shadow-sm"
-                    : "border-black/[0.06] hover:bg-slate-50/50 bg-white"
-                }`}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={coach.image}
-                  alt={coach.name}
-                  className="w-12 h-12 rounded-xl object-cover shrink-0 shadow-2xs"
-                />
-                <div className="min-w-0">
-                  <div className="font-bold text-xs text-[#0F172A] truncate">
-                    {coach.name}
-                  </div>
-                  <div className="text-[10px] text-[#64748B] truncate mt-0.5">
-                    {coach.title}
-                  </div>
-                  <div className="inline-flex items-center gap-1 text-[10px] text-emerald-600 font-semibold mt-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                    <span>Aktif Koç</span>
-                  </div>
-                </div>
-              </button>
-            );
-          })}
+        {/* Solo Coach Profile Banner */}
+        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-slate-900 to-[#1E293B] text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-md">
+          <div className="flex items-center gap-4">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={currentCoachMeta.image}
+              alt={currentCoachMeta.name}
+              className="w-14 h-14 rounded-2xl object-cover ring-2 ring-emerald-500/40 shrink-0 shadow-sm"
+            />
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h4 className="font-bold text-sm sm:text-base text-white">
+                  {currentCoachMeta.name}
+                </h4>
+                <span className="px-2.5 py-0.5 bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 rounded-full text-[10px] font-bold">
+                  ● Kurucu & Baş Antrenör
+                </span>
+              </div>
+              <p className="text-xs text-slate-300 mt-1">
+                {currentCoachMeta.title} • {currentCoachMeta.experience}
+              </p>
+              <div className="text-[11px] text-slate-400 mt-0.5">
+                Nişantaşı Private Studio seansları ve haftalık randevu takvimi
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 self-end sm:self-center">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 backdrop-blur-md rounded-xl text-xs font-semibold text-white border border-white/10">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Tek Yetkili İşletmeci</span>
+            </span>
+          </div>
         </div>
       </div>
 

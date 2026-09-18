@@ -25,7 +25,7 @@ export const BLOG_POSTS: BlogPost[] = [
     category: "Rehber",
     readTime: "5 Dk Okuma",
     publishedAt: "2025-01-15",
-    author: "Mert Aksoy (Head Coach)",
+    author: "İlker Yüksel (Kurucu & Baş Antrenör)",
     image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1200&q=80",
     tags: ["Nişantaşı Personal Trainer", "Kişisel Koç", "Birebir Antrenman"],
     content: [
@@ -55,7 +55,7 @@ export const BLOG_POSTS: BlogPost[] = [
     category: "Sistem",
     readTime: "4 Dk Okuma",
     publishedAt: "2025-01-10",
-    author: "Selin Yılmaz",
+    author: "İlker Yüksel",
     image: "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=1200&q=80",
     tags: ["Personal Training", "Doğru Teknik", "Verimlilik"],
     content: [
@@ -80,7 +80,7 @@ export const BLOG_POSTS: BlogPost[] = [
     category: "Beslenme & Fizyoloji",
     readTime: "6 Dk Okuma",
     publishedAt: "2025-01-05",
-    author: "Can Demir",
+    author: "İlker Yüksel",
     image: "https://images.unsplash.com/photo-1549060279-7e168fcee0c2?auto=format&fit=crop&w=1200&q=80",
     tags: ["Yağ Kaybı", "Kardiyo", "Direnç Antrenmanı"],
     content: [
@@ -105,7 +105,7 @@ export const BLOG_POSTS: BlogPost[] = [
     category: "Hipertrofi",
     readTime: "5 Dk Okuma",
     publishedAt: "2024-12-28",
-    author: "Mert Aksoy",
+    author: "İlker Yüksel",
     image: "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&w=1200&q=80",
     tags: ["Kas İnşası", "Hipertrofi", "Progresif Yükleme"],
     content: [
@@ -125,7 +125,7 @@ export const BLOG_POSTS: BlogPost[] = [
     category: "Programlama",
     readTime: "4 Dk Okuma",
     publishedAt: "2024-12-20",
-    author: "Selin Yılmaz",
+    author: "İlker Yüksel",
     image: "https://images.unsplash.com/photo-1517963879433-6ad2b056d712?auto=format&fit=crop&w=1200&q=80",
     tags: ["Antrenman Frekansı", "Toparlanma", "Programlama"],
     content: [
@@ -145,7 +145,7 @@ export const BLOG_POSTS: BlogPost[] = [
     category: "Başlangıç",
     readTime: "5 Dk Okuma",
     publishedAt: "2024-12-15",
-    author: "Mert Aksoy",
+    author: "İlker Yüksel",
     image: "https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=1200&q=80",
     tags: ["Başlangıç", "Motivasyon", "Teknik"],
     content: [

@@ -309,37 +309,29 @@ export const AdminCreateSessionModal: React.FC<AdminCreateSessionModalProps> = (
             <label className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider block">
               2. ANTRENÖR / KOÇ
             </label>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              {COACHES_DATA.map((coach) => {
-                const isSelected = selectedCoach.id === coach.id;
-                return (
-                  <button
-                    key={coach.id}
-                    type="button"
-                    onClick={() => setSelectedCoach(coach)}
-                    className={`p-3 rounded-2xl border text-left transition-all flex items-center gap-3 ${
-                      isSelected
-                        ? "border-[#0F172A] bg-slate-50 ring-2 ring-[#0F172A]/15 shadow-xs"
-                        : "border-black/[0.06] hover:bg-slate-50/60 bg-white"
-                    }`}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={coach.image}
-                      alt={coach.name}
-                      className="w-10 h-10 rounded-xl object-cover shrink-0"
-                    />
-                    <div className="min-w-0">
-                      <div className="font-bold text-xs text-[#0F172A] truncate">
-                        {coach.name}
-                      </div>
-                      <div className="text-[10px] text-[#64748B] truncate">
-                        {coach.title}
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
+            <div className="p-3.5 rounded-2xl border border-black/[0.08] bg-slate-50 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={selectedCoach.image}
+                  alt={selectedCoach.name}
+                  className="w-11 h-11 rounded-xl object-cover shrink-0 shadow-2xs"
+                />
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-xs text-[#0F172A]">{selectedCoach.name}</span>
+                    <span className="text-[10px] px-2 py-0.5 bg-emerald-100 text-emerald-800 font-bold rounded-md">
+                      Kurucu & Baş Antrenör
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-[#64748B] mt-0.5">
+                    Tüm seanslar kurucu baş antrenör tarafından birebir (1:1) yürütülür.
+                  </div>
+                </div>
+              </div>
+              <div className="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+                <Check className="w-3.5 h-3.5 stroke-[3]" />
+              </div>
             </div>
           </div>
 

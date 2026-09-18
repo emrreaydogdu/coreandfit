@@ -28,7 +28,7 @@ interface AdminQrScannerModalProps {
 export const AdminQrScannerModal: React.FC<AdminQrScannerModalProps> = ({
   isOpen,
   onClose,
-  defaultCoach = "Mert Aksoy",
+  defaultCoach = "İlker Yüksel",
 }) => {
   const { user, remainingSessions, adminCheckInMember } = useMember();
   const [cameraActive, setCameraActive] = useState(false);
