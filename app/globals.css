@@ -330,6 +330,136 @@ html[data-design="apple"].light .text-\[\#E8FF36\] {
   color: #059669 !important;
 }
 
+/* ==========================================================================
+   AUTHENTIC APPLE LIQUID GLASS SYSTEM (SPECULAR HIGHLIGHTS & REFRACTION)
+   ========================================================================== */
+
+.liquid-glass-panel {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(28px) saturate(190%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.8),
+    inset 0 -1px 1px 0 rgba(0, 0, 0, 0.04),
+    0 20px 45px -10px rgba(0, 0, 0, 0.07);
+}
+
+.dark .liquid-glass-panel {
+  background: rgba(18, 20, 24, 0.62);
+  backdrop-filter: blur(28px) saturate(190%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -1px 1px 0 rgba(0, 0, 0, 0.5),
+    0 25px 50px -12px rgba(0, 0, 0, 0.6);
+}
+
+.liquid-glass-card {
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow: 
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.75),
+    inset 0 -1px 1px 0 rgba(0, 0, 0, 0.03),
+    0 16px 36px -8px rgba(0, 0, 0, 0.05);
+}
+
+.dark .liquid-glass-card {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -1px 1px 0 rgba(0, 0, 0, 0.4),
+    0 16px 36px -8px rgba(0, 0, 0, 0.5);
+}
+
+.liquid-glass-pill {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.9),
+    0 4px 16px -2px rgba(0, 0, 0, 0.05);
+}
+
+.dark .liquid-glass-pill {
+  background: rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.18),
+    0 4px 16px -2px rgba(0, 0, 0, 0.3);
+}
+
+/* Liquid Glass Primary Button with Specular Arc */
+.liquid-glass-btn-primary {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.02) 100%), #0F172A;
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.45),
+    0 10px 25px -4px rgba(15, 23, 42, 0.25);
+  color: #FFFFFF;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dark .liquid-glass-btn-primary {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(240, 240, 245, 0.9) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 
+    inset 0 1px 1px 0 #FFFFFF,
+    0 10px 25px -4px rgba(255, 255, 255, 0.2);
+  color: #000000;
+}
+
+.liquid-glass-btn-primary:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.6),
+    0 14px 32px -4px rgba(15, 23, 42, 0.35);
+}
+
+.dark .liquid-glass-btn-primary:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 
+    inset 0 1px 1px 0 #FFFFFF,
+    0 14px 32px -4px rgba(255, 255, 255, 0.3);
+}
+
+.liquid-glass-btn-primary:active {
+  transform: translateY(0.5px) scale(0.98);
+}
+
+/* Liquid Glass Emerald Accent Button */
+.liquid-glass-btn-emerald {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.04) 100%), #10B981;
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.55),
+    0 10px 25px -4px rgba(16, 185, 129, 0.35);
+  color: #FFFFFF;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.liquid-glass-btn-emerald:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.75),
+    0 14px 32px -4px rgba(16, 185, 129, 0.45);
+}
+
+.liquid-glass-btn-emerald:active {
+  transform: translateY(0.5px) scale(0.98);
+}
+
 /* Error alerts in light mode */
 html.light .bg-red-950\/40 {
   background-color: #FEF2F2 !important;

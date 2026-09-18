@@ -24,7 +24,7 @@ export const DesignThemeSwitcher: React.FC<DesignThemeSwitcherProps> = ({
 
   if (variant === "drawer") {
     return (
-      <div className={cn("w-full p-3 rounded-2xl bg-black/[0.04] dark:bg-white/[0.06] border border-black/[0.08] dark:border-white/[0.1] mb-2", className)}>
+      <div className={cn("w-full p-3 rounded-2xl liquid-glass-card mb-2", className)}>
         <div className="flex items-center justify-between mb-2">
           <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
@@ -67,16 +67,16 @@ export const DesignThemeSwitcher: React.FC<DesignThemeSwitcherProps> = ({
     return (
       <div
         className={cn(
-          "inline-flex items-center p-1 rounded-full bg-black/[0.05] dark:bg-white/[0.08] border border-black/[0.08] dark:border-white/[0.12] backdrop-blur-xl shrink-0 text-xs shadow-inner",
+          "inline-flex items-center p-1 rounded-full liquid-glass-pill shrink-0 text-xs",
           className
         )}
       >
         <button
           onClick={() => setDesignMode("apple")}
           className={cn(
-            "px-2.5 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1 transition-all duration-200",
+            "px-3 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1 transition-all duration-200",
             isApple
-              ? "bg-white dark:bg-emerald-500 text-slate-900 dark:text-white shadow-sm"
+              ? "bg-slate-900 dark:bg-white text-white dark:text-black shadow-sm scale-[1.02]"
               : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
           )}
           title="Apple Cupertino Teması"
@@ -86,9 +86,9 @@ export const DesignThemeSwitcher: React.FC<DesignThemeSwitcherProps> = ({
         <button
           onClick={() => setDesignMode("classic")}
           className={cn(
-            "px-2.5 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1 transition-all duration-200",
+            "px-3 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1 transition-all duration-200",
             !isApple
-              ? "bg-[#E8FF36] text-[#08090B] font-bold shadow-sm"
+              ? "bg-[#E8FF36] text-[#08090B] font-bold shadow-sm scale-[1.02]"
               : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
           )}
           title="Orijinal Atletik Tema"
@@ -100,15 +100,15 @@ export const DesignThemeSwitcher: React.FC<DesignThemeSwitcherProps> = ({
     );
   }
 
-  // Default: Floating top capsule pill
+  // Floating top capsule with VisionOS liquid glass
   return (
     <div
       className={cn(
-        "fixed top-2 sm:top-2.5 left-1/2 -translate-x-1/2 z-[80] flex items-center gap-1 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 rounded-full bg-white/85 dark:bg-[#121214]/90 backdrop-blur-2xl border border-black/[0.08] dark:border-white/[0.15] shadow-[0_10px_35px_rgba(0,0,0,0.15)] text-xs select-none transition-all duration-300",
+        "fixed top-2.5 sm:top-3 left-1/2 -translate-x-1/2 z-[80] flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 rounded-full liquid-glass-panel text-xs select-none transition-all duration-300",
         className
       )}
     >
-      <div className="hidden sm:flex items-center gap-1.5 pr-1 border-r border-black/[0.08] dark:border-white/[0.1]">
+      <div className="hidden sm:flex items-center gap-1.5 pr-2 border-r border-black/[0.08] dark:border-white/[0.1]">
         <Sparkles className="w-3.5 h-3.5 text-emerald-500 animate-pulse" />
         <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
           TEMA:
@@ -119,7 +119,7 @@ export const DesignThemeSwitcher: React.FC<DesignThemeSwitcherProps> = ({
         <button
           onClick={() => setDesignMode("apple")}
           className={cn(
-            "px-2.5 sm:px-3 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1.5 transition-all duration-200",
+            "px-3 sm:px-3.5 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1.5 transition-all duration-200",
             isApple
               ? "bg-slate-900 dark:bg-white text-white dark:text-black shadow-md scale-[1.02]"
               : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
@@ -131,7 +131,7 @@ export const DesignThemeSwitcher: React.FC<DesignThemeSwitcherProps> = ({
         <button
           onClick={() => setDesignMode("classic")}
           className={cn(
-            "px-2.5 sm:px-3 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1.5 transition-all duration-200",
+            "px-3 sm:px-3.5 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1.5 transition-all duration-200",
             !isApple
               ? "bg-[#E8FF36] text-[#08090B] font-bold shadow-md scale-[1.02]"
               : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"

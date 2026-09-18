@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BUSINESS_CONFIG } from "@/config/business";
 import { buildQuickChatWhatsAppUrl } from "@/lib/whatsapp";
-import { Menu, X, MessageSquare, Phone, ChevronRight, User, Sparkles } from "lucide-react";
+import { Menu, X, MessageSquare, Phone, ChevronRight, User, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { DesignThemeSwitcher } from "@/components/ui/DesignThemeSwitcher";
@@ -14,14 +14,13 @@ import { useMember } from "@/context/MemberContext";
 
 const NAV_LINKS = [
   { label: "Ana Sayfa", href: "/" },
-  { label: "1:1 Kişisel Koçluk", href: "/personal-training" },
-  { label: "Antrenman", href: "/antrenman" },
-  { label: "Sistemimiz", href: "/#sistemimiz" },
+  { label: "1:1 Seanslar", href: "/personal-training" },
+  { label: "Programlar", href: "/antrenman" },
+  { label: "Süreç", href: "/#sistemimiz" },
   { label: "Paketler", href: "/paketler" },
-  { label: "Kurucu Koç", href: "/koclar" },
-  { label: "Başarı Hikayeleri", href: "/basari-hikayeleri" },
-  { label: "Hakkımızda", href: "/hakkimizda" },
-  { label: "Blog", href: "/blog" },
+  { label: "İlker Yüksel", href: "/koclar/ilker-yuksel" },
+  { label: "Deneyimler", href: "/basari-hikayeleri" },
+  { label: "Stüdyo", href: "/studio" },
   { label: "İletişim", href: "/iletisim" },
 ];
 
@@ -39,17 +38,14 @@ export const Header: React.FC = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Portal ve Admin sayfalarında marketing header render edilmez
   if (pathname?.startsWith("/portal") || pathname?.startsWith("/admin")) {
     return null;
   }
 
-  // Close mobile menu on route change
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [pathname]);
 
-  // Lock body scroll when mobile menu is open
   useEffect(() => {
     if (mobileMenuOpen) {
       document.body.style.overflow = "hidden";
@@ -63,36 +59,41 @@ export const Header: React.FC = () => {
 
   return (
     <>
-      {/* Floating Apple Liquid Glass Capsule Island */}
-      <header className="fixed top-2 sm:top-4 left-0 right-0 z-50 px-3 sm:px-6 pointer-events-none transition-all duration-300">
-        <div
-          className={cn(
-            "pointer-events-auto max-w-7xl mx-auto flex items-center justify-between rounded-full transition-all duration-300",
-            "bg-white/85 dark:bg-[#121214]/85 backdrop-blur-2xl border border-black/[0.08] dark:border-white/[0.12]",
-            "shadow-[0_8px_32px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.45)]",
-            isScrolled ? "py-2 sm:py-2.5 px-4 sm:px-6 scale-[0.99]" : "py-2.5 sm:py-3 px-4 sm:px-7"
-          )}
-        >
-          {/* Logo */}
-          <Link href="/" className="group flex items-center gap-2.5 shrink-0">
-            <div className="w-8 h-8 rounded-full bg-[#0F172A] dark:bg-white text-white dark:text-[#0F172A] flex items-center justify-center font-black text-xs tracking-tight shadow-2xs group-hover:scale-105 transition-transform">
+      {/* Floating Apple VisionOS Liquid Glass Island Header */}
+      <header
+        className={cn(
+          "fixed top-12 sm:top-14 left-0 right-0 z-50 transition-all duration-500 ease-out px-4 sm:px-6 pointer-events-none",
+          isScrolled ? "translate-y-[-6px]" : "translate-y-0"
+        )}
+      >
+        <div className="max-w-7xl mx-auto flex items-center justify-between pointer-events-auto liquid-glass-panel rounded-full px-4 sm:px-6 py-2.5 sm:py-3 transition-all duration-300">
+          {/* Brand Monogram & Logo */}
+          <Link
+            href="/"
+            className="flex items-center gap-3 shrink-0 group select-none"
+            aria-label="Core & Fit Ana Sayfa"
+          >
+            <div className="w-8 h-8 rounded-full bg-slate-900 dark:bg-white text-white dark:text-black flex items-center justify-center font-bold text-xs tracking-tighter shadow-sm group-hover:scale-105 transition-transform">
               CF
             </div>
-            <div className="flex flex-col text-left">
+            <div className="flex flex-col">
               <div className="flex items-center gap-1.5">
-                <span className="font-extrabold text-sm sm:text-base tracking-tight text-[#0F172A] dark:text-white uppercase leading-none font-sans">
+                <span className="font-extrabold text-sm sm:text-base tracking-tight text-slate-900 dark:text-white">
                   CORE & FIT
                 </span>
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse shrink-0" />
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               </div>
-              <span className="text-[9px] tracking-wider text-[#64748B] dark:text-[#86868B] uppercase font-medium mt-0.5">
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium tracking-wide">
                 Nişantaşı Private Studio
               </span>
             </div>
           </Link>
 
           {/* Desktop Navigation Links */}
-          <nav className="hidden xl:flex items-center gap-1 2xl:gap-1.5 shrink-0 mx-2">
+          <nav
+            aria-label="Ana Menü"
+            className="hidden lg:flex items-center gap-1 xl:gap-1.5 px-3 py-1 rounded-full liquid-glass-pill"
+          >
             {NAV_LINKS.map((link) => {
               const isActive = pathname === link.href;
               return (
@@ -100,10 +101,10 @@ export const Header: React.FC = () => {
                   key={link.href}
                   href={link.href}
                   className={cn(
-                    "text-xs font-semibold px-3 py-1.5 rounded-full transition-all duration-200 tracking-tight whitespace-nowrap",
+                    "px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 select-none",
                     isActive
-                      ? "bg-[#0F172A] dark:bg-white text-white dark:text-[#0F172A] font-bold shadow-xs"
-                      : "text-[#64748B] dark:text-[#A1A1A6] hover:text-[#0F172A] dark:hover:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.08]"
+                      ? "bg-slate-900 dark:bg-white text-white dark:text-black font-semibold shadow-xs"
+                      : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
                   )}
                 >
                   {link.label}
@@ -112,70 +113,61 @@ export const Header: React.FC = () => {
             })}
           </nav>
 
-          {/* Right Action Capsule */}
-          <div className="hidden xl:flex items-center gap-2 shrink-0">
+          {/* Desktop Right Controls & CTA */}
+          <div className="hidden lg:flex items-center gap-2 shrink-0">
             <DesignThemeSwitcher variant="inline" />
             <LanguageSwitcher />
             <ThemeToggle />
 
-            {/* Member Portal Access */}
+            {/* Member Portal Status Pill */}
             {user ? (
               <Link
                 href="/portal"
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-300 rounded-full text-xs font-bold transition-all hover:scale-102 active:scale-98 shadow-2xs"
-                title="Üye Paneline Geç"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 liquid-glass-pill text-emerald-800 dark:text-emerald-300 rounded-full text-xs font-semibold hover:scale-102 active:scale-98 transition-all"
+                title="Üye Paneli"
               >
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
                 <span>{user.fullName.split(" ")[0]}</span>
-                <span className="text-emerald-700 dark:text-emerald-400">({remainingSessions} Hak)</span>
+                <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+                  ({remainingSessions} Hak)
+                </span>
               </Link>
             ) : (
               <Link
                 href="/portal/giris"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-black/[0.04] dark:bg-white/[0.08] hover:bg-black/[0.08] text-[#0F172A] dark:text-white rounded-full text-xs font-semibold transition-all shrink-0"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 liquid-glass-pill text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white rounded-full text-xs font-medium transition-all"
               >
                 <User className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                 <span>Giriş Yap</span>
               </Link>
             )}
 
+            {/* Apple Liquid Glass Primary CTA */}
             <Link
               href="/on-gorusme"
-              className="inline-flex items-center justify-center gap-1.5 text-xs font-bold uppercase tracking-wider bg-[#0F172A] dark:bg-white text-white dark:text-[#0F172A] hover:bg-black dark:hover:bg-slate-100 px-4 py-2 rounded-full transition-all shadow-sm active:scale-98 shrink-0"
+              className="inline-flex items-center justify-center gap-2 text-xs font-semibold px-4.5 py-2 rounded-full liquid-glass-btn-primary select-none"
             >
-              <Sparkles className="w-3.5 h-3.5 text-emerald-400 dark:text-emerald-600" />
-              <span>1:1 Ön Görüşme</span>
+              <span>Ön Görüşme</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
-          {/* Mobile / Tablet Controls */}
-          <div className="flex items-center gap-1.5 xl:hidden shrink-0">
-            {/* Quick Member Icon */}
+          {/* Mobile Tablet Controls */}
+          <div className="flex items-center gap-1.5 lg:hidden shrink-0">
             <Link
               href={user ? "/portal" : "/portal/giris"}
-              className="p-2 rounded-full bg-black/[0.04] dark:bg-white/[0.08] text-[#0F172A] dark:text-white relative transition-colors"
+              className="p-2 rounded-full liquid-glass-pill text-slate-800 dark:text-slate-200"
               aria-label="Üye Paneli"
-              title="Üye Paneli"
             >
               <User className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              {user && (
-                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500 ring-1 ring-white dark:ring-black" />
-              )}
             </Link>
 
             <LanguageSwitcher variant="compact" hideScripts />
             <ThemeToggle />
 
-            <Link
-              href="/on-gorusme"
-              className="hidden sm:inline-flex items-center justify-center text-[11px] font-bold uppercase tracking-wider bg-[#0F172A] dark:bg-white text-white dark:text-[#0F172A] px-3.5 py-1.5 rounded-full whitespace-nowrap shadow-2xs"
-            >
-              Ön Görüşme
-            </Link>
-
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 text-[#0F172A] dark:text-white rounded-full bg-black/[0.04] dark:bg-white/[0.08] focus:outline-none transition-colors"
+              className="p-2 rounded-full liquid-glass-pill text-slate-800 dark:text-slate-200 focus:outline-none"
               aria-label={mobileMenuOpen ? "Menüyü kapat" : "Menüyü aç"}
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -184,12 +176,12 @@ export const Header: React.FC = () => {
         </div>
       </header>
 
-      {/* Mobile Drawer Overlay - Apple Frosted Liquid Glass */}
+      {/* Mobile Drawer with Apple Liquid Glass Backdrop */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-40 bg-white/95 dark:bg-[#000000]/95 backdrop-blur-3xl flex flex-col pt-24 pb-8 px-6 overflow-y-auto xl:hidden animate-in fade-in duration-200">
-          <div className="flex flex-col gap-1 border-b border-black/[0.06] dark:border-white/[0.1] pb-6 mb-6">
-            <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-2">
-              CORE & FIT NİŞANTAŞI
+        <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-3xl flex flex-col pt-32 pb-8 px-6 overflow-y-auto lg:hidden animate-in fade-in duration-200">
+          <div className="flex flex-col gap-1 liquid-glass-panel rounded-3xl p-5 mb-4 shadow-xl">
+            <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest px-2 mb-1">
+              Sayfalar
             </span>
             {NAV_LINKS.map((link) => {
               const isActive = pathname === link.href;
@@ -198,10 +190,10 @@ export const Header: React.FC = () => {
                   key={link.href}
                   href={link.href}
                   className={cn(
-                    "flex items-center justify-between py-3 px-3 rounded-2xl text-sm uppercase tracking-wider font-semibold transition-all",
+                    "flex items-center justify-between py-3 px-3.5 text-sm font-semibold rounded-xl transition-all",
                     isActive
-                      ? "bg-[#0F172A] dark:bg-white text-white dark:text-[#0F172A] font-bold"
-                      : "text-[#0F172A] dark:text-white/90 hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
+                      ? "bg-slate-900 dark:bg-white text-white dark:text-black shadow-xs"
+                      : "text-slate-700 dark:text-slate-200 hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
                   )}
                 >
                   <span>{link.label}</span>
@@ -211,15 +203,14 @@ export const Header: React.FC = () => {
             })}
           </div>
 
-          <div className="flex flex-col gap-3 mt-auto">
-            {/* Member Card in Mobile Drawer */}
+          <div className="flex flex-col gap-2 mt-auto">
             {user ? (
               <Link
                 href="/portal"
-                className="w-full flex items-center justify-between p-3.5 bg-[#F8FAFC] dark:bg-[#121214] border border-black/[0.06] dark:border-white/[0.1] rounded-2xl text-xs mb-1 shadow-2xs"
+                className="w-full flex items-center justify-between p-4 liquid-glass-card rounded-2xl text-xs font-semibold"
               >
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-emerald-500/40">
+                  <div className="w-8 h-8 rounded-full overflow-hidden border border-emerald-500">
                     <img
                       src={user.avatarUrl}
                       alt={user.fullName}
@@ -227,10 +218,10 @@ export const Header: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <span className="font-bold block text-[#0F172A] dark:text-white">
+                    <span className="font-bold block text-slate-900 dark:text-white">
                       {user.fullName}
                     </span>
-                    <span className="text-[10px] text-[#64748B]">Üye Paneli & Seanslarım</span>
+                    <span className="text-[10px] text-slate-500">Üye Portalı & Seanslar</span>
                   </div>
                 </div>
                 <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold">
@@ -240,7 +231,7 @@ export const Header: React.FC = () => {
             ) : (
               <Link
                 href="/portal/giris"
-                className="w-full flex items-center justify-center gap-2 p-3.5 bg-[#F8FAFC] dark:bg-[#121214] border border-black/[0.06] dark:border-white/[0.1] text-[#0F172A] dark:text-white text-xs font-bold uppercase tracking-wider rounded-2xl mb-1 shadow-2xs"
+                className="w-full flex items-center justify-center gap-2 p-3.5 liquid-glass-card rounded-2xl text-xs font-semibold text-slate-800 dark:text-slate-200"
               >
                 <User className="w-4 h-4 text-emerald-600" />
                 <span>Üye Girişi / Mobil Panel</span>
@@ -253,15 +244,15 @@ export const Header: React.FC = () => {
 
             <Link
               href="/on-gorusme"
-              className="w-full flex items-center justify-center py-3.5 bg-[#0F172A] dark:bg-white text-white dark:text-[#0F172A] font-bold text-xs uppercase tracking-wider text-center rounded-2xl shadow-md active:scale-98"
+              className="w-full flex items-center justify-center py-3.5 rounded-full liquid-glass-btn-primary font-semibold text-xs text-center"
             >
-              Ücretsiz Ön Görüşme Planla
+              Ön Görüşme Randevusu Al
             </Link>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2 mt-1">
               <a
                 href={BUSINESS_CONFIG.phoneTel}
-                className="flex items-center justify-center gap-2 py-3 bg-[#F8FAFC] dark:bg-[#121214] border border-black/[0.06] dark:border-white/[0.1] text-[#0F172A] dark:text-white text-xs uppercase tracking-wider font-semibold rounded-2xl"
+                className="flex items-center justify-center gap-2 py-3 rounded-2xl liquid-glass-card text-xs font-semibold text-slate-800 dark:text-slate-200"
               >
                 <Phone className="w-3.5 h-3.5 text-emerald-600" />
                 Hemen Ara
@@ -270,16 +261,12 @@ export const Header: React.FC = () => {
                 href={buildQuickChatWhatsAppUrl()}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 py-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-300 text-xs uppercase tracking-wider font-bold rounded-2xl"
+                className="flex items-center justify-center gap-2 py-3 rounded-2xl liquid-glass-pill text-emerald-800 dark:text-emerald-300 text-xs font-semibold"
               >
                 <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
                 WhatsApp
               </a>
             </div>
-
-            <p className="text-center text-[10px] text-[#64748B] dark:text-[#86868B] mt-2 font-medium">
-              {BUSINESS_CONFIG.displayLocation} • {BUSINESS_CONFIG.phone}
-            </p>
           </div>
         </div>
       )}

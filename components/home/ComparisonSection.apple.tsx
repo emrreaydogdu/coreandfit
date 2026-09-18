@@ -8,68 +8,71 @@ import { ScrollReveal } from "@/components/ui/ScrollReveal";
 const COMPARISONS = [
   {
     category: "Programlama",
-    gym: "Hazır şablonlar, herkese aynı standart egzersiz listesi.",
-    coreAndFit: "Postür, biyomekanik ve yaşam düzeninize göre sıfırdan kurgulanan periyotlama.",
+    gym: "Karton şablonlar, herkese verilen standart egzersiz listeleri.",
+    coreAndFit: "Postürünüze, eklem sınırlarınıza ve hedefinize göre özel kurgulanan periyotlama.",
   },
   {
     category: "Ortam & Alan",
     gym: "Aynı anda onlarca kişi, alet sırası bekleme, gürültü ve dikkat dağınıklığı.",
-    coreAndFit: "Yalnızca randevulu danışan ve antrenörü. Sıfır bekleme, kesintisiz odak ve özel alan.",
+    coreAndFit: "Randevu saatinizde yalnızca siz ve kurucu antrenör. Sıfır sıra, tam mahremiyet.",
   },
   {
     category: "Teknik & Güvenlik",
-    gym: "Kendi başınızasınız. Hatalı form ve eklem zorlanması fark edilmez.",
-    coreAndFit: "Her tekrarda milimetrik form düzeltmesi, tempo kontrolü ve sakatlık koruması.",
+    gym: "Kendi başınızasınız. Hatalı form ve eklem zorlanmaları fark edilmez.",
+    coreAndFit: "Her tekrarda açı, tempo ve postür düzeltmesi. Sakatlık riski sıfıra indirilir.",
   },
   {
     category: "Takip & Veri",
-    gym: "Hangi ağırlığı ne zaman kaldırdığınız unutulur, gelişim tesadüfe kalır.",
-    coreAndFit: "Seans bazlı ağırlık, nabız ve hacim kaydı. Raporlanabilir ölçülebilir ilerleme.",
+    gym: "Hangi kiloyu ne zaman kaldırdığınız unutulur; gelişim tesadüfe kalır.",
+    coreAndFit: "Seans bazlı ağırlık, nabız ve hacim kaydı. Dijital üye portalında net ilerleme.",
   },
   {
-    category: "Motivasyon & Disiplin",
-    gym: "Gitmediğinizde kimse aramaz; abonelik ücreti boşa gider.",
-    coreAndFit: "Koçunuzla randevulu ortak takvim. Kararlı, sürdürülebilir ve kesintisiz sorumluluk.",
+    category: "Süreklilik",
+    gym: "Gitmeyi bıraktığınızda kimse aramaz; aidatınız boşa gider.",
+    coreAndFit: "Randevulu ortak takvim. Kararlı, sürdürülebilir ve kesintisiz sorumluluk.",
   },
 ];
 
 export const ComparisonSection: React.FC = () => {
   return (
-    <section className="py-20 lg:py-28 bg-[#FBFBFD] dark:bg-[#000000] relative">
+    <section className="py-20 lg:py-28 bg-[#FBFBFD] dark:bg-[#000000] relative overflow-hidden">
+      {/* Environmental Ambient Light */}
+      <div className="absolute top-1/3 -left-20 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[140px] pointer-events-none" />
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="max-w-2xl mb-16">
           <ScrollReveal variant="fade-up">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[11px] font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 mb-3">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full liquid-glass-pill text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 mb-3">
               <Sparkles className="w-3.5 h-3.5" />
               <span>STÜDYO FARKI</span>
             </div>
           </ScrollReveal>
           <ScrollReveal variant="fade-up" delay={0.1}>
             <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-[1.12]">
-              Kalabalık salon deneyimini <br />
-              <span className="text-slate-600 dark:text-slate-400">geride bırakın.</span>
+              Klasik spor salonları ile <br />
+              <span className="text-slate-500 dark:text-slate-400">farkımız.</span>
             </h2>
           </ScrollReveal>
           <ScrollReveal variant="fade-up" delay={0.2}>
-            <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 mt-4 leading-relaxed">
-              Zamanınız ve sağlığınız değerli. Klasik spor merkezlerinin yarattığı verimsizliği private sport studio modeliyle sonlandırıyoruz.
+            <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400 mt-4 leading-relaxed">
+              Vaktiniz ve sağlığınız değerli. Büyük salonların verimsizliğini private studio yaklaşımıyla sonlandırıyoruz.
             </p>
           </ScrollReveal>
         </div>
 
-        {/* Apple Comparison Matrix Card */}
+        {/* Apple Comparison Matrix in Liquid Glass Panel */}
         <ScrollReveal variant="fade-up" delay={0.25}>
-          <div className="rounded-[32px] border border-black/[0.08] dark:border-white/[0.12] bg-white/80 dark:bg-[#121214]/80 backdrop-blur-2xl shadow-xl overflow-hidden">
+          <div className="rounded-[34px] liquid-glass-panel shadow-2xl overflow-hidden p-2 sm:p-4">
             {/* Table Header */}
-            <div className="grid grid-cols-1 md:grid-cols-12 border-b border-black/[0.06] dark:border-white/[0.08] bg-black/[0.02] dark:bg-white/[0.03] text-xs font-semibold">
-              <div className="md:col-span-3 p-5 text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+            <div className="grid grid-cols-1 md:grid-cols-12 rounded-2xl bg-black/[0.03] dark:bg-white/[0.04] text-xs font-semibold">
+              <div className="md:col-span-3 p-5 text-slate-400 uppercase tracking-wider">
                 Kriter
               </div>
-              <div className="md:col-span-4 p-5 text-slate-600 dark:text-slate-400 border-t md:border-t-0 md:border-l border-black/[0.06] dark:border-white/[0.08] uppercase tracking-wider">
+              <div className="md:col-span-4 p-5 text-slate-400 border-t md:border-t-0 md:border-l border-black/[0.06] dark:border-white/[0.08] uppercase tracking-wider">
                 Klasik Spor Salonu
               </div>
-              <div className="md:col-span-5 p-5 text-emerald-700 dark:text-emerald-400 border-t md:border-t-0 md:border-l border-black/[0.06] dark:border-white/[0.08] flex items-center gap-2 uppercase tracking-wider font-bold bg-emerald-500/5">
+              <div className="md:col-span-5 p-5 text-emerald-700 dark:text-emerald-400 border-t md:border-t-0 md:border-l border-black/[0.06] dark:border-white/[0.08] flex items-center gap-2 uppercase tracking-wider font-bold bg-emerald-500/5 rounded-r-2xl">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 Core & Fit Private Studio
               </div>
@@ -80,7 +83,7 @@ export const ComparisonSection: React.FC = () => {
               {COMPARISONS.map((row, i) => (
                 <div
                   key={i}
-                  className="grid grid-cols-1 md:grid-cols-12 group hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors"
+                  className="grid grid-cols-1 md:grid-cols-12 group hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors rounded-xl"
                 >
                   {/* Criterion */}
                   <div className="md:col-span-3 p-5 flex items-center">
@@ -90,7 +93,7 @@ export const ComparisonSection: React.FC = () => {
                   </div>
 
                   {/* Traditional Gym */}
-                  <div className="md:col-span-4 p-5 border-t md:border-t-0 md:border-l border-black/[0.04] dark:border-white/[0.06] text-xs sm:text-sm text-slate-600 dark:text-slate-400 flex items-start gap-3">
+                  <div className="md:col-span-4 p-5 border-t md:border-t-0 md:border-l border-black/[0.04] dark:border-white/[0.06] text-xs sm:text-sm text-slate-500 dark:text-slate-400 flex items-start gap-3">
                     <div className="w-5 h-5 rounded-full bg-rose-500/10 text-rose-500 dark:text-rose-400 flex items-center justify-center shrink-0 mt-0.5">
                       <X className="w-3 h-3" />
                     </div>
