@@ -204,7 +204,7 @@ export const DigitalPassCard: React.FC<DigitalPassCardProps> = ({
               </p>
 
               {/* High-Resolution Real QR Code Box */}
-              <div className="relative mx-auto w-64 h-64 bg-white p-3 rounded-3xl border-2 border-[#0F172A] shadow-xl flex flex-col items-center justify-center overflow-hidden">
+              <div className="relative mx-auto w-72 bg-white pt-4 pb-4 px-4 rounded-3xl border-2 border-[#0F172A] shadow-xl flex flex-col items-center justify-center overflow-hidden">
                 {/* 60s Progress Bar on Top */}
                 <div className="absolute top-0 left-0 right-0 h-1.5 bg-slate-100">
                   <div
@@ -214,32 +214,32 @@ export const DigitalPassCard: React.FC<DigitalPassCardProps> = ({
                 </div>
 
                 {/* Real Scannable QR Image */}
-                <div className="w-full h-full flex flex-col items-center justify-center bg-white p-2">
+                <div className="flex flex-col items-center justify-center bg-white pt-2">
                   {qrDataUrl ? (
                     <img
                       src={qrDataUrl}
                       alt="Taranabilir Gerçek QR Kod"
-                      className="w-44 h-44 object-contain"
+                      className="w-48 h-48 object-contain"
                     />
                   ) : (
-                    <div className="w-44 h-44 flex items-center justify-center">
+                    <div className="w-48 h-48 flex items-center justify-center">
                       <RefreshCw className="w-8 h-8 animate-spin text-slate-400" />
                     </div>
                   )}
 
                   {/* 6-Digit TOTP Dynamic Code */}
-                  <div className="mt-1 flex items-center gap-1.5">
-                    <Lock className="w-3 h-3 text-[#10B981]" />
+                  <div className="mt-2 flex items-center gap-1.5 bg-[#F8FAFC] px-3 py-1 rounded-lg border border-black/[0.06]">
+                    <Lock className="w-3.5 h-3.5 text-[#10B981]" />
                     <span className="font-mono text-sm font-black tracking-widest text-[#0F172A]">
                       {dynamicOtp}
                     </span>
                   </div>
-                </div>
 
-                {/* Bottom Countdown Badge */}
-                <div className="absolute -bottom-3 bg-[#0F172A] text-white px-4 py-1 rounded-full text-[10px] font-sans font-bold uppercase tracking-wider shadow flex items-center gap-1.5">
-                  <RefreshCw className="w-2.5 h-2.5 animate-spin" />
-                  <span>{secondsLeft} SANİYEDE YENİLENİR</span>
+                  {/* Countdown Badge (Naturally placed, never clipped!) */}
+                  <div className="mt-2.5 inline-flex items-center gap-1.5 px-3.5 py-1 bg-[#0F172A] text-white rounded-full text-[10px] font-sans font-bold uppercase tracking-wider shadow-sm">
+                    <RefreshCw className="w-2.5 h-2.5 animate-spin text-emerald-400" />
+                    <span>{secondsLeft} SANİYEDE YENİLENİR</span>
+                  </div>
                 </div>
               </div>
 
