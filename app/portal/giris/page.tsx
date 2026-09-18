@@ -47,13 +47,13 @@ export default function MemberAuthPage() {
       {/* Top Header */}
       <div className="py-5 px-4 sm:px-8 border-b border-black/[0.06] bg-white/70 backdrop-blur-xl sticky top-0 z-10">
         <div className="max-w-md mx-auto flex items-center justify-between">
-          <Link
+          <a
             href="/"
             className="flex items-center gap-2 text-xs font-sans text-[#64748B] hover:text-[#0F172A] transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Ana Sayfaya Dön</span>
-          </Link>
+          </a>
 
           <div className="flex items-center gap-2">
             <span className="font-extrabold text-sm font-sans tracking-tighter text-[#0F172A] uppercase">

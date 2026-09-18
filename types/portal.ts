@@ -15,6 +15,23 @@ export type SessionStatus =
   | "completed" 
   | "cancelled";
 
+export interface SavedCard {
+  id: string;
+  last4: string;
+  cardHolder: string;
+  expiry: string;
+  brand: "visa" | "mastercard";
+  isDefault: boolean;
+}
+
+export interface UserAddress {
+  title: string;
+  street: string;
+  district: string;
+  city: string;
+  postalCode?: string;
+}
+
 export interface MemberUser {
   id: string;
   memberNo: string;
@@ -24,8 +41,11 @@ export interface MemberUser {
   avatarUrl: string;
   membershipTier: "VIP 1:1 Personal Training" | "Performance Athlete" | "Studio Member";
   joinDate: string;
+  birthDate?: string;
   emergencyContact?: string;
   healthNotes?: string;
+  address?: UserAddress;
+  savedCards?: SavedCard[];
 }
 
 export interface BookedSession {

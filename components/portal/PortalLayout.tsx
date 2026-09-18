@@ -23,6 +23,7 @@ import { SessionsTab } from "@/components/portal/tabs/SessionsTab";
 import { StoreTab } from "@/components/portal/tabs/StoreTab";
 import { HistoryTab } from "@/components/portal/tabs/HistoryTab";
 import { ProfileTab } from "@/components/portal/tabs/ProfileTab";
+import { FloatingGlassNav } from "@/components/portal/FloatingGlassNav";
 
 export const PortalLayout: React.FC = () => {
   const {
@@ -68,7 +69,7 @@ export const PortalLayout: React.FC = () => {
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           {/* Brand & Studio Indicator */}
           <div className="flex items-center gap-3 sm:gap-4">
-            <Link
+            <a
               href="/"
               className="flex items-center gap-2 group transition-all text-[#64748B] hover:text-[#0F172A]"
               title="Web Sitesine Dön"
@@ -78,7 +79,7 @@ export const PortalLayout: React.FC = () => {
                 <span>CORE & FIT</span>
                 <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
               </div>
-            </Link>
+            </a>
 
             <span className="text-[#CBD5E1] hidden sm:inline">|</span>
 
@@ -90,8 +91,18 @@ export const PortalLayout: React.FC = () => {
             </div>
           </div>
 
-          {/* Controls: View Mode, Web Link, Avatar */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          {/* Controls: Admin Link, View Mode, Web Link, Avatar */}
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            {/* Coach & Admin Portal Link */}
+            <Link
+              href="/portal/admin"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-black text-white rounded-full text-xs font-semibold transition-all shadow-xs"
+              title="Yönetici ve Antrenör Paneli"
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="hidden sm:inline">Koç & Yönetici</span>
+            </Link>
+
             {/* View Mode Switcher (Desktop Only) */}
             <button
               onClick={toggleViewMode}
@@ -184,44 +195,13 @@ export const PortalLayout: React.FC = () => {
                 </AnimatePresence>
               </div>
 
-              {/* Fixed In-Frame iOS Glass Bottom Tab Bar */}
-              <nav className="shrink-0 bg-white/90 backdrop-blur-2xl border-t border-black/[0.06] py-2 px-3 flex items-center justify-around shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
-                {NAV_ITEMS.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = activeTab === item.id;
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => setActiveTab(item.id)}
-                      className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-2xl transition-all ${
-                        isActive
-                          ? "text-[#0F172A]"
-                          : "text-[#94A3B8] hover:text-[#64748B]"
-                      }`}
-                    >
-                      <div
-                        className={`p-1.5 rounded-xl transition-all ${
-                          isActive
-                            ? "bg-[#0F172A] text-white shadow-sm"
-                            : "bg-transparent text-inherit"
-                        }`}
-                      >
-                        <Icon className="w-4 h-4" />
-                      </div>
-                      <span
-                        className={`text-[10px] tracking-tight ${
-                          isActive ? "font-bold text-[#0F172A]" : "font-medium text-[#94A3B8]"
-                        }`}
-                      >
-                        {item.label}
-                      </span>
-                    </button>
-                  );
-                })}
-              </nav>
+              {/* Floating Glass Pill Bar in iPhone Frame */}
+              <div className="shrink-0 pt-2 pb-2 px-3 flex items-center justify-center">
+                <FloatingGlassNav activeTab={activeTab} setActiveTab={setActiveTab} />
+              </div>
 
               {/* iOS Home Indicator */}
-              <div className="w-32 h-1 bg-black/20 rounded-full mx-auto my-2 shrink-0" />
+              <div className="w-32 h-1 bg-black/20 rounded-full mx-auto my-1.5 shrink-0" />
             </div>
           </div>
         ) : (
@@ -309,37 +289,10 @@ export const PortalLayout: React.FC = () => {
         )}
       </main>
 
-      {/* Fixed Native iOS Bottom Tab Bar on Mobile */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/85 backdrop-blur-2xl border-t border-black/[0.06] py-2 px-4 flex items-center justify-around lg:hidden shadow-[0_-4px_25px_rgba(0,0,0,0.04)]">
-        {NAV_ITEMS.map((item) => {
-          const Icon = item.icon;
-          const isActive = activeTab === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              className={`flex flex-col items-center gap-1 py-1 px-3 rounded-2xl transition-all ${
-                isActive ? "text-[#0F172A]" : "text-[#94A3B8] hover:text-[#64748B]"
-              }`}
-            >
-              <div
-                className={`p-1.5 rounded-xl transition-all ${
-                  isActive ? "bg-[#0F172A] text-white shadow-sm" : "bg-transparent text-inherit"
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-              </div>
-              <span
-                className={`text-[10px] tracking-tight ${
-                  isActive ? "font-bold text-[#0F172A]" : "font-medium text-[#94A3B8]"
-                }`}
-              >
-                {item.label}
-              </span>
-            </button>
-          );
-        })}
-      </nav>
+      {/* Floating Apple Glass Capsule Bottom Nav Bar on Mobile & Tablets */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 lg:hidden">
+        <FloatingGlassNav activeTab={activeTab} setActiveTab={setActiveTab} />
+      </div>
     </div>
   );
 };

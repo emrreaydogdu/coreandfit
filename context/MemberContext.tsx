@@ -8,6 +8,8 @@ import {
   OrderItem,
   PortalTab,
   PaymentMethod,
+  SavedCard,
+  UserAddress,
 } from "@/types/portal";
 import {
   DEMO_USER,
@@ -62,6 +64,24 @@ interface MemberContextType {
       cvv: string;
     };
   }) => { success: boolean; order: OrderItem };
+
+  // Profil & Bilgi Güncelleme
+  updateUserProfile: (data: Partial<MemberUser>) => void;
+  addSavedCard: (card: Omit<SavedCard, "id">) => void;
+  removeSavedCard: (cardId: string) => void;
+  setDefaultCard: (cardId: string) => void;
+  updateAddress: (address: UserAddress) => void;
+
+  // Yönetici & Koç İşlemleri
+  approveOrder: (orderId: string) => void;
+  adminCheckInMember: (data: {
+    coachName: string;
+    sessionType: string;
+    performanceNote: string;
+    keyMetric?: string;
+  }) => { success: boolean; message: string };
+  adminAddSessions: (count: number) => void;
+  completeBookedSession: (sessionId: string, coachNote: string, metric?: string) => void;
 }
 
 const MemberContext = createContext<MemberContextType | undefined>(undefined);
@@ -320,6 +340,138 @@ export const MemberProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     };
   };
 
+  const updateUserProfile = (data: Partial<MemberUser>) => {
+    if (!user) return;
+    const updated = { ...user, ...data };
+    setUser(updated);
+    saveToStorage(STORAGE_KEYS.USER, updated);
+  };
+
+  const addSavedCard = (newCardData: Omit<SavedCard, "id">) => {
+    if (!user) return;
+    const newCard: SavedCard = {
+      ...newCardData,
+      id: `card-${Date.now()}`,
+    };
+    const currentCards = user.savedCards || [];
+    const updatedCards = newCard.isDefault
+      ? [...currentCards.map((c) => ({ ...c, isDefault: false })), newCard]
+      : [...currentCards, newCard];
+    updateUserProfile({ savedCards: updatedCards });
+  };
+
+  const removeSavedCard = (cardId: string) => {
+    if (!user || !user.savedCards) return;
+    const updatedCards = user.savedCards.filter((c) => c.id !== cardId);
+    updateUserProfile({ savedCards: updatedCards });
+  };
+
+  const setDefaultCard = (cardId: string) => {
+    if (!user || !user.savedCards) return;
+    const updatedCards = user.savedCards.map((c) => ({
+      ...c,
+      isDefault: c.id === cardId,
+    }));
+    updateUserProfile({ savedCards: updatedCards });
+  };
+
+  const updateAddress = (address: UserAddress) => {
+    updateUserProfile({ address });
+  };
+
+  const approveOrder = (orderId: string) => {
+    const updatedOrders = orders.map((ord) => {
+      if (ord.id === orderId) {
+        return {
+          ...ord,
+          paymentStatus: "completed" as const,
+          paidAt: new Date().toLocaleString("tr-TR"),
+        };
+      }
+      return ord;
+    });
+    setOrders(updatedOrders);
+    saveToStorage(STORAGE_KEYS.ORDERS, updatedOrders);
+  };
+
+  const adminCheckInMember = (data: {
+    coachName: string;
+    sessionType: string;
+    performanceNote: string;
+    keyMetric?: string;
+  }) => {
+    if (remainingSessions <= 0) {
+      return { success: false, message: "Üyenin kalan seans bakiyesi bulunmuyor (0 Seans)!" };
+    }
+    const nextRemaining = remainingSessions - 1;
+    setRemainingSessions(nextRemaining);
+    saveToStorage(STORAGE_KEYS.REMAINING, nextRemaining.toString());
+
+    const now = new Date();
+    const trMonths = [
+      "Ocak",
+      "Şubat",
+      "Mart",
+      "Nisan",
+      "Mayıs",
+      "Haziran",
+      "Temmuz",
+      "Ağustos",
+      "Eylül",
+      "Ekim",
+      "Kasım",
+      "Aralık",
+    ];
+    const formattedDate = `${now.getDate()} ${trMonths[now.getMonth()]} ${now.getFullYear()}`;
+    const formattedTime = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+
+    const newLog: CheckInLog = {
+      id: `log-${Date.now()}`,
+      date: formattedDate,
+      time: formattedTime,
+      coachName: data.coachName,
+      sessionType: data.sessionType,
+      performanceNote: data.performanceNote,
+      keyMetric: data.keyMetric,
+    };
+
+    const nextLogs = [newLog, ...checkInLogs];
+    setCheckInLogs(nextLogs);
+    saveToStorage(STORAGE_KEYS.CHECKIN, nextLogs);
+
+    return {
+      success: true,
+      message: `Turnike girişi onaylandı! 1 Seans düşüldü. Kalan: ${nextRemaining}`,
+    };
+  };
+
+  const adminAddSessions = (count: number) => {
+    const nextRemaining = remainingSessions + count;
+    const nextTotal = totalSessions + count;
+    setRemainingSessions(nextRemaining);
+    setTotalSessions(nextTotal);
+    saveToStorage(STORAGE_KEYS.REMAINING, nextRemaining.toString());
+    saveToStorage(STORAGE_KEYS.TOTAL, nextTotal.toString());
+  };
+
+  const completeBookedSession = (sessionId: string, coachNote: string, metric?: string) => {
+    const sess = bookedSessions.find((s) => s.id === sessionId);
+    if (!sess) return;
+
+    const updatedBooked = bookedSessions.map((s) =>
+      s.id === sessionId ? { ...s, status: "completed" as const } : s
+    );
+    setBookedSessions(updatedBooked);
+    saveToStorage(STORAGE_KEYS.BOOKED, updatedBooked);
+
+    adminCheckInMember({
+      coachName: sess.coachName,
+      sessionType: sess.focusArea,
+      performanceNote: coachNote,
+      keyMetric: metric,
+    });
+  };
+
   return (
     <MemberContext.Provider
       value={{
@@ -344,6 +496,15 @@ export const MemberProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         bookSession,
         cancelSession,
         purchasePackage,
+        updateUserProfile,
+        addSavedCard,
+        removeSavedCard,
+        setDefaultCard,
+        updateAddress,
+        approveOrder,
+        adminCheckInMember,
+        adminAddSessions,
+        completeBookedSession,
       }}
     >
       {children}

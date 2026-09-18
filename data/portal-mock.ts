@@ -9,8 +9,34 @@ export const DEMO_USER: MemberUser = {
   avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
   membershipTier: "VIP 1:1 Personal Training",
   joinDate: "12 Temmuz 2026",
+  birthDate: "14 Mayıs 1994 (32 Yaş)",
   emergencyContact: "+90 532 111 2233 (Ayla Mert - Eşi)",
   healthNotes: "Sol diz menisküs eski operasyon, squat derinlik kontrollü",
+  address: {
+    title: "Ev Adresi",
+    street: "Abdi İpekçi Cad. No: 42/8",
+    district: "Nişantaşı, Şişli",
+    city: "İstanbul",
+    postalCode: "34367",
+  },
+  savedCards: [
+    {
+      id: "card-1",
+      last4: "5432",
+      cardHolder: "EGE MERT",
+      expiry: "12/28",
+      brand: "mastercard",
+      isDefault: true,
+    },
+    {
+      id: "card-2",
+      last4: "8910",
+      cardHolder: "EGE MERT",
+      expiry: "09/27",
+      brand: "visa",
+      isDefault: false,
+    },
+  ],
 };
 
 export const INITIAL_BOOKED_SESSIONS: BookedSession[] = [

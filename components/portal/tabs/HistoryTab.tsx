@@ -18,45 +18,107 @@ import { motion, AnimatePresence } from "motion/react";
 import { useMember } from "@/context/MemberContext";
 
 /* ------------------------------------------------------------------ */
-/*  Activity Calendar Mini Heatmap (Apple Fitness+ style)              */
+/*  Activity Calendar Mini Heatmap (Integrated with Real Sessions)     */
 /* ------------------------------------------------------------------ */
-const ActivityCalendar: React.FC<{ checkInCount: number }> = ({ checkInCount }) => {
-  const today = new Date();
+const MONTH_MAP: Record<string, number> = {
+  Ocak: 0,
+  Şubat: 1,
+  Mart: 2,
+  Nisan: 3,
+  Mayıs: 4,
+  Haziran: 5,
+  Temmuz: 6,
+  Ağustos: 7,
+  Eylül: 8,
+  Ekim: 9,
+  Kasım: 10,
+  Aralık: 11,
+};
+
+const ActivityCalendar: React.FC<{
+  checkInLogs: any[];
+  bookedSessions: any[];
+  onSelectDate?: (dateStr: string) => void;
+}> = ({ checkInLogs, bookedSessions, onSelectDate }) => {
+  const [selectedDayInfo, setSelectedDayInfo] = useState<string | null>(null);
+
+  // Use fixed studio reference date: 18 September 2026
+  const refDate = new Date(2026, 8, 18); // 18 Sep 2026
+
+  // Create a set of formatted date strings for check-in logs
+  const activeDateMap = new Map<string, any>();
+  checkInLogs.forEach((log) => {
+    // Format: "16 Eylül 2026"
+    const parts = log.date.split(" ");
+    if (parts.length >= 3) {
+      const day = parseInt(parts[0], 10);
+      const monthName = parts[1];
+      const year = parseInt(parts[2], 10);
+      const month = MONTH_MAP[monthName] ?? 8;
+      const key = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      activeDateMap.set(key, log);
+    }
+  });
+
+  // Upcoming booked sessions map
+  const upcomingDateMap = new Map<string, any>();
+  bookedSessions.forEach((sess) => {
+    upcomingDateMap.set(sess.date, sess);
+  });
+
+  // Build the 28-day window ending on Sep 18, plus 3 upcoming days for context
   const days = Array.from({ length: 28 }, (_, i) => {
-    const date = new Date(today);
-    date.setDate(today.getDate() - (27 - i));
-    const dayOfWeek = date.getDay();
-    const isActive =
-      i > 20
-        ? Math.random() > 0.3
-        : dayOfWeek !== 0 && dayOfWeek !== 6
-        ? Math.random() > 0.45
-        : Math.random() > 0.75;
+    const d = new Date(refDate);
+    d.setDate(refDate.getDate() - (24 - i)); // window showing ~4 days ahead and 24 days past
+
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    const dateKey = `${year}-${month}-${day}`;
+
+    const checkIn = activeDateMap.get(dateKey);
+    const upcoming = upcomingDateMap.get(dateKey);
+
+    const isToday =
+      d.getDate() === refDate.getDate() &&
+      d.getMonth() === refDate.getMonth() &&
+      d.getFullYear() === refDate.getFullYear();
+
     return {
-      date,
-      dayNum: date.getDate(),
-      isActive,
-      isToday: i === 27,
+      date: d,
+      dateKey,
+      dayNum: d.getDate(),
+      isActive: !!checkIn,
+      isUpcoming: !!upcoming && !checkIn,
+      isToday,
+      checkIn,
+      upcoming,
     };
   });
 
   const weekDayLabels = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cts", "Paz"];
 
   return (
-    <div className="bg-white border border-black/[0.06] rounded-2xl p-5 shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
-      <div className="flex items-center justify-between mb-4">
+    <div className="bg-white border border-black/[0.06] rounded-3xl p-5 shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
         <div>
-          <h3 className="text-sm font-semibold text-[#0F172A]">Aktivite Takvimi</h3>
-          <p className="text-[11px] text-[#94A3B8] mt-0.5">Son 4 hafta</p>
+          <h3 className="text-sm font-semibold text-[#0F172A]">Aktivite & Antrenman Takvimi</h3>
+          <p className="text-[11px] text-[#94A3B8] mt-0.5">
+            Stüdyo girişleriniz ve planlanan randevularınızla entegre
+          </p>
         </div>
         <div className="flex items-center gap-3 text-[10px] text-[#94A3B8]">
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-[4px] bg-emerald-500" />
-            <span>Aktif</span>
+            <span className="w-2.5 h-2.5 rounded-[4px] bg-emerald-500 shadow-2xs" />
+            <span className="text-[#0F172A] font-medium">Giriş Yapıldı ({checkInLogs.length})</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-[4px] bg-blue-500 shadow-2xs" />
+            <span className="text-[#0F172A] font-medium">Randevu ({bookedSessions.length})</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-[4px] bg-[#F1F5F9]" />
-            <span>Boş</span>
+            <span>Dinlenme</span>
           </div>
         </div>
       </div>
@@ -70,25 +132,59 @@ const ActivityCalendar: React.FC<{ checkInCount: number }> = ({ checkInCount }) 
         {Array.from({ length: (days[0].date.getDay() + 6) % 7 }, (_, i) => (
           <div key={`pad-${i}`} />
         ))}
-        {days.map((day, i) => (
-          <motion.div
-            key={i}
-            initial={{ scale: 0.5, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: i * 0.015, duration: 0.25 }}
-            className={`
-              aspect-square rounded-lg flex items-center justify-center text-[10px] font-semibold transition-all relative
-              ${day.isToday ? "ring-2 ring-emerald-500 ring-offset-1" : ""}
-              ${day.isActive
-                ? "bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-[0_2px_8px_rgba(16,185,129,0.3)]"
-                : "bg-[#F1F5F9] text-[#94A3B8]"
-              }
-            `}
-          >
-            {day.dayNum}
-          </motion.div>
-        ))}
+        {days.map((day) => {
+          let badgeStyle = "bg-[#F1F5F9] text-[#94A3B8]";
+          if (day.isActive) {
+            badgeStyle =
+              "bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-[0_2px_8px_rgba(16,185,129,0.35)] cursor-pointer hover:scale-105";
+          } else if (day.isUpcoming) {
+            badgeStyle =
+              "bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-[0_2px_8px_rgba(37,99,235,0.3)] cursor-pointer hover:scale-105";
+          }
+
+          return (
+            <button
+              type="button"
+              key={day.dateKey}
+              onClick={() => {
+                if (day.checkIn) {
+                  setSelectedDayInfo(
+                    `✓ ${day.checkIn.date} (${day.checkIn.time}): ${day.checkIn.sessionType} — Koç: ${day.checkIn.coachName}`
+                  );
+                } else if (day.upcoming) {
+                  setSelectedDayInfo(
+                    `📅 ${day.upcoming.date} (${day.upcoming.timeSlot}): ${day.upcoming.focusArea} — Koç: ${day.upcoming.coachName}`
+                  );
+                } else {
+                  setSelectedDayInfo(null);
+                }
+              }}
+              className={`
+                aspect-square rounded-xl flex flex-col items-center justify-center text-[10px] font-semibold transition-all relative
+                ${day.isToday ? "ring-2 ring-emerald-500 ring-offset-1 font-bold" : ""}
+                ${badgeStyle}
+              `}
+            >
+              <span>{day.dayNum}</span>
+              {day.isActive && <span className="w-1 h-1 rounded-full bg-white/80 mt-0.5" />}
+              {day.isUpcoming && <span className="w-1 h-1 rounded-full bg-white/80 mt-0.5" />}
+            </button>
+          );
+        })}
       </div>
+
+      {/* Selected day banner */}
+      {selectedDayInfo && (
+        <div className="mt-3.5 p-3 bg-emerald-50 border border-emerald-200/80 rounded-xl text-xs text-emerald-800 flex items-center justify-between animate-fadeIn">
+          <span>{selectedDayInfo}</span>
+          <button
+            onClick={() => setSelectedDayInfo(null)}
+            className="text-emerald-600 hover:text-emerald-900 text-xs font-bold px-1.5"
+          >
+            ✕
+          </button>
+        </div>
+      )}
     </div>
   );
 };
@@ -97,7 +193,7 @@ const ActivityCalendar: React.FC<{ checkInCount: number }> = ({ checkInCount }) 
 /*  Main HistoryTab Component                                          */
 /* ------------------------------------------------------------------ */
 export const HistoryTab: React.FC = () => {
-  const { checkInLogs } = useMember();
+  const { checkInLogs, bookedSessions } = useMember();
   const [expandedLog, setExpandedLog] = useState<string | null>(null);
 
   const stats = [
@@ -184,7 +280,10 @@ export const HistoryTab: React.FC = () => {
       </div>
 
       {/* Activity Calendar */}
-      <ActivityCalendar checkInCount={checkInLogs.length + 8} />
+      <ActivityCalendar
+        checkInLogs={checkInLogs}
+        bookedSessions={bookedSessions}
+      />
 
       {/* Session History */}
       <div>
