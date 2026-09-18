@@ -37,7 +37,7 @@ export const SessionRingGauge: React.FC<SessionRingGaugeProps> = ({
             <h4 className="text-sm font-bold uppercase font-display text-[#0F172A] tracking-tight">
               SEANS BAKIYESİ & İLERLEME
             </h4>
-            <span className="text-[10px] font-mono text-[#64748B] uppercase">
+            <span className="text-[10px] font-sans text-[#64748B] uppercase">
               1:1 PERSONAL TRAINING HAKLARI
             </span>
           </div>
@@ -92,7 +92,7 @@ export const SessionRingGauge: React.FC<SessionRingGaugeProps> = ({
             <span className="text-4xl font-black font-display text-[#0F172A] tracking-tighter leading-none">
               {remaining}
             </span>
-            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#64748B] mt-1">
+            <span className="text-[10px] font-sans font-bold uppercase tracking-wider text-[#64748B] mt-1">
               SEANS KALDI
             </span>
             <span className="text-[10px] font-bold text-[#10B981] mt-0.5 bg-[#ECFDF5] px-2 py-0.5 rounded-full">

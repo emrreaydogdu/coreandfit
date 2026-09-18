@@ -47,11 +47,11 @@ export const DashboardTab: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-mono text-[#10B981] uppercase tracking-wider font-bold">
+            <span className="text-[11px] font-sans text-[#10B981] uppercase tracking-wider font-bold">
               KİŞİSEL ANTRENMAN PANELİ
             </span>
             <span className="text-[#CBD5E1]">•</span>
-            <span className="text-[11px] font-mono text-[#64748B]">Nişantaşı Private Studio</span>
+            <span className="text-[11px] font-sans text-[#64748B]">Nişantaşı Private Studio</span>
           </div>
           <h2 className="text-2xl sm:text-3xl font-extrabold uppercase font-display text-[#0F172A] tracking-tight mt-0.5">
             Hoş Geldin, {user.fullName.split(" ")[0]}
@@ -90,7 +90,7 @@ export const DashboardTab: React.FC = () => {
               <h4 className="text-sm font-bold uppercase font-display text-[#0F172A] tracking-tight">
                 YAKLAŞAN İLK SEANSINIZ
               </h4>
-              <span className="text-[10px] font-mono text-[#64748B] uppercase">
+              <span className="text-[10px] font-sans text-[#64748B] uppercase">
                 BİREBİR REZERVE EDİLMİŞ ANTRENMAN
               </span>
             </div>
@@ -118,7 +118,7 @@ export const DashboardTab: React.FC = () => {
 
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold font-mono text-[#2563EB]">
+                  <span className="text-xs font-bold font-sans text-[#2563EB]">
                     {upcomingSession.date} • {upcomingSession.timeSlot}
                   </span>
                   <span className="px-2.5 py-0.5 bg-[#ECFDF5] text-[#059669] text-[10px] font-bold rounded-full uppercase">
@@ -130,7 +130,7 @@ export const DashboardTab: React.FC = () => {
                   {upcomingSession.coachName} ile {upcomingSession.focusArea}
                 </h5>
 
-                <p className="text-xs text-[#64748B] font-mono flex items-center gap-1.5 mt-1">
+                <p className="text-xs text-[#64748B] font-sans flex items-center gap-1.5 mt-1">
                   <MapPin className="w-3.5 h-3.5 text-[#10B981]" />
                   <span>{upcomingSession.station}</span>
                 </p>
@@ -168,7 +168,7 @@ export const DashboardTab: React.FC = () => {
             </p>
             <button
               onClick={() => setActiveTab("sessions")}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0F172A] text-white font-bold text-xs uppercase font-mono rounded-full hover:bg-[#1E293B]"
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0F172A] text-white font-bold text-xs uppercase font-sans rounded-full hover:bg-[#1E293B]"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Hemen Seans Ayırt</span>
@@ -188,7 +188,7 @@ export const DashboardTab: React.FC = () => {
               <h4 className="text-sm font-bold uppercase font-display text-[#0F172A] tracking-tight">
                 HAFTALIK ANTRENMAN DİSİPLİNİ
               </h4>
-              <span className="text-[10px] font-mono text-[#64748B] uppercase">
+              <span className="text-[10px] font-sans text-[#64748B] uppercase">
                 BU HAFTA 2 SEANS TAMAMLANDI • 1 SEANS BEKLİYOR
               </span>
             </div>

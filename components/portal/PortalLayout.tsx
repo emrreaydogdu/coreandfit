@@ -74,7 +74,7 @@ export const PortalLayout: React.FC = () => {
               title="Web Sitesine Dön"
             >
               <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
-              <div className="flex items-center gap-1.5 font-mono font-black text-sm tracking-tight text-[#0F172A]">
+              <div className="flex items-center gap-1.5 font-sans font-black text-sm tracking-tight text-[#0F172A]">
                 <span>CORE & FIT</span>
                 <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
               </div>

@@ -22,11 +22,11 @@ export const StoreTab: React.FC = () => {
       {/* Header */}
       <div>
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-mono text-[#10B981] uppercase tracking-wider font-bold">
+          <span className="text-[11px] font-sans text-[#10B981] uppercase tracking-wider font-bold">
             ÖZEL DERS & SEANS MAĞAZASI
           </span>
           <span className="text-[#CBD5E1]">•</span>
-          <span className="text-[11px] font-mono text-[#64748B]">1:1 Kişisel Koçluk</span>
+          <span className="text-[11px] font-sans text-[#64748B]">1:1 Kişisel Koçluk</span>
         </div>
         <h2 className="text-2xl sm:text-3xl font-extrabold uppercase font-display text-[#0F172A] tracking-tight mt-0.5">
           Paket Satın Al & Seans Yükle
@@ -75,7 +75,7 @@ export const StoreTab: React.FC = () => {
 
             <div>
               <div className="flex items-center justify-between gap-2 mb-2">
-                <span className="text-xs font-bold font-mono text-[#10B981] uppercase tracking-wider">
+                <span className="text-xs font-bold font-sans text-[#10B981] uppercase tracking-wider">
                   {pkg.sessionCount} SEANS • {pkg.validityDays} GÜN
                 </span>
               </div>

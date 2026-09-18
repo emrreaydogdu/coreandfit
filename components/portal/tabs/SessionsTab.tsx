@@ -112,7 +112,7 @@ export const SessionsTab: React.FC = () => {
       {/* Header with CTA */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <span className="text-[11px] font-mono text-[#10B981] uppercase tracking-wider font-bold block">
+          <span className="text-[11px] font-sans text-[#10B981] uppercase tracking-wider font-bold block">
             RANDEVU VE DERS TAKVİMİ
           </span>
           <h2 className="text-2xl sm:text-3xl font-extrabold uppercase font-display text-[#0F172A] mt-0.5">
@@ -143,7 +143,7 @@ export const SessionsTab: React.FC = () => {
 
       {/* Booked Sessions List */}
       <div className="space-y-3.5">
-        <h3 className="text-xs font-bold font-mono text-[#64748B] uppercase tracking-wider">
+        <h3 className="text-xs font-bold font-sans text-[#64748B] uppercase tracking-wider">
           Planlanmış Seanslar ({bookedSessions.length})
         </h3>
 
@@ -164,7 +164,7 @@ export const SessionsTab: React.FC = () => {
 
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold font-mono text-[#2563EB]">
+                    <span className="text-xs font-bold font-sans text-[#2563EB]">
                       {session.date} • {session.timeSlot}
                     </span>
                     <span className="px-2.5 py-0.5 bg-[#ECFDF5] text-[#059669] text-[10px] font-bold rounded-full uppercase">
@@ -176,7 +176,7 @@ export const SessionsTab: React.FC = () => {
                     {session.coachName} — {session.focusArea}
                   </h4>
 
-                  <p className="text-xs text-[#64748B] font-mono flex items-center gap-1.5 mt-1">
+                  <p className="text-xs text-[#64748B] font-sans flex items-center gap-1.5 mt-1">
                     <MapPin className="w-3.5 h-3.5 text-[#10B981]" />
                     <span>{session.station}</span>
                   </p>
@@ -218,7 +218,7 @@ export const SessionsTab: React.FC = () => {
             </p>
             <button
               onClick={() => setBookingWizardOpen(true)}
-              className="px-5 py-2.5 bg-[#0F172A] text-white font-bold text-xs uppercase font-mono rounded-full hover:bg-[#1E293B]"
+              className="px-5 py-2.5 bg-[#0F172A] text-white font-bold text-xs uppercase font-sans rounded-full hover:bg-[#1E293B]"
             >
               Hemen Seans Ayırt
             </button>
@@ -348,13 +348,13 @@ export const SessionsTab: React.FC = () => {
                             : "border-black/[0.06] bg-[#F8FAFC] text-[#0F172A] hover:border-black/[0.15]"
                         }`}
                       >
-                        <span className="text-[10px] font-mono block uppercase">
+                        <span className="text-[10px] font-sans block uppercase">
                           {d.dayName}
                         </span>
                         <span className="text-2xl font-bold font-display block my-1">
                           {d.dayNumber}
                         </span>
-                        <span className="text-[10px] font-mono block uppercase">
+                        <span className="text-[10px] font-sans block uppercase">
                           {d.monthName}
                         </span>
                       </button>
@@ -400,7 +400,7 @@ export const SessionsTab: React.FC = () => {
                         key={i}
                         type="button"
                         onClick={() => setSelectedTime(slot)}
-                        className={`p-3.5 rounded-2xl border font-mono text-xs text-center transition-all ${
+                        className={`p-3.5 rounded-2xl border font-sans text-xs text-center transition-all ${
                           selectedTime === slot
                             ? "border-[#0F172A] bg-[#0F172A] text-white font-bold shadow-md"
                             : "border-black/[0.06] bg-[#F8FAFC] text-[#0F172A] hover:border-black/[0.15]"

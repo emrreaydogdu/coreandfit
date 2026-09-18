@@ -89,7 +89,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           <div>
             {/* Header */}
             <div className="mb-6">
-              <span className="text-[10px] font-mono text-[#10B981] uppercase tracking-widest block font-bold">
+              <span className="text-[10px] font-sans text-[#10B981] uppercase tracking-widest block font-bold">
                 GÜVENLİ ÖDEME
               </span>
               <h3 className="text-2xl font-bold font-display uppercase text-[#0F172A] mt-1">
@@ -240,7 +240,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                       placeholder="4543 2100 8921 5432"
                       value={cardNumber}
                       onChange={(e) => setCardNumber(e.target.value)}
-                      className="w-full bg-white border border-black/[0.12] rounded-xl px-3.5 py-2.5 text-xs font-mono text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#0F172A]"
+                      className="w-full bg-white border border-black/[0.12] rounded-xl px-3.5 py-2.5 text-xs font-sans text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#0F172A]"
                     />
                   </div>
 
@@ -254,7 +254,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                       placeholder="EGE MERT"
                       value={cardHolder}
                       onChange={(e) => setCardHolder(e.target.value.toUpperCase())}
-                      className="w-full bg-white border border-black/[0.12] rounded-xl px-3.5 py-2.5 text-xs font-mono text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#0F172A]"
+                      className="w-full bg-white border border-black/[0.12] rounded-xl px-3.5 py-2.5 text-xs font-sans text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#0F172A]"
                     />
                   </div>
 
@@ -270,7 +270,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                         placeholder="12/28"
                         value={expiry}
                         onChange={(e) => setExpiry(e.target.value)}
-                        className="w-full bg-white border border-black/[0.12] rounded-xl px-3.5 py-2.5 text-xs font-mono text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#0F172A]"
+                        className="w-full bg-white border border-black/[0.12] rounded-xl px-3.5 py-2.5 text-xs font-sans text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#0F172A]"
                       />
                     </div>
                     <div>
@@ -284,7 +284,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                         placeholder="•••"
                         value={cvv}
                         onChange={(e) => setCvv(e.target.value)}
-                        className="w-full bg-white border border-black/[0.12] rounded-xl px-3.5 py-2.5 text-xs font-mono text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#0F172A]"
+                        className="w-full bg-white border border-black/[0.12] rounded-xl px-3.5 py-2.5 text-xs font-sans text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#0F172A]"
                       />
                     </div>
                   </div>
@@ -345,14 +345,14 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                         key={i}
                         className="p-3 bg-white rounded-xl border border-black/[0.06] flex items-center justify-between shadow-xs"
                       >
-                        <div className="text-xs font-mono">
+                        <div className="text-xs font-sans">
                           <span className="font-bold text-[#0F172A] block">{acc.bankName}</span>
                           <span className="text-[11px] text-[#64748B] block">{acc.iban}</span>
                         </div>
                         <button
                           type="button"
                           onClick={() => handleCopyIban(acc.iban)}
-                          className="p-2 bg-[#F1F5F9] hover:bg-[#E2E8F0] rounded-lg text-[#0F172A] text-xs font-mono flex items-center gap-1 transition-colors"
+                          className="p-2 bg-[#F1F5F9] hover:bg-[#E2E8F0] rounded-lg text-[#0F172A] text-xs font-sans flex items-center gap-1 transition-colors"
                         >
                           {copiedIban === acc.iban ? (
                             <>
@@ -414,7 +414,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             <div className="p-5 bg-[#F8FAFC] border border-black/[0.06] rounded-2xl text-left space-y-2.5 font-sans text-xs max-w-sm mx-auto shadow-xs">
               <div className="flex justify-between border-b border-black/[0.06] pb-2">
                 <span className="text-[#64748B]">Sipariş No:</span>
-                <span className="font-bold font-mono text-[#0F172A]">{completedOrder.orderNumber}</span>
+                <span className="font-bold font-sans text-[#0F172A]">{completedOrder.orderNumber}</span>
               </div>
               <div className="flex justify-between border-b border-black/[0.06] pb-2">
                 <span className="text-[#64748B]">Paket:</span>
@@ -444,7 +444,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                     : "Havale Bekleniyor"}
                 </span>
               </div>
-              <div className="flex justify-between pt-1 font-mono">
+              <div className="flex justify-between pt-1 font-sans">
                 <span className="text-[#64748B]">Makbuz Kodu:</span>
                 <span className="text-[#0F172A] font-bold tracking-wider">
                   {completedOrder.receiptCode}
