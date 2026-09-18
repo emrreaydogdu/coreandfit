@@ -13,8 +13,8 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 export const Footer: React.FC = () => {
   const pathname = usePathname();
 
-  // Portal sayfalarında marketing footer render edilmez
-  if (pathname?.startsWith("/portal")) {
+  // Portal ve Admin sayfalarında marketing footer render edilmez
+  if (pathname?.startsWith("/portal") || pathname?.startsWith("/admin")) {
     return null;
   }
   return (

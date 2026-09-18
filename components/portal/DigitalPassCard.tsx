@@ -1,8 +1,17 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { QrCode, X, ShieldCheck, Maximize2, Zap, Sparkles } from "lucide-react";
+import {
+  QrCode,
+  X,
+  ShieldCheck,
+  Maximize2,
+  Zap,
+  Sparkles,
+  RefreshCw,
+  Lock,
+} from "lucide-react";
 import { MemberUser } from "@/types/portal";
 
 interface DigitalPassCardProps {
@@ -15,6 +24,50 @@ export const DigitalPassCard: React.FC<DigitalPassCardProps> = ({
   remainingSessions,
 }) => {
   const [showQrModal, setShowQrModal] = useState(false);
+
+  // 60-Second Rolling TOTP QR Engine
+  const [secondsLeft, setSecondsLeft] = useState(60);
+  const [refreshToken, setRefreshToken] = useState<string>("");
+  const [dynamicOtp, setDynamicOtp] = useState<string>("842 190");
+
+  const generateToken = () => {
+    const currentMinute = Math.floor(Date.now() / 60000);
+    const hash = Math.abs(
+      (user.memberNo.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0) * 31 + currentMinute) % 900000
+    ) + 100000;
+    const otpStr = `${String(hash).slice(0, 3)} ${String(hash).slice(3, 6)}`;
+    const fullToken = `CF-PASS|${user.memberNo}|${user.fullName}|${currentMinute}|${hash}`;
+    setDynamicOtp(otpStr);
+    setRefreshToken(fullToken);
+  };
+
+  useEffect(() => {
+    // Initial generation
+    generateToken();
+
+    // Calculate seconds remaining in current minute
+    const syncTime = () => {
+      const now = new Date();
+      const rem = 60 - now.getSeconds();
+      setSecondsLeft(rem);
+      if (rem === 60) {
+        generateToken();
+      }
+    };
+
+    syncTime();
+    const interval = setInterval(syncTime, 1000);
+    return () => clearInterval(interval);
+  }, [user.memberNo, user.fullName]);
+
+  const handleManualRefresh = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    generateToken();
+    setSecondsLeft(60);
+  };
+
+  // Progress percentage (60 down to 0)
+  const progressPercent = (secondsLeft / 60) * 100;
 
   return (
     <>
@@ -40,7 +93,7 @@ export const DigitalPassCard: React.FC<DigitalPassCardProps> = ({
               <div>
                 <div className="flex items-center gap-1.5">
                   <span className="font-sans text-[10px] tracking-[0.25em] text-[#64748B] uppercase font-bold">
-                    DIGITAL MEMBER PASS
+                    DİNAMİK TURNİKE KARTI
                   </span>
                   <Sparkles className="w-3 h-3 text-[#10B981]" />
                 </div>
@@ -50,10 +103,11 @@ export const DigitalPassCard: React.FC<DigitalPassCardProps> = ({
               </div>
             </div>
 
+            {/* Live 60s Rolling Pulse Badge */}
             <div className="flex items-center gap-1.5 px-3 py-1 bg-white border border-black/[0.06] rounded-full shadow-xs">
               <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse" />
               <span className="text-[10px] font-sans font-bold tracking-wider text-[#0F172A] uppercase">
-                AKTİF ÜYE
+                {secondsLeft}s YENİLENİYOR
               </span>
             </div>
           </div>
@@ -73,11 +127,11 @@ export const DigitalPassCard: React.FC<DigitalPassCardProps> = ({
               </p>
             </div>
 
-            {/* Apple Wallet Style QR Preview Box */}
-            <div className="flex flex-col items-center gap-1 bg-white border border-black/[0.08] p-2.5 rounded-2xl shadow-xs group-hover:border-[#0F172A] transition-colors">
+            {/* Apple Wallet Style Dynamic QR Preview Box */}
+            <div className="flex flex-col items-center gap-1 bg-white border border-black/[0.08] p-2.5 rounded-2xl shadow-xs group-hover:border-[#0F172A] transition-colors relative">
               <QrCode className="w-9 h-9 text-[#0F172A]" />
-              <span className="text-[8px] font-sans text-[#64748B] uppercase tracking-wider flex items-center gap-0.5 font-bold">
-                <span>DOKUN</span>
+              <span className="text-[8px] font-sans text-emerald-600 font-bold uppercase tracking-wider flex items-center gap-0.5">
+                <span>{secondsLeft}s</span>
                 <Maximize2 className="w-2 h-2" />
               </span>
             </div>
@@ -99,7 +153,7 @@ export const DigitalPassCard: React.FC<DigitalPassCardProps> = ({
         </div>
       </motion.div>
 
-      {/* Fullscreen Turnstile / Reception QR Modal */}
+      {/* Fullscreen Turnstile / Reception QR Modal with 60s Live Countdown */}
       <AnimatePresence>
         {showQrModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
@@ -107,7 +161,7 @@ export const DigitalPassCard: React.FC<DigitalPassCardProps> = ({
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="relative w-full max-w-sm bg-white border border-black/[0.08] rounded-3xl p-7 shadow-2xl text-center text-[#0F172A]"
+              className="relative w-full max-w-sm bg-white border border-black/[0.08] rounded-3xl p-6 sm:p-7 shadow-2xl text-center text-[#0F172A]"
             >
               <button
                 onClick={() => setShowQrModal(false)}
@@ -116,36 +170,77 @@ export const DigitalPassCard: React.FC<DigitalPassCardProps> = ({
                 <X className="w-5 h-5" />
               </button>
 
-              <div className="inline-flex items-center gap-1.5 px-3.5 py-1 bg-[#F1F5F9] text-[#0F172A] rounded-full text-xs font-sans font-bold uppercase tracking-wider mb-4 border border-black/[0.04]">
-                <Zap className="w-3.5 h-3.5 text-[#10B981]" />
-                <span>STÜDYO TURNİKE & GİRİŞ KARTI</span>
+              <div className="inline-flex items-center gap-1.5 px-3.5 py-1 bg-emerald-50 text-emerald-800 rounded-full text-xs font-sans font-bold uppercase tracking-wider mb-2 border border-emerald-200/60">
+                <Zap className="w-3.5 h-3.5 text-emerald-600" />
+                <span>CANLI DİNAMİK TURNİKE KODU</span>
               </div>
 
               <h4 className="text-2xl font-bold font-display uppercase tracking-tight text-[#0F172A]">
                 {user.fullName}
               </h4>
-              <p className="text-xs font-sans text-[#64748B] mt-1 mb-6">
+              <p className="text-xs font-sans text-[#64748B] mt-0.5 mb-4">
                 ÜYE NO: <span className="font-bold text-[#0F172A]">{user.memberNo}</span>
               </p>
 
-              {/* High Contrast QR Box */}
-              <div className="relative mx-auto w-56 h-56 bg-white p-4 rounded-3xl border-2 border-[#0F172A] shadow-lg flex flex-col items-center justify-center">
-                <div className="w-full h-full p-2 flex flex-col items-center justify-center bg-white">
-                  <QrCode className="w-36 h-36 text-[#0F172A]" />
-                  <span className="font-sans text-[10px] font-black tracking-widest text-[#0F172A] mt-1">
-                    {user.memberNo}
-                  </span>
+              {/* High Contrast Dynamic QR Box with Countdown Border */}
+              <div className="relative mx-auto w-64 h-64 bg-white p-4 rounded-3xl border-2 border-[#0F172A] shadow-xl flex flex-col items-center justify-center overflow-hidden">
+                {/* 60s Progress Bar on Top */}
+                <div className="absolute top-0 left-0 right-0 h-1.5 bg-slate-100">
+                  <div
+                    className="h-full bg-emerald-500 transition-all duration-1000 ease-linear"
+                    style={{ width: `${progressPercent}%` }}
+                  />
                 </div>
-                <div className="absolute -bottom-3 bg-[#0F172A] text-white px-4 py-1 rounded-full text-[10px] font-sans font-bold uppercase tracking-wider shadow">
-                  GİRİŞTE OKUTUNUZ
+
+                {/* QR Visual */}
+                <div className="w-full h-full p-2 flex flex-col items-center justify-center bg-white">
+                  <div className="relative p-2 rounded-2xl bg-white border border-black/[0.06] shadow-2xs">
+                    <QrCode className="w-36 h-36 text-[#0F172A]" />
+                    {/* Pulsing center badge */}
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className="w-8 h-8 rounded-lg bg-white border border-black/[0.1] flex items-center justify-center shadow-md">
+                        <span className="font-black text-[10px] text-[#0F172A]">CF</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 6-Digit TOTP Dynamic Code */}
+                  <div className="mt-2 flex items-center gap-1.5">
+                    <Lock className="w-3 h-3 text-[#10B981]" />
+                    <span className="font-mono text-sm font-black tracking-widest text-[#0F172A]">
+                      {dynamicOtp}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Bottom Countdown Badge */}
+                <div className="absolute -bottom-3 bg-[#0F172A] text-white px-4 py-1 rounded-full text-[10px] font-sans font-bold uppercase tracking-wider shadow flex items-center gap-1.5">
+                  <RefreshCw className="w-2.5 h-2.5 animate-spin" />
+                  <span>{secondsLeft} SANİYEDE YENİLENİR</span>
                 </div>
               </div>
 
-              <div className="mt-8 pt-5 border-t border-black/[0.06] text-xs font-sans text-[#64748B] space-y-1">
-                <p>Nişantaşı Private Studio Resepsiyon Turnikesi</p>
-                <p className="text-[#10B981] font-bold text-sm">
+              {/* Dynamic Security Explanation */}
+              <div className="mt-7 pt-4 border-t border-black/[0.06] text-xs font-sans text-[#64748B] space-y-1.5">
+                <div className="flex items-center justify-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse" />
+                  <span className="text-[11px] font-medium text-[#0F172A]">
+                    Kapıdaki turnike kamerasına okutunuz
+                  </span>
+                  <button
+                    onClick={handleManualRefresh}
+                    className="p-1 text-[#94A3B8] hover:text-[#0F172A] transition-colors"
+                    title="Hemen Yenile"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                  </button>
+                </div>
+                <p className="text-emerald-700 font-bold text-xs">
                   Aktif Bakiye: {remainingSessions} Seans
                 </p>
+                <span className="text-[10px] text-[#94A3B8] block truncate max-w-xs mx-auto font-mono">
+                  {refreshToken}
+                </span>
               </div>
             </motion.div>
           </div>

@@ -38,8 +38,8 @@ export const Header: React.FC = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Portal sayfalarında marketing header render edilmez
-  if (pathname?.startsWith("/portal")) {
+  // Portal ve Admin sayfalarında marketing header render edilmez
+  if (pathname?.startsWith("/portal") || pathname?.startsWith("/admin")) {
     return null;
   }
 

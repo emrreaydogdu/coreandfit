@@ -27,10 +27,17 @@ import {
   Filter,
   UserCheck,
   Sparkles,
+  QrCode,
+  Zap,
+  Smartphone,
+  Monitor,
+  Camera,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useMember } from "@/context/MemberContext";
 import { PaymentMethod } from "@/types/portal";
+import { AdminQrScannerModal } from "@/components/portal/admin/AdminQrScannerModal";
+import { AdminFloatingNav, AdminTab } from "@/components/portal/admin/AdminFloatingNav";
 
 export const AdminPortal: React.FC = () => {
   const {
@@ -46,9 +53,11 @@ export const AdminPortal: React.FC = () => {
     completeBookedSession,
   } = useMember();
 
-  // Role switch
+  // Role switch & Display Mode
   const [selectedRole, setSelectedRole] = useState<string>("Genel Stüdyo Yöneticisi");
-  const [adminTab, setAdminTab] = useState<"overview" | "schedule" | "turnstile" | "cashier" | "members" | "coaches">("overview");
+  const [adminTab, setAdminTab] = useState<AdminTab>("overview");
+  const [viewMode, setViewMode] = useState<"responsive" | "app_frame">("responsive");
+  const [isScannerOpen, setIsScannerOpen] = useState<boolean>(false);
 
   // Filter states
   const [coachFilter, setCoachFilter] = useState<string>("all");
@@ -153,146 +162,11 @@ export const AdminPortal: React.FC = () => {
 
   const pendingOrdersCount = orders.filter((o) => o.paymentStatus !== "completed").length;
 
-  return (
-    <div className="min-h-screen bg-[#F5F6FA] text-[#0F172A] font-sans antialiased pb-20">
-      {/* Top Admin Bar */}
-      <header className="sticky top-0 z-40 bg-slate-900 text-white border-b border-slate-800 shadow-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <Link
-              href="/portal"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-full text-xs font-semibold text-slate-200 transition-colors"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Üye Paneline Dön</span>
-            </Link>
-
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <h1 className="font-bold text-sm tracking-tight uppercase">
-                CORE & FIT STUDIO OS <span className="text-slate-400 font-normal">| Yönetici & Koç Portalı</span>
-              </h1>
-            </div>
-          </div>
-
-          {/* Role selector dropdown */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-400 hidden md:inline">Görünüm:</span>
-            <select
-              value={selectedRole}
-              onChange={(e) => setSelectedRole(e.target.value)}
-              className="bg-slate-800 border border-slate-700 text-white text-xs font-medium rounded-xl px-3 py-1.5 focus:outline-none focus:border-emerald-400"
-            >
-              <option value="Genel Stüdyo Yöneticisi">👑 Genel Stüdyo Yöneticisi</option>
-              <option value="Mert Aksoy (Baş Antrenör)">🏋️ Mert Aksoy (Baş Antrenör)</option>
-              <option value="Selin Yılmaz (Performans Koçu)">🤸 Selin Yılmaz (Performans Koçu)</option>
-              <option value="Can Demir (Kondisyon Koçu)">🏃 Can Demir (Kondisyon Koçu)</option>
-            </select>
-          </div>
-        </div>
-      </header>
-
-      {/* Admin Content Container */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">
-        {/* Top KPI Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white border border-black/[0.06] rounded-3xl p-5 shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
-            <div className="flex items-center justify-between text-xs text-[#64748B] mb-2 font-medium">
-              <span>GÜNLÜK TURNİKE GİRİŞİ</span>
-              <div className="w-8 h-8 rounded-xl bg-emerald-50 text-[#10B981] flex items-center justify-center">
-                <UserCheck className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-black text-[#0F172A]">{checkInLogs.length + 34}</span>
-              <span className="text-xs font-semibold text-emerald-600">↑ %14 artış</span>
-            </div>
-            <span className="text-[11px] text-[#94A3B8] block mt-1">Bugün tamamlanan seanslar</span>
-          </div>
-
-          <div className="bg-white border border-black/[0.06] rounded-3xl p-5 shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
-            <div className="flex items-center justify-between text-xs text-[#64748B] mb-2 font-medium">
-              <span>STÜDYO DOLULUK ORANI</span>
-              <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#2563EB] flex items-center justify-center">
-                <Activity className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-black text-[#0F172A]">%70</span>
-              <span className="text-xs text-[#64748B]">14 / 20 İstasyon</span>
-            </div>
-            <span className="text-[11px] text-[#94A3B8] block mt-1">Nişantaşı stüdyo anlık kapasite</span>
-          </div>
-
-          <div className="bg-white border border-black/[0.06] rounded-3xl p-5 shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
-            <div className="flex items-center justify-between text-xs text-[#64748B] mb-2 font-medium">
-              <span>AYLIK TOPLAM CİRO</span>
-              <div className="w-8 h-8 rounded-xl bg-emerald-50 text-[#10B981] flex items-center justify-center">
-                <DollarSign className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-black text-[#0F172A]">₺428.000</span>
-              <span className="text-xs font-semibold text-emerald-600">Hedef: %107</span>
-            </div>
-            <span className="text-[11px] text-[#94A3B8] block mt-1">Eylül 2026 gerçekleşen ciro</span>
-          </div>
-
-          <div className="bg-white border border-black/[0.06] rounded-3xl p-5 shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
-            <div className="flex items-center justify-between text-xs text-[#64748B] mb-2 font-medium">
-              <span>BEKLEYEN KASA TAHSİLATI</span>
-              <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
-                <Banknote className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-black text-amber-600">{pendingOrdersCount} Sipariş</span>
-              <span className="text-xs font-semibold text-[#64748B]">Kasada / Havale</span>
-            </div>
-            <span className="text-[11px] text-[#94A3B8] block mt-1">Onay bekleyen ödemeler</span>
-          </div>
-        </div>
-
-        {/* Admin Navigation Pills */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-black/[0.06]">
-          {[
-            { id: "overview", label: "Genel Bakış", icon: TrendingUp },
-            { id: "schedule", label: "Seans Programı & Randevular", icon: Calendar, badge: bookedSessions.length },
-            { id: "turnstile", label: "Turnike & Hızlı Giriş", icon: UserCheck },
-            { id: "cashier", label: "Kasa & Ödeme Onayları", icon: CreditCard, badge: pendingOrdersCount },
-            { id: "members", label: "Üye Yönetimi (CRM)", icon: Users },
-            { id: "coaches", label: "Koç Performansları", icon: Award },
-          ].map((tab) => {
-            const Icon = tab.icon;
-            const isActive = adminTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setAdminTab(tab.id as any)}
-                className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-semibold whitespace-nowrap transition-all ${
-                  isActive
-                    ? "bg-[#0F172A] text-white shadow-md shadow-slate-900/10"
-                    : "bg-white text-[#64748B] hover:bg-slate-100 hover:text-[#0F172A] border border-black/[0.05]"
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-                <span>{tab.label}</span>
-                {tab.badge !== undefined && tab.badge > 0 && (
-                  <span
-                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                      isActive ? "bg-emerald-500 text-white" : "bg-emerald-100 text-emerald-800"
-                    }`}
-                  >
-                    {tab.badge}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* TAB 1: OVERVIEW */}
-        {adminTab === "overview" && (
+  // Render tab contents
+  const renderTabContent = () => {
+    switch (adminTab) {
+      case "overview":
+        return (
           <div className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Today's Schedule Snapshot */}
@@ -350,13 +224,13 @@ export const AdminPortal: React.FC = () => {
               <div className="bg-gradient-to-br from-slate-900 to-[#0F172A] text-white rounded-3xl p-6 shadow-xl flex flex-col justify-between">
                 <div>
                   <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mb-4">
-                    <UserCheck className="w-5 h-5" />
+                    <Zap className="w-5 h-5" />
                   </div>
                   <h3 className="text-lg font-bold uppercase tracking-tight">
-                    Hızlı Turnike Geçişi
+                    Otomatik QR Turnike Terminali
                   </h3>
                   <p className="text-xs text-slate-300 mt-1 leading-relaxed">
-                    Stüdyoya giriş yapan üyelerin seansını 1 tıkla düşürün ve koç antrenman notunu anında kaydedin.
+                    Üyenin ekranındaki 60 saniyelik dinamik QR kodunu kamerayla okutarak anında seans düşüşü yapın.
                   </p>
 
                   <div className="mt-5 p-4 bg-white/5 border border-white/10 rounded-2xl space-y-2 text-xs">
@@ -372,18 +246,19 @@ export const AdminPortal: React.FC = () => {
                 </div>
 
                 <button
-                  onClick={() => setAdminTab("turnstile")}
-                  className="w-full mt-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-md active:scale-98"
+                  onClick={() => setIsScannerOpen(true)}
+                  className="w-full mt-6 py-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-md flex items-center justify-center gap-2 active:scale-98"
                 >
-                  Turnike Terminalini Aç →
+                  <QrCode className="w-4 h-4" />
+                  <span>Kamerayı / QR Okuyucuyu Başlat →</span>
                 </button>
               </div>
             </div>
           </div>
-        )}
+        );
 
-        {/* TAB 2: SCHEDULE & APPOINTMENTS */}
-        {adminTab === "schedule" && (
+      case "schedule":
+        return (
           <div className="bg-white border border-black/[0.06] rounded-3xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-black/[0.05] pb-4">
               <div>
@@ -457,117 +332,159 @@ export const AdminPortal: React.FC = () => {
                 ))}
             </div>
           </div>
-        )}
+        );
 
-        {/* TAB 3: TURNSTILE SIMULATOR */}
-        {adminTab === "turnstile" && (
-          <div className="max-w-2xl mx-auto bg-white border border-black/[0.06] rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
-            <div className="text-center space-y-1">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center mx-auto shadow-md">
-                <UserCheck className="w-6 h-6" />
-              </div>
-              <h3 className="text-xl font-bold uppercase tracking-tight text-[#0F172A] pt-2">
-                Stüdyo Turnike & Giriş Terminali
-              </h3>
-              <p className="text-xs text-[#64748B]">
-                Üyenin girişini onaylayın, kalan seansından 1 düşürün ve koç gelişim notunu işleyin.
-              </p>
-            </div>
-
-            {turnstileSuccessMsg && (
-              <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl text-xs font-semibold flex items-center gap-2 animate-fadeIn">
-                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                <span>{turnstileSuccessMsg}</span>
-              </div>
-            )}
-
-            {/* Member Snapshot Card */}
-            <div className="p-4 bg-[#F8FAFC] border border-black/[0.06] rounded-2xl flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl overflow-hidden border border-emerald-500/30">
-                  <img src={user?.avatarUrl} alt="Üye" className="w-full h-full object-cover" />
+      case "turnstile":
+        return (
+          <div className="space-y-6">
+            {/* Direct Auto Scanner Launcher Hero */}
+            <div className="bg-gradient-to-r from-slate-950 via-[#0B131E] to-slate-900 rounded-3xl p-6 sm:p-8 text-white border border-white/10 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="space-y-2 text-center md:text-left">
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 rounded-full text-xs font-bold uppercase tracking-wider">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>Optik Turnike Kapı Sensörü</span>
                 </div>
-                <div>
-                  <h4 className="font-bold text-sm text-[#0F172A]">{user?.fullName}</h4>
-                  <span className="text-xs text-[#64748B]">{user?.memberNo} • {user?.membershipTier}</span>
-                </div>
-              </div>
-              <div className="text-right">
-                <span className="text-xs text-[#64748B] block">Kalan Seans</span>
-                <span className="text-xl font-black text-emerald-600">{remainingSessions} / {totalSessions}</span>
-              </div>
-            </div>
-
-            <form onSubmit={handleTurnstileSubmit} className="space-y-4 text-xs font-sans">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[10px] font-bold text-[#64748B] uppercase block mb-1">
-                    EŞLİK EDEN KOÇ
-                  </label>
-                  <select
-                    value={turnstileCoach}
-                    onChange={(e) => setTurnstileCoach(e.target.value)}
-                    className="w-full p-2.5 bg-[#F8FAFC] border border-black/[0.08] rounded-xl text-xs font-semibold text-[#0F172A]"
-                  >
-                    <option value="Mert Aksoy">Mert Aksoy (Baş Antrenör)</option>
-                    <option value="Selin Yılmaz">Selin Yılmaz (Performans Koçu)</option>
-                    <option value="Can Demir">Can Demir (Kondisyon Koçu)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-bold text-[#64748B] uppercase block mb-1">
-                    ANTRENMAN TÜRÜ
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={turnstileSessionType}
-                    onChange={(e) => setTurnstileSessionType(e.target.value)}
-                    className="w-full p-2.5 bg-[#F8FAFC] border border-black/[0.08] rounded-xl text-xs text-[#0F172A]"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-[10px] font-bold text-[#64748B] uppercase block mb-1">
-                  KOÇUN GELİŞİM & SEANS NOTU
-                </label>
-                <textarea
-                  rows={3}
-                  required
-                  value={turnstileNote}
-                  onChange={(e) => setTurnstileNote(e.target.value)}
-                  placeholder="Üyenin performansı, set/tekrar sayıları ve postür geri bildirimleri..."
-                  className="w-full p-3 bg-[#F8FAFC] border border-black/[0.08] rounded-xl text-xs text-[#0F172A]"
-                />
-              </div>
-
-              <div>
-                <label className="text-[10px] font-bold text-[#64748B] uppercase block mb-1">
-                  ÖNE ÇIKAN VERİ / METRİK
-                </label>
-                <input
-                  type="text"
-                  value={turnstileMetric}
-                  onChange={(e) => setTurnstileMetric(e.target.value)}
-                  placeholder="Örn: 140 kg Deadlift PR • 580 kcal"
-                  className="w-full p-2.5 bg-[#F8FAFC] border border-black/[0.08] rounded-xl text-xs text-[#0F172A]"
-                />
+                <h3 className="text-2xl font-bold font-display uppercase tracking-tight">
+                  Kamera & Turnike QR Okuyucu
+                </h3>
+                <p className="text-xs text-slate-300 max-w-lg leading-relaxed">
+                  Kapıya gelen üyenin telefonundaki 60 saniyelik dinamik kodu kameraya gösterin. Sistem turnikeyi anında açar ve bakiyeden seans düşer.
+                </p>
               </div>
 
               <button
-                type="submit"
-                className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-md active:scale-98"
+                onClick={() => setIsScannerOpen(true)}
+                className="px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs uppercase tracking-wider rounded-2xl transition-all shadow-lg flex items-center gap-2.5 shrink-0 active:scale-98"
               >
-                Turnikeyi Aç & Seansı Başlat (1 Seans Düş)
+                <Camera className="w-5 h-5" />
+                <span>Kamerayı & Okuyucuyu Başlat</span>
               </button>
-            </form>
-          </div>
-        )}
+            </div>
 
-        {/* TAB 4: CASHIER & ORDERS APPROVAL */}
-        {adminTab === "cashier" && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Manual Turnstile Check-in Form */}
+              <div className="bg-white border border-black/[0.06] rounded-3xl p-6 sm:p-7 shadow-[0_2px_12px_rgba(0,0,0,0.03)] space-y-5">
+                <div>
+                  <h4 className="font-bold text-base uppercase text-[#0F172A]">
+                    Manuel Turnike Girişi Yap
+                  </h4>
+                  <p className="text-xs text-[#64748B] mt-0.5">
+                    Kartı veya telefonu yanında olmayan üyeler için manuel giriş terminali.
+                  </p>
+                </div>
+
+                {turnstileSuccessMsg && (
+                  <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl text-xs font-semibold flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>{turnstileSuccessMsg}</span>
+                  </div>
+                )}
+
+                {/* Member Preview */}
+                <div className="p-4 bg-[#F8FAFC] border border-black/[0.05] rounded-2xl flex items-center justify-between">
+                  <div>
+                    <h5 className="font-bold text-xs text-[#0F172A]">{user?.fullName} ({user?.memberNo})</h5>
+                    <span className="text-[11px] text-[#64748B]">{user?.membershipTier}</span>
+                  </div>
+                  <span className="text-sm font-black text-emerald-600">{remainingSessions} / {totalSessions} Seans</span>
+                </div>
+
+                <form onSubmit={handleTurnstileSubmit} className="space-y-3.5 text-xs font-sans">
+                  <div>
+                    <label className="text-[10px] font-bold text-[#64748B] uppercase block mb-1">
+                      EŞLİK EDEN KOÇ
+                    </label>
+                    <select
+                      value={turnstileCoach}
+                      onChange={(e) => setTurnstileCoach(e.target.value)}
+                      className="w-full p-2.5 bg-[#F8FAFC] border border-black/[0.08] rounded-xl text-xs font-semibold text-[#0F172A]"
+                    >
+                      <option value="Mert Aksoy">Mert Aksoy (Baş Antrenör)</option>
+                      <option value="Selin Yılmaz">Selin Yılmaz (Performans Koçu)</option>
+                      <option value="Can Demir">Can Demir (Kondisyon Koçu)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-bold text-[#64748B] uppercase block mb-1">
+                      ANTRENMAN TÜRÜ
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={turnstileSessionType}
+                      onChange={(e) => setTurnstileSessionType(e.target.value)}
+                      className="w-full p-2.5 bg-[#F8FAFC] border border-black/[0.08] rounded-xl text-xs text-[#0F172A]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-bold text-[#64748B] uppercase block mb-1">
+                      KOÇUN SEANS NOTU
+                    </label>
+                    <textarea
+                      rows={2}
+                      required
+                      value={turnstileNote}
+                      onChange={(e) => setTurnstileNote(e.target.value)}
+                      className="w-full p-2.5 bg-[#F8FAFC] border border-black/[0.08] rounded-xl text-xs text-[#0F172A]"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full py-3.5 bg-[#0F172A] hover:bg-black text-white font-bold text-xs uppercase rounded-xl transition-all shadow-md active:scale-98"
+                  >
+                    Turnikeyi Aç (1 Seans Düşür)
+                  </button>
+                </form>
+              </div>
+
+              {/* Live Turnstile Activity Feed */}
+              <div className="bg-white border border-black/[0.06] rounded-3xl p-6 sm:p-7 shadow-[0_2px_12px_rgba(0,0,0,0.03)] space-y-4 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between border-b border-black/[0.05] pb-3 mb-3">
+                    <div className="flex items-center gap-2">
+                      <UserCheck className="w-4 h-4 text-emerald-600" />
+                      <h4 className="font-bold text-base uppercase text-[#0F172A]">
+                        Canlı Turnike Giriş Akışı ({checkInLogs.length})
+                      </h4>
+                    </div>
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  </div>
+
+                  <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1">
+                    {checkInLogs.map((log) => (
+                      <div
+                        key={log.id}
+                        className="p-3.5 bg-[#F8FAFC] border border-black/[0.04] rounded-2xl space-y-1 text-xs"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-[#0F172A]">{log.sessionType}</span>
+                          <span className="text-[10px] font-mono text-[#64748B]">{log.date} {log.time}</span>
+                        </div>
+                        <p className="text-[#64748B] text-[11px]">
+                          Eğitmen: <strong className="text-[#0F172A]">{log.coachName}</strong> • {log.keyMetric || "Standart Seans"}
+                        </p>
+                        <p className="text-[11px] text-[#334155] italic bg-white p-2 rounded-lg border border-black/[0.03]">
+                          &ldquo;{log.performanceNote}&rdquo;
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-black/[0.05] text-[11px] text-[#94A3B8] flex items-center justify-between">
+                  <span>Turnike Donanımı: Online (Optik Tarayıcı v2.4)</span>
+                  <span className="text-emerald-600 font-bold">● Aktif</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
+      case "cashier":
+        return (
           <div className="bg-white border border-black/[0.06] rounded-3xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-black/[0.05] pb-4">
               <div>
@@ -653,10 +570,10 @@ export const AdminPortal: React.FC = () => {
                 ))}
             </div>
           </div>
-        )}
+        );
 
-        {/* TAB 5: MEMBERS CRM */}
-        {adminTab === "members" && (
+      case "members":
+        return (
           <div className="bg-white border border-black/[0.06] rounded-3xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-black/[0.05] pb-4">
               <div>
@@ -723,79 +640,245 @@ export const AdminPortal: React.FC = () => {
               ))}
             </div>
           </div>
-        )}
+        );
 
-        {/* TAB 6: COACHES PERFORMANCE */}
-        {adminTab === "coaches" && (
-          <div className="bg-white border border-black/[0.06] rounded-3xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] space-y-6">
-            <div className="border-b border-black/[0.05] pb-4">
-              <h3 className="font-bold text-base uppercase text-[#0F172A]">
-                Eğitmen & Koç Performans Metrikleri
-              </h3>
-              <p className="text-xs text-[#64748B] mt-0.5">
-                Stüdyo antrenörlerimizin aylık seans sayıları, doluluk oranları ve üye memnuniyet skorları.
-              </p>
-            </div>
+      default:
+        return null;
+    }
+  };
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              {[
-                {
-                  name: "Mert Aksoy",
-                  title: "Baş Antrenör (Head Coach)",
-                  sessionsMonth: 42,
-                  satisfaction: "%98",
-                  revenue: "₺194.000",
-                  specialty: "Biyomekanik, Deadlift & Güç",
-                },
-                {
-                  name: "Selin Yılmaz",
-                  title: "Kıdemli Performans Koçu",
-                  sessionsMonth: 38,
-                  satisfaction: "%96",
-                  revenue: "₺152.000",
-                  specialty: "Mobilite, Fonksiyonel Güç & Core",
-                },
-                {
-                  name: "Can Demir",
-                  title: "Kondisyon & Atletizm Koçu",
-                  sessionsMonth: 29,
-                  satisfaction: "%95",
-                  revenue: "₺82.000",
-                  specialty: "HIIT, VO2 Max & Hız",
-                },
-              ].map((c) => (
-                <div
-                  key={c.name}
-                  className="p-5 bg-[#F8FAFC] border border-black/[0.05] rounded-3xl space-y-4 shadow-2xs"
-                >
-                  <div>
-                    <h4 className="font-bold text-base text-[#0F172A]">{c.name}</h4>
-                    <span className="text-xs text-emerald-600 font-semibold">{c.title}</span>
-                    <p className="text-[11px] text-[#64748B] mt-1">{c.specialty}</p>
-                  </div>
+  return (
+    <div className="min-h-screen bg-[#F5F6FA] text-[#0F172A] font-sans antialiased pb-24">
+      {/* Top Admin Header Bar */}
+      <header className="sticky top-0 z-40 bg-slate-900 text-white border-b border-slate-800 shadow-md">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <a
+              href="/portal"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-full text-xs font-semibold text-slate-200 transition-colors"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Üye Paneline Dön</span>
+            </a>
 
-                  <div className="grid grid-cols-3 gap-2 text-center pt-2 border-t border-black/[0.05]">
-                    <div className="p-2 bg-white rounded-xl">
-                      <span className="text-[10px] text-[#64748B] block">SEANS</span>
-                      <span className="font-black text-sm text-[#0F172A]">{c.sessionsMonth}</span>
-                    </div>
-                    <div className="p-2 bg-white rounded-xl">
-                      <span className="text-[10px] text-[#64748B] block">MEMNUNİYET</span>
-                      <span className="font-black text-sm text-emerald-600">{c.satisfaction}</span>
-                    </div>
-                    <div className="p-2 bg-white rounded-xl">
-                      <span className="text-[10px] text-[#64748B] block">CİRO</span>
-                      <span className="font-black text-xs text-[#0F172A]">{c.revenue}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <h1 className="font-bold text-sm tracking-tight uppercase">
+                CORE & FIT STUDIO OS <span className="text-slate-400 font-normal">| Yönetici & Koç Portalı</span>
+              </h1>
             </div>
           </div>
+
+          {/* Header Actions: Auto QR Scanner & View Mode Toggle */}
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+            {/* Quick Auto QR Scanner Button */}
+            <button
+              onClick={() => setIsScannerOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-full shadow-md transition-all active:scale-98"
+            >
+              <Zap className="w-3.5 h-3.5 fill-slate-950" />
+              <span>⚡ Turnike QR Tara</span>
+            </button>
+
+            {/* View Mode Switcher (Desktop Only) */}
+            <button
+              onClick={() => setViewMode(viewMode === "app_frame" ? "responsive" : "app_frame")}
+              className="hidden lg:inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white/10 hover:bg-white/20 border border-white/10 rounded-full text-xs font-semibold text-white transition-all shadow-xs"
+              title={viewMode === "app_frame" ? "Geniş Ekran Görünümüne Geç" : "iPhone Görünümüne Geç"}
+            >
+              {viewMode === "app_frame" ? (
+                <>
+                  <Monitor className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Geniş Ekran</span>
+                </>
+              ) : (
+                <>
+                  <Smartphone className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>iPhone Görünümü</span>
+                </>
+              )}
+            </button>
+
+            {/* Role selector dropdown */}
+            <select
+              value={selectedRole}
+              onChange={(e) => setSelectedRole(e.target.value)}
+              className="bg-slate-800 border border-slate-700 text-white text-xs font-medium rounded-xl px-3 py-1.5 focus:outline-none focus:border-emerald-400"
+            >
+              <option value="Genel Stüdyo Yöneticisi">👑 Genel Stüdyo Yöneticisi</option>
+              <option value="Mert Aksoy (Baş Antrenör)">🏋️ Mert Aksoy (Baş Antrenör)</option>
+              <option value="Selin Yılmaz (Performans Koçu)">🤸 Selin Yılmaz (Performans Koçu)</option>
+              <option value="Can Demir (Kondisyon Koçu)">🏃 Can Demir (Kondisyon Koçu)</option>
+            </select>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Admin Body */}
+      <main className="pt-6">
+        {viewMode === "app_frame" ? (
+          /* iPhone 16 Pro Style Mobile App Frame for Admin */
+          <div className="py-6 px-4 flex justify-center items-center">
+            <div className="relative w-full max-w-[420px] bg-white rounded-[50px] border-[9px] border-slate-900 shadow-[0_25px_70px_rgba(0,0,0,0.35)] overflow-hidden flex flex-col h-[850px]">
+              {/* iPhone Dynamic Island */}
+              <div className="w-28 h-6 bg-slate-900 rounded-full mx-auto mt-2.5 shrink-0 z-30 flex items-center justify-end px-3">
+                <div className="w-2.5 h-2.5 rounded-full bg-[#10B981] animate-pulse" />
+              </div>
+
+              {/* In-Frame App Header */}
+              <div className="px-5 pt-3 pb-2 border-b border-black/[0.05] flex items-center justify-between shrink-0">
+                <span className="font-black text-xs uppercase tracking-tight text-[#0F172A]">
+                  CORE & FIT OS
+                </span>
+                <button
+                  onClick={() => setIsScannerOpen(true)}
+                  className="p-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-[10px] font-bold flex items-center gap-1"
+                >
+                  <QrCode className="w-3.5 h-3.5" />
+                  <span>Tara</span>
+                </button>
+              </div>
+
+              {/* Scrollable App Body */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                {renderTabContent()}
+              </div>
+
+              {/* Floating Dock Inside Frame */}
+              <div className="shrink-0 pt-2 pb-2 px-3 flex items-center justify-center">
+                <AdminFloatingNav
+                  activeTab={adminTab}
+                  setActiveTab={setAdminTab}
+                  onOpenScanner={() => setIsScannerOpen(true)}
+                />
+              </div>
+
+              {/* iOS Home Indicator */}
+              <div className="w-32 h-1 bg-black/20 rounded-full mx-auto my-1.5 shrink-0" />
+            </div>
+          </div>
+        ) : (
+          /* Wide Full-Width Responsive Dashboard */
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+            {/* Top KPI Metric Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-white border border-black/[0.06] rounded-3xl p-5 shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
+                <div className="flex items-center justify-between text-xs text-[#64748B] mb-2 font-medium">
+                  <span>GÜNLÜK TURNİKE GİRİŞİ</span>
+                  <div className="w-8 h-8 rounded-xl bg-emerald-50 text-[#10B981] flex items-center justify-center">
+                    <UserCheck className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-black text-[#0F172A]">{checkInLogs.length + 34}</span>
+                  <span className="text-xs font-semibold text-emerald-600">↑ %14 artış</span>
+                </div>
+                <span className="text-[11px] text-[#94A3B8] block mt-1">Bugün tamamlanan seanslar</span>
+              </div>
+
+              <div className="bg-white border border-black/[0.06] rounded-3xl p-5 shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
+                <div className="flex items-center justify-between text-xs text-[#64748B] mb-2 font-medium">
+                  <span>STÜDYO DOLULUK ORANI</span>
+                  <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#2563EB] flex items-center justify-center">
+                    <Activity className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-black text-[#0F172A]">%70</span>
+                  <span className="text-xs text-[#64748B]">14 / 20 İstasyon</span>
+                </div>
+                <span className="text-[11px] text-[#94A3B8] block mt-1">Nişantaşı anlık kapasite</span>
+              </div>
+
+              <div className="bg-white border border-black/[0.06] rounded-3xl p-5 shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
+                <div className="flex items-center justify-between text-xs text-[#64748B] mb-2 font-medium">
+                  <span>AYLIK TOPLAM CİRO</span>
+                  <div className="w-8 h-8 rounded-xl bg-emerald-50 text-[#10B981] flex items-center justify-center">
+                    <DollarSign className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-black text-[#0F172A]">₺428.000</span>
+                  <span className="text-xs font-semibold text-emerald-600">Hedef: %107</span>
+                </div>
+                <span className="text-[11px] text-[#94A3B8] block mt-1">Eylül 2026 gerçekleşen ciro</span>
+              </div>
+
+              <div className="bg-white border border-black/[0.06] rounded-3xl p-5 shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
+                <div className="flex items-center justify-between text-xs text-[#64748B] mb-2 font-medium">
+                  <span>BEKLEYEN KASA TAHSİLATI</span>
+                  <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                    <Banknote className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-black text-amber-600">{pendingOrdersCount} Sipariş</span>
+                  <span className="text-xs font-semibold text-[#64748B]">Kasada / Havale</span>
+                </div>
+                <span className="text-[11px] text-[#94A3B8] block mt-1">Onay bekleyen ödemeler</span>
+              </div>
+            </div>
+
+            {/* Desktop Navigation Tabs */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-black/[0.06]">
+              {[
+                { id: "overview", label: "Genel Bakış", icon: TrendingUp },
+                { id: "turnstile", label: "Turnike & Hızlı QR Giriş", icon: QrCode },
+                { id: "schedule", label: "Seans Programı & Randevular", icon: Calendar, badge: bookedSessions.length },
+                { id: "cashier", label: "Kasa & Ödeme Onayları", icon: CreditCard, badge: pendingOrdersCount },
+                { id: "members", label: "Üye Yönetimi (CRM)", icon: Users },
+              ].map((tab) => {
+                const Icon = tab.icon;
+                const isActive = adminTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setAdminTab(tab.id as any)}
+                    className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-semibold whitespace-nowrap transition-all ${
+                      isActive
+                        ? "bg-[#0F172A] text-white shadow-md shadow-slate-900/10"
+                        : "bg-white text-[#64748B] hover:bg-slate-100 hover:text-[#0F172A] border border-black/[0.05]"
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span>{tab.label}</span>
+                    {tab.badge !== undefined && tab.badge > 0 && (
+                      <span
+                        className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                          isActive ? "bg-emerald-500 text-white" : "bg-emerald-100 text-emerald-800"
+                        }`}
+                      >
+                        {tab.badge}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Render Tab Body */}
+            <div>{renderTabContent()}</div>
+          </div>
         )}
+      </main>
+
+      {/* Floating Apple Glass Dock on Mobile Screens */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 lg:hidden">
+        <AdminFloatingNav
+          activeTab={adminTab}
+          setActiveTab={setAdminTab}
+          onOpenScanner={() => setIsScannerOpen(true)}
+        />
       </div>
 
-      {/* MODAL: Complete Session & Enter Coach Note */}
+      {/* MODAL 1: Auto Optical QR Scanner Terminal */}
+      <AdminQrScannerModal
+        isOpen={isScannerOpen}
+        onClose={() => setIsScannerOpen(false)}
+        defaultCoach={selectedRole.includes("Mert") ? "Mert Aksoy" : selectedRole.includes("Selin") ? "Selin Yılmaz" : selectedRole.includes("Can") ? "Can Demir" : "Mert Aksoy"}
+      />
+
+      {/* MODAL 2: Complete Session & Coach Note */}
       <AnimatePresence>
         {activeSessionToComplete && (
           <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-md">
@@ -868,7 +951,7 @@ export const AdminPortal: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* MODAL: Add Sessions to Member */}
+      {/* MODAL 3: Add Extra Sessions */}
       <AnimatePresence>
         {isAddSessionModalOpen && (
           <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-md">

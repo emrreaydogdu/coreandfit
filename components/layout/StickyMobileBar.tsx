@@ -9,8 +9,13 @@ import { MessageSquare, Calendar } from "lucide-react";
 export const StickyMobileBar: React.FC = () => {
   const pathname = usePathname();
 
-  // Hide sticky bar on consultation funnel, booking wizard, or inside member portal
-  if (pathname === "/on-gorusme" || pathname === "/randevu" || pathname?.startsWith("/portal")) {
+  // Hide sticky bar on consultation funnel, booking wizard, or inside member portal / admin
+  if (
+    pathname === "/on-gorusme" ||
+    pathname === "/randevu" ||
+    pathname?.startsWith("/portal") ||
+    pathname?.startsWith("/admin")
+  ) {
     return null;
   }
 
