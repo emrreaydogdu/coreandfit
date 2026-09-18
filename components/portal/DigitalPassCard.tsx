@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import QRCode from "qrcode";
 import {
-  QrCode,
+  QrCode as QrIcon,
   X,
   ShieldCheck,
   Maximize2,
@@ -29,8 +30,9 @@ export const DigitalPassCard: React.FC<DigitalPassCardProps> = ({
   const [secondsLeft, setSecondsLeft] = useState(60);
   const [refreshToken, setRefreshToken] = useState<string>("");
   const [dynamicOtp, setDynamicOtp] = useState<string>("842 190");
+  const [qrDataUrl, setQrDataUrl] = useState<string>("");
 
-  const generateToken = () => {
+  const generateToken = async () => {
     const currentMinute = Math.floor(Date.now() / 60000);
     const hash = Math.abs(
       (user.memberNo.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0) * 31 + currentMinute) % 900000
@@ -39,13 +41,27 @@ export const DigitalPassCard: React.FC<DigitalPassCardProps> = ({
     const fullToken = `CF-PASS|${user.memberNo}|${user.fullName}|${currentMinute}|${hash}`;
     setDynamicOtp(otpStr);
     setRefreshToken(fullToken);
+
+    try {
+      // Generate genuine ISO/IEC 18004 compliant QR Code Data URL
+      const dataUrl = await QRCode.toDataURL(fullToken, {
+        width: 360,
+        margin: 1,
+        color: {
+          dark: "#0F172A",
+          light: "#FFFFFF",
+        },
+        errorCorrectionLevel: "M",
+      });
+      setQrDataUrl(dataUrl);
+    } catch (err) {
+      console.error("QR Code generation error:", err);
+    }
   };
 
   useEffect(() => {
-    // Initial generation
     generateToken();
 
-    // Calculate seconds remaining in current minute
     const syncTime = () => {
       const now = new Date();
       const rem = 60 - now.getSeconds();
@@ -66,7 +82,6 @@ export const DigitalPassCard: React.FC<DigitalPassCardProps> = ({
     setSecondsLeft(60);
   };
 
-  // Progress percentage (60 down to 0)
   const progressPercent = (secondsLeft / 60) * 100;
 
   return (
@@ -127,9 +142,15 @@ export const DigitalPassCard: React.FC<DigitalPassCardProps> = ({
               </p>
             </div>
 
-            {/* Apple Wallet Style Dynamic QR Preview Box */}
-            <div className="flex flex-col items-center gap-1 bg-white border border-black/[0.08] p-2.5 rounded-2xl shadow-xs group-hover:border-[#0F172A] transition-colors relative">
-              <QrCode className="w-9 h-9 text-[#0F172A]" />
+            {/* Real QR Thumbnail Box */}
+            <div className="flex flex-col items-center gap-1 bg-white border border-black/[0.08] p-1.5 rounded-2xl shadow-xs group-hover:border-[#0F172A] transition-colors relative">
+              <div className="w-12 h-12 bg-white flex items-center justify-center overflow-hidden rounded-xl">
+                {qrDataUrl ? (
+                  <img src={qrDataUrl} alt="Gerçek QR Kod" className="w-full h-full object-contain" />
+                ) : (
+                  <QrIcon className="w-8 h-8 text-[#0F172A]" />
+                )}
+              </div>
               <span className="text-[8px] font-sans text-emerald-600 font-bold uppercase tracking-wider flex items-center gap-0.5">
                 <span>{secondsLeft}s</span>
                 <Maximize2 className="w-2 h-2" />
@@ -153,7 +174,7 @@ export const DigitalPassCard: React.FC<DigitalPassCardProps> = ({
         </div>
       </motion.div>
 
-      {/* Fullscreen Turnstile / Reception QR Modal with 60s Live Countdown */}
+      {/* Fullscreen Turnstile / Reception QR Modal with Real Scannable QR Code */}
       <AnimatePresence>
         {showQrModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
@@ -172,7 +193,7 @@ export const DigitalPassCard: React.FC<DigitalPassCardProps> = ({
 
               <div className="inline-flex items-center gap-1.5 px-3.5 py-1 bg-emerald-50 text-emerald-800 rounded-full text-xs font-sans font-bold uppercase tracking-wider mb-2 border border-emerald-200/60">
                 <Zap className="w-3.5 h-3.5 text-emerald-600" />
-                <span>CANLI DİNAMİK TURNİKE KODU</span>
+                <span>GERÇEK DİNAMİK TURNİKE KODU</span>
               </div>
 
               <h4 className="text-2xl font-bold font-display uppercase tracking-tight text-[#0F172A]">
@@ -182,8 +203,8 @@ export const DigitalPassCard: React.FC<DigitalPassCardProps> = ({
                 ÜYE NO: <span className="font-bold text-[#0F172A]">{user.memberNo}</span>
               </p>
 
-              {/* High Contrast Dynamic QR Box with Countdown Border */}
-              <div className="relative mx-auto w-64 h-64 bg-white p-4 rounded-3xl border-2 border-[#0F172A] shadow-xl flex flex-col items-center justify-center overflow-hidden">
+              {/* High-Resolution Real QR Code Box */}
+              <div className="relative mx-auto w-64 h-64 bg-white p-3 rounded-3xl border-2 border-[#0F172A] shadow-xl flex flex-col items-center justify-center overflow-hidden">
                 {/* 60s Progress Bar on Top */}
                 <div className="absolute top-0 left-0 right-0 h-1.5 bg-slate-100">
                   <div
@@ -192,20 +213,22 @@ export const DigitalPassCard: React.FC<DigitalPassCardProps> = ({
                   />
                 </div>
 
-                {/* QR Visual */}
-                <div className="w-full h-full p-2 flex flex-col items-center justify-center bg-white">
-                  <div className="relative p-2 rounded-2xl bg-white border border-black/[0.06] shadow-2xs">
-                    <QrCode className="w-36 h-36 text-[#0F172A]" />
-                    {/* Pulsing center badge */}
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <div className="w-8 h-8 rounded-lg bg-white border border-black/[0.1] flex items-center justify-center shadow-md">
-                        <span className="font-black text-[10px] text-[#0F172A]">CF</span>
-                      </div>
+                {/* Real Scannable QR Image */}
+                <div className="w-full h-full flex flex-col items-center justify-center bg-white p-2">
+                  {qrDataUrl ? (
+                    <img
+                      src={qrDataUrl}
+                      alt="Taranabilir Gerçek QR Kod"
+                      className="w-44 h-44 object-contain"
+                    />
+                  ) : (
+                    <div className="w-44 h-44 flex items-center justify-center">
+                      <RefreshCw className="w-8 h-8 animate-spin text-slate-400" />
                     </div>
-                  </div>
+                  )}
 
                   {/* 6-Digit TOTP Dynamic Code */}
-                  <div className="mt-2 flex items-center gap-1.5">
+                  <div className="mt-1 flex items-center gap-1.5">
                     <Lock className="w-3 h-3 text-[#10B981]" />
                     <span className="font-mono text-sm font-black tracking-widest text-[#0F172A]">
                       {dynamicOtp}
@@ -225,7 +248,7 @@ export const DigitalPassCard: React.FC<DigitalPassCardProps> = ({
                 <div className="flex items-center justify-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse" />
                   <span className="text-[11px] font-medium text-[#0F172A]">
-                    Kapıdaki turnike kamerasına okutunuz
+                    Turnike kamerasına veya herhangi bir telefona okutulabilir
                   </span>
                   <button
                     onClick={handleManualRefresh}
