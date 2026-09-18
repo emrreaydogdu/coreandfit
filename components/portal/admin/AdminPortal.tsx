@@ -208,8 +208,16 @@ export const AdminPortal: React.FC = () => {
                       className="p-4 bg-[#F8FAFC] border border-black/[0.04] rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex flex-col items-center justify-center font-bold text-xs shrink-0">
-                          <span>{sess.timeSlot}</span>
+                        <div className="min-w-[64px] px-2.5 py-1.5 rounded-2xl bg-[#0F172A] text-white flex flex-col items-center justify-center shrink-0 shadow-2xs">
+                          <span className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400 leading-none mb-0.5">SAAT</span>
+                          <span className="text-xs sm:text-sm font-black tracking-tight leading-tight text-white whitespace-nowrap">
+                            {sess.timeSlot.includes(" - ") ? sess.timeSlot.split(" - ")[0] : sess.timeSlot}
+                          </span>
+                          {sess.timeSlot.includes(" - ") && (
+                            <span className="text-[9px] font-semibold text-slate-400 leading-none mt-0.5 whitespace-nowrap">
+                              - {sess.timeSlot.split(" - ")[1]}
+                            </span>
+                          )}
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
@@ -334,9 +342,16 @@ export const AdminPortal: React.FC = () => {
                     className="p-4 bg-[#F8FAFC] border border-black/[0.04] rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-black/[0.1] transition-all"
                   >
                     <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-2xl bg-[#0F172A] text-white flex flex-col items-center justify-center font-bold text-xs shrink-0">
-                        <span className="text-[10px] opacity-70">SAAT</span>
-                        <span className="text-sm">{sess.timeSlot}</span>
+                      <div className="min-w-[70px] px-3 py-2 rounded-2xl bg-[#0F172A] text-white flex flex-col items-center justify-center shrink-0 shadow-2xs">
+                        <span className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400 leading-none mb-0.5">SAAT</span>
+                        <span className="text-sm font-black tracking-tight leading-tight text-white whitespace-nowrap">
+                          {sess.timeSlot.includes(" - ") ? sess.timeSlot.split(" - ")[0] : sess.timeSlot}
+                        </span>
+                        {sess.timeSlot.includes(" - ") && (
+                          <span className="text-[10px] font-semibold text-slate-400 leading-none mt-0.5 whitespace-nowrap">
+                            - {sess.timeSlot.split(" - ")[1]}
+                          </span>
+                        )}
                       </div>
 
                       <div>
