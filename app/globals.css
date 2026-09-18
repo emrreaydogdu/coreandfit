@@ -4,28 +4,28 @@
 @custom-variant light (&:where(.light, .light *));
 
 @theme {
-  --color-brand-bg: #08090B;
-  --color-brand-surface: #0D0F12;
-  --color-brand-elevated: #131519;
-  --color-brand-card: #191B20;
-  --color-brand-border: #23272F;
+  --color-brand-bg: #0A0A0C;
+  --color-brand-surface: #141416;
+  --color-brand-elevated: #1C1C1E;
+  --color-brand-card: #242426;
+  --color-brand-border: rgba(255, 255, 255, 0.1);
 
   --color-brand-primary: #FFFFFF;
-  --color-brand-secondary: #A5A7AD;
-  --color-brand-muted: #72757C;
-  --color-brand-light: #F4F4F1;
+  --color-brand-secondary: #A1A1A6;
+  --color-brand-muted: #86868B;
+  --color-brand-light: #F5F5F7;
 
-  --color-brand-accent: #E8FF36;
-  --color-brand-accent-hover: #D4EB2B;
-  --color-brand-accent-subtle: rgba(232, 255, 54, 0.12);
+  --color-brand-accent: #10B981;
+  --color-brand-accent-hover: #059669;
+  --color-brand-accent-subtle: rgba(16, 185, 129, 0.12);
 
-  --font-display: var(--font-archivo), sans-serif;
+  --font-display: var(--font-inter), sans-serif;
   --font-sans: var(--font-inter), sans-serif;
 }
 
 :root {
-  --background: #08090B;
-  --foreground: #FFFFFF;
+  --background: #FFFFFF;
+  --foreground: #1D1D1F;
 }
 
 * {
@@ -33,28 +33,29 @@
 }
 
 /* ==========================================================================
-   DEFAULT DARK THEME (CORE & FIT DARK ATHLETIC EDITORIAL)
+   DEFAULT APPLE SLEEK THEME (CORE & FIT LIQUID FROSTED GLASS)
    ========================================================================== */
 
 html {
-  color-scheme: dark;
+  color-scheme: light dark;
   scroll-behavior: smooth;
-  background-color: #08090B;
-  color: #FFFFFF;
+  background-color: #FBFBFD;
+  color: #1D1D1F;
 }
 
 body {
-  background-color: #08090B;
-  color: #FFFFFF;
-  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: #FBFBFD;
+  color: #1D1D1F;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, sans-serif;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.011em;
 }
 
 ::selection {
-  background-color: #E8FF36;
-  color: #08090B;
+  background-color: rgba(16, 185, 129, 0.25);
+  color: #0F172A;
 }
 
 /* Custom subtle scrollbar */
@@ -260,27 +261,48 @@ html.light .bg-white.text-\[\#08090B\]:hover {
   background-color: #1F242F !important;
 }
 
-/* Accent Lime Brand Buttons: iconic Core & Fit lime #E8FF36 with deep athletic black text */
+/* Apple Emerald Accent Harmonization: replaces harsh lime with luxury Apple Emerald */
+.bg-\[\#E8FF36\] {
+  background-color: #10B981 !important;
+  color: #FFFFFF !important;
+}
+.bg-\[\#E8FF36\] * {
+  color: #FFFFFF !important;
+}
+.bg-\[\#E8FF36\]:hover {
+  background-color: #059669 !important;
+}
+
 html.light .bg-\[\#E8FF36\] {
-  background-color: #E2FA14 !important;
-  color: #08090B !important;
+  background-color: #059669 !important;
+  color: #FFFFFF !important;
 }
 html.light .bg-\[\#E8FF36\] * {
-  color: #08090B !important;
+  color: #FFFFFF !important;
 }
 html.light .bg-\[\#E8FF36\]:hover {
-  background-color: #D4EC0A !important;
+  background-color: #047857 !important;
 }
 
 /* Subtle Accent Badges */
+.bg-\[\#E8FF36\]\/10,
 html.light .bg-\[\#E8FF36\]\/10 {
-  background-color: rgba(180, 210, 10, 0.18) !important;
+  background-color: rgba(16, 185, 129, 0.12) !important;
 }
+.bg-\[\#E8FF36\]\/20,
 html.light .bg-\[\#E8FF36\]\/20 {
-  background-color: rgba(180, 210, 10, 0.28) !important;
+  background-color: rgba(16, 185, 129, 0.22) !important;
 }
+.border-\[\#E8FF36\],
 html.light .border-\[\#E8FF36\] {
-  border-color: #A4C600 !important;
+  border-color: #10B981 !important;
+}
+
+.text-\[\#E8FF36\] {
+  color: #10B981 !important;
+}
+html.light .text-\[\#E8FF36\] {
+  color: #059669 !important;
 }
 
 /* Error alerts in light mode */
