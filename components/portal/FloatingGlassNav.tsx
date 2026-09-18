@@ -8,8 +8,6 @@ import {
   Calendar,
   Target,
   User,
-  Zap,
-  BarChart3,
 } from "lucide-react";
 import { PortalTab } from "@/types/portal";
 
@@ -30,7 +28,7 @@ const TABS: TabItem[] = [
   { id: "sessions", label: "Seanslar", icon: CheckCircle2 },
   { id: "history", label: "Girişler", icon: Calendar },
   { id: "store", label: "Paketler", icon: Target },
-  { id: "profile", label: "Profil", icon: User },
+  { id: "profile", label: "Hesabım", icon: User },
 ];
 
 export const FloatingGlassNav: React.FC<FloatingGlassNavProps> = ({
@@ -40,11 +38,11 @@ export const FloatingGlassNav: React.FC<FloatingGlassNavProps> = ({
 }) => {
   return (
     <nav
-      aria-label="Apple Glass Navigation Bar"
+      aria-label="Liquid Glass Navigation Bar"
       className={`pointer-events-auto select-none ${className}`}
     >
-      {/* Outer Floating Glass Capsule */}
-      <div className="relative flex items-center gap-1.5 p-1.5 bg-[#0B131E]/80 hover:bg-[#0B131E]/85 backdrop-blur-2xl border border-white/15 rounded-full shadow-[0_12px_40px_rgba(0,0,0,0.4),0_2px_10px_rgba(0,0,0,0.2)] transition-all duration-300">
+      {/* Outer Floating Liquid White Glass Capsule */}
+      <div className="relative flex items-center gap-1 sm:gap-1.5 p-1.5 bg-white/80 hover:bg-white/90 backdrop-blur-2xl border border-white/70 rounded-[28px] shadow-[0_16px_45px_rgba(0,0,0,0.1),0_4px_16px_rgba(0,0,0,0.05),inset_0_1px_2px_rgba(255,255,255,0.95)] transition-all duration-300">
         {TABS.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -54,19 +52,19 @@ export const FloatingGlassNav: React.FC<FloatingGlassNavProps> = ({
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`relative flex items-center justify-center p-3 rounded-full transition-all duration-200 outline-none ${
-                isActive ? "text-white" : "text-white/55 hover:text-white"
+              className={`relative flex flex-col items-center justify-center py-1.5 px-3 sm:px-4 rounded-2xl transition-all duration-200 outline-none min-w-[56px] sm:min-w-[64px] ${
+                isActive ? "text-white" : "text-[#64748B] hover:text-[#0F172A]"
               }`}
               title={tab.label}
             >
-              {/* Active Animated Floating Pill Background (Apple VisionOS / Dynamic Island Style) */}
+              {/* Active Animated Floating Liquid Capsule Pill */}
               {isActive && (
                 <motion.div
                   layoutId="appleFloatingPillActive"
-                  className="absolute inset-0 bg-white/18 border border-white/25 rounded-full shadow-[inset_0_1px_1px_rgba(255,255,255,0.3),0_2px_10px_rgba(0,0,0,0.2)]"
+                  className="absolute inset-0 bg-[#0F172A] rounded-2xl shadow-[0_4px_16px_rgba(15,23,42,0.22)]"
                   transition={{
                     type: "spring",
-                    stiffness: 420,
+                    stiffness: 450,
                     damping: 32,
                   }}
                 />
@@ -75,10 +73,19 @@ export const FloatingGlassNav: React.FC<FloatingGlassNavProps> = ({
               {/* Icon */}
               <span className="relative z-10 flex items-center justify-center">
                 <Icon
-                  className={`w-5 h-5 transition-transform duration-200 ${
-                    isActive ? "scale-110 stroke-[2.5]" : "stroke-[1.8]"
+                  className={`w-4 h-4 sm:w-4.5 sm:h-4.5 transition-transform duration-200 ${
+                    isActive ? "scale-105 stroke-[2.3] text-white" : "stroke-[1.8] text-[#64748B]"
                   }`}
                 />
+              </span>
+
+              {/* Text Label Underneath */}
+              <span
+                className={`relative z-10 text-[10px] font-sans mt-0.5 tracking-tight transition-colors duration-200 ${
+                  isActive ? "text-white font-bold" : "text-[#64748B] font-medium"
+                }`}
+              >
+                {tab.label}
               </span>
             </button>
           );

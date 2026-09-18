@@ -8,7 +8,6 @@ import {
   CreditCard,
   Users,
   QrCode,
-  Zap,
 } from "lucide-react";
 
 export type AdminTab = "overview" | "schedule" | "turnstile" | "cashier" | "members";
@@ -24,12 +23,11 @@ interface AdminTabItem {
   id: AdminTab;
   label: string;
   icon: React.ElementType;
-  isAction?: boolean;
 }
 
 const ADMIN_TABS: AdminTabItem[] = [
   { id: "overview", label: "Özet", icon: TrendingUp },
-  { id: "turnstile", label: "Turnike & QR", icon: QrCode },
+  { id: "turnstile", label: "Turnike", icon: QrCode },
   { id: "schedule", label: "Program", icon: Calendar },
   { id: "cashier", label: "Kasa", icon: CreditCard },
   { id: "members", label: "Üyeler", icon: Users },
@@ -43,10 +41,10 @@ export const AdminFloatingNav: React.FC<AdminFloatingNavProps> = ({
 }) => {
   return (
     <nav
-      aria-label="Admin Floating Dock"
+      aria-label="Admin Liquid Glass Dock"
       className={`pointer-events-auto select-none ${className}`}
     >
-      <div className="relative flex items-center gap-1.5 p-1.5 bg-[#0B131E]/85 hover:bg-[#0B131E]/90 backdrop-blur-2xl border border-white/15 rounded-full shadow-[0_12px_40px_rgba(0,0,0,0.4),0_2px_10px_rgba(0,0,0,0.2)] transition-all duration-300">
+      <div className="relative flex items-center gap-1 sm:gap-1.5 p-1.5 bg-white/85 hover:bg-white/95 backdrop-blur-2xl border border-white/70 rounded-[28px] shadow-[0_16px_45px_rgba(0,0,0,0.1),0_4px_16px_rgba(0,0,0,0.05),inset_0_1px_2px_rgba(255,255,255,0.95)] transition-all duration-300">
         {ADMIN_TABS.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -56,19 +54,19 @@ export const AdminFloatingNav: React.FC<AdminFloatingNavProps> = ({
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`relative flex items-center justify-center p-3 rounded-full transition-all duration-200 outline-none ${
-                isActive ? "text-white" : "text-white/55 hover:text-white"
+              className={`relative flex flex-col items-center justify-center py-1.5 px-3 sm:px-4 rounded-2xl transition-all duration-200 outline-none min-w-[56px] sm:min-w-[64px] ${
+                isActive ? "text-white" : "text-[#64748B] hover:text-[#0F172A]"
               }`}
               title={tab.label}
             >
-              {/* Active Animated Floating Pill Background */}
+              {/* Active Animated Floating Capsule Pill */}
               {isActive && (
                 <motion.div
                   layoutId="adminFloatingPillActive"
-                  className="absolute inset-0 bg-white/18 border border-white/25 rounded-full shadow-[inset_0_1px_1px_rgba(255,255,255,0.3),0_2px_10px_rgba(0,0,0,0.2)]"
+                  className="absolute inset-0 bg-[#0F172A] rounded-2xl shadow-[0_4px_16px_rgba(15,23,42,0.22)]"
                   transition={{
                     type: "spring",
-                    stiffness: 420,
+                    stiffness: 450,
                     damping: 32,
                   }}
                 />
@@ -77,10 +75,19 @@ export const AdminFloatingNav: React.FC<AdminFloatingNavProps> = ({
               {/* Icon */}
               <span className="relative z-10 flex items-center justify-center">
                 <Icon
-                  className={`w-5 h-5 transition-transform duration-200 ${
-                    isActive ? "scale-110 stroke-[2.5]" : "stroke-[1.8]"
+                  className={`w-4 h-4 sm:w-4.5 sm:h-4.5 transition-transform duration-200 ${
+                    isActive ? "scale-105 stroke-[2.3] text-white" : "stroke-[1.8] text-[#64748B]"
                   }`}
                 />
+              </span>
+
+              {/* Text Label Underneath */}
+              <span
+                className={`relative z-10 text-[10px] font-sans mt-0.5 tracking-tight transition-colors duration-200 ${
+                  isActive ? "text-white font-bold" : "text-[#64748B] font-medium"
+                }`}
+              >
+                {tab.label}
               </span>
             </button>
           );
