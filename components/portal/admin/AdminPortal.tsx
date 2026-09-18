@@ -174,22 +174,68 @@ export const AdminPortal: React.FC = () => {
       case "overview":
         return (
           <div className="space-y-6">
+            {/* Solo Coach & Studio Model Executive Banner - Apple Liquid Glass */}
+            <div className="bg-white/90 backdrop-blur-2xl border border-black/[0.06] rounded-[32px] p-6 sm:p-7 shadow-[0_4px_24px_rgba(0,0,0,0.03)] relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
+              <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                <div className="space-y-2">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-full text-[11px] font-bold uppercase tracking-wider">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>TEK YETKİLİ BAŞ ANTRENÖR YÖNETİMİNDE (1:1)</span>
+                  </div>
+                  <h3 className="text-xl sm:text-2xl font-bold font-display uppercase tracking-tight text-[#0F172A]">
+                    İlker Yüksel — Birebir Stüdyo İşletim Merkezi
+                  </h3>
+                  <p className="text-xs text-[#64748B] max-w-2xl leading-relaxed">
+                    Core & Fit Nişantaşı Studio, kurucu baş antrenör İlker Yüksel tarafından bizzat işletilmekte ve yönetilmektedir. Stüdyomuzda asistan veya stajyer antrenör çalıştırılmaz; her üye doğrudan 10+ yıl deneyimli kurucumuzla 1:1 biyomekanik ve kuvvet çalışır.
+                  </p>
+                  <div className="flex flex-wrap items-center gap-2 pt-1 text-[10px] font-semibold text-[#334155]">
+                    <span className="px-2.5 py-1 bg-slate-100 rounded-lg border border-black/[0.04]">
+                      🏅 NSCA-CSCS Sertifikalı
+                    </span>
+                    <span className="px-2.5 py-1 bg-slate-100 rounded-lg border border-black/[0.04]">
+                      📋 NASM-CES Düzeltici Egzersiz
+                    </span>
+                    <span className="px-2.5 py-1 bg-slate-100 rounded-lg border border-black/[0.04]">
+                      ⚡ FMS 1 & 2 Eklem Taraması
+                    </span>
+                    <span className="px-2.5 py-1 bg-emerald-50 text-emerald-800 rounded-lg border border-emerald-200/60 font-bold">
+                      🛡️ %100 Bizzat Kurucu Güvencesi
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-3 shrink-0">
+                  <div className="p-3.5 bg-[#F8FAFC] border border-black/[0.04] rounded-2xl">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] block">GÜNLÜK SEANS</span>
+                    <span className="text-lg font-black text-[#0F172A]">{bookedSessions.length} / 8 Planlı</span>
+                    <span className="text-[10px] text-emerald-600 block mt-0.5 font-semibold">1:1 Özel Kapasite</span>
+                  </div>
+                  <div className="p-3.5 bg-[#F8FAFC] border border-black/[0.04] rounded-2xl">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] block">MOLA ARALIĞI</span>
+                    <span className="text-lg font-black text-[#0F172A]">15 Dakika</span>
+                    <span className="text-[10px] text-slate-500 block mt-0.5">Hijyen & Hazırlık</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Today's Schedule Snapshot */}
+              {/* Today's Schedule Snapshot (Ultra Detailed Cards) */}
               <div className="lg:col-span-2 bg-white border border-black/[0.06] rounded-3xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] space-y-4">
                 <div className="flex items-center justify-between border-b border-black/[0.05] pb-3">
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-[#10B981]" />
                     <h3 className="font-bold text-sm uppercase text-[#0F172A]">
-                      Yaklaşan Seanslar ({bookedSessions.length})
+                      Yaklaşan Birebir Seanslar ({bookedSessions.length})
                     </h3>
                   </div>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setIsCreateSessionOpen(true)}
-                      className="px-2.5 py-1 bg-[#0F172A] hover:bg-black text-white rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors"
+                      className="px-3 py-1.5 bg-[#0F172A] hover:bg-black text-white rounded-xl text-xs font-semibold flex items-center gap-1 transition-colors"
                     >
-                      <Plus className="w-3 h-3" />
+                      <Plus className="w-3.5 h-3.5 text-emerald-400" />
                       <span>+ Seans Oluştur</span>
                     </button>
                     <button
@@ -201,45 +247,138 @@ export const AdminPortal: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  {bookedSessions.map((sess) => (
-                    <div
-                      key={sess.id}
-                      className="p-4 bg-[#F8FAFC] border border-black/[0.04] rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="min-w-[64px] px-2.5 py-1.5 rounded-2xl bg-[#0F172A] text-white flex flex-col items-center justify-center shrink-0 shadow-2xs">
-                          <span className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400 leading-none mb-0.5">SAAT</span>
-                          <span className="text-xs sm:text-sm font-black tracking-tight leading-tight text-white whitespace-nowrap">
-                            {sess.timeSlot.includes(" - ") ? sess.timeSlot.split(" - ")[0] : sess.timeSlot}
-                          </span>
-                          {sess.timeSlot.includes(" - ") && (
-                            <span className="text-[9px] font-semibold text-slate-400 leading-none mt-0.5 whitespace-nowrap">
-                              - {sess.timeSlot.split(" - ")[1]}
-                            </span>
-                          )}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h4 className="font-bold text-xs text-[#0F172A]">{sess.memberName || user?.fullName || "Ege Mert"}</h4>
-                            <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded-md">
-                              {sess.station}
+                <div className="space-y-4">
+                  {bookedSessions.map((sess) => {
+                    const coachName = "İlker Yüksel";
+                    const coachTitle = "Kurucu & Baş Antrenör (Founder & Head Coach)";
+                    const memberName = sess.memberName || user?.fullName || "Ege Mert";
+                    const memberNo = sess.memberNo || user?.memberNo || "CF-89210";
+                    const stationName = sess.station || "Özel İstasyon A (Kuvvet Alanı)";
+                    const focusArea = sess.focusArea || "Kuvvet & Biyomekanik (Deadlift & Core)";
+                    const notes = sess.notes || "Ağır çekiş bloğu ve core stabilizasyonu çalışılacak.";
+
+                    let startTime = sess.timeSlot;
+                    let endTime = "";
+                    if (sess.timeSlot.includes(" - ")) {
+                      [startTime, endTime] = sess.timeSlot.split(" - ");
+                    }
+
+                    return (
+                      <div
+                        key={sess.id}
+                        className="p-5 bg-[#F8FAFC] hover:bg-white border border-black/[0.05] hover:border-black/[0.12] rounded-2xl transition-all space-y-3.5 shadow-2xs"
+                      >
+                        {/* Session Top Bar: Time, Station, Status */}
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-black/[0.04] pb-2.5">
+                          <div className="flex items-center gap-2.5">
+                            <div className="px-3 py-1 bg-[#0F172A] text-white rounded-xl flex items-center gap-1.5 shadow-2xs">
+                              <Clock className="w-3 h-3 text-emerald-400" />
+                              <span className="text-xs font-black tracking-tight">{startTime}</span>
+                              {endTime && <span className="text-[10px] text-slate-300 font-medium">- {endTime}</span>}
+                              <span className="text-[9px] font-bold text-emerald-300 bg-emerald-950/80 px-1 py-0.2 rounded ml-1">
+                                60 DK
+                              </span>
+                            </div>
+
+                            <span className="px-2.5 py-1 bg-blue-50 text-blue-700 text-[10px] font-bold rounded-lg uppercase">
+                              {stationName}
                             </span>
                           </div>
-                          <p className="text-[11px] text-[#64748B] mt-0.5">
-                            Koç: <strong className="text-[#0F172A] font-semibold">{sess.coachName}</strong> • {sess.focusArea}
+
+                          <div className="flex items-center gap-2">
+                            <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200/60 text-[10px] font-bold rounded-full flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                              <span>Birebir (1:1) Seans</span>
+                            </span>
+                            <span className="text-[11px] font-mono text-[#64748B]">📅 {sess.date}</span>
+                          </div>
+                        </div>
+
+                        {/* Member & Coach Card Duo */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {/* Member */}
+                          <div className="p-3 bg-white rounded-xl border border-black/[0.04] space-y-1">
+                            <div className="flex items-center justify-between text-[10px] font-bold text-[#64748B] uppercase">
+                              <span>DANIŞAN</span>
+                              <span className="text-emerald-600 font-bold">{remainingSessions} Seans Hak</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="w-7 h-7 rounded-lg bg-[#0F172A] text-white flex items-center justify-center font-bold text-[11px] shrink-0">
+                                {memberName.split(" ").map((n) => n[0]).join("")}
+                              </div>
+                              <div>
+                                <h4 className="font-bold text-xs text-[#0F172A] leading-tight">
+                                  {memberName} <span className="text-[#64748B] font-mono text-[10px]">({memberNo})</span>
+                                </h4>
+                                <p className="text-[10px] text-[#64748B]">VIP 1:1 Personal Training</p>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Coach (İlker Yüksel) */}
+                          <div className="p-3 bg-slate-900 text-white rounded-xl space-y-1 shadow-2xs">
+                            <div className="flex items-center justify-between text-[10px] font-bold text-emerald-400 uppercase">
+                              <span>BAŞ ANTRENÖR</span>
+                              <span className="text-[9px] px-1.5 py-0.2 bg-emerald-500/20 text-emerald-300 rounded font-bold">1:1 Solo</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src="https://images.unsplash.com/photo-1567013127542-490d757e51fc?auto=format&fit=crop&w=120&q=80"
+                                alt="İlker Yüksel"
+                                className="w-7 h-7 rounded-lg object-cover ring-1 ring-emerald-400/40 shrink-0"
+                              />
+                              <div>
+                                <h4 className="font-bold text-xs text-white leading-tight flex items-center gap-1">
+                                  <span>{coachName}</span>
+                                  <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
+                                </h4>
+                                <p className="text-[10px] text-slate-300">Kurucu & Baş Antrenör • NSCA-CSCS</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Focus & Protocol */}
+                        <div className="p-3 bg-white rounded-xl border border-black/[0.04] space-y-1 text-xs">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded uppercase">
+                              🎯 ODAK
+                            </span>
+                            <span className="font-bold text-[#0F172A]">{focusArea}</span>
+                          </div>
+                          <p className="text-[11px] text-[#475569] leading-relaxed italic pl-1 border-l-2 border-emerald-500 mt-1">
+                            &ldquo;{notes}&rdquo;
                           </p>
                         </div>
-                      </div>
 
-                      <button
-                        onClick={() => setActiveSessionToComplete(sess)}
-                        className="px-3.5 py-1.5 bg-[#0F172A] hover:bg-black text-white rounded-xl text-xs font-semibold self-end sm:self-center transition-colors"
-                      >
-                        ✓ Seansı Tamamla
-                      </button>
-                    </div>
-                  ))}
+                        {/* Footer Readiness & Complete Action */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1">
+                          <div className="flex items-center gap-2 text-[10px] font-semibold text-[#64748B] flex-wrap">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-800 rounded-md">
+                              <Check className="w-3 h-3 text-emerald-600" />
+                              İstasyon Sterilize
+                            </span>
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-800 rounded-md">
+                              <Check className="w-3 h-3 text-emerald-600" />
+                              Nabız Bandı Hazır
+                            </span>
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-[#0F172A] rounded-md">
+                              Asistansız Bizzat Kurucu Seansı
+                            </span>
+                          </div>
+
+                          <button
+                            onClick={() => setActiveSessionToComplete(sess)}
+                            className="px-4 py-2 bg-[#0F172A] hover:bg-black text-white rounded-xl text-xs font-bold uppercase tracking-wider self-end sm:self-center transition-colors shadow-2xs active:scale-98 flex items-center gap-1.5"
+                          >
+                            <Check className="w-3.5 h-3.5 text-emerald-400 stroke-[3]" />
+                            <span>Seansı Tamamla</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -269,6 +408,10 @@ export const AdminPortal: React.FC = () => {
                       <span className="text-[#64748B]">Kalan Seans:</span>
                       <span className="font-bold text-emerald-600">{remainingSessions} Seans</span>
                     </div>
+                    <div className="flex justify-between pt-1 border-t border-black/[0.04]">
+                      <span className="text-[#64748B]">Görevli Antrenör:</span>
+                      <span className="font-bold text-[#0F172A]">İlker Yüksel (Kurucu)</span>
+                    </div>
                   </div>
                 </div>
 
@@ -286,23 +429,28 @@ export const AdminPortal: React.FC = () => {
 
       case "schedule":
         return (
-          <div className="bg-white border border-black/[0.06] rounded-3xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-black/[0.05] pb-4">
+          <div className="bg-white border border-black/[0.06] rounded-3xl p-6 sm:p-7 shadow-[0_2px_12px_rgba(0,0,0,0.03)] space-y-6">
+            {/* Schedule Top Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-black/[0.05] pb-5">
               <div>
-                <h3 className="font-bold text-base uppercase text-[#0F172A]">
-                  Koç Seans Programı & Randevu Takvimi
+                <div className="inline-flex items-center gap-2 px-2.5 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200/60 rounded-full text-[10px] font-bold uppercase tracking-wider mb-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>TEK ANTRENÖRLÜ BUTİK STÜDYO MODELİ</span>
+                </div>
+                <h3 className="font-bold text-lg sm:text-xl uppercase text-[#0F172A] font-display">
+                  İlker Yüksel Seans Programı & Randevu Takvimi
                 </h3>
                 <p className="text-xs text-[#64748B] mt-0.5">
-                  Planlanmış tüm birebir seansları koç bazlı inceleyin ve yönetin.
+                  Tüm seanslar kurucu baş antrenör İlker Yüksel&apos;in bireysel randevu takvimine bağlıdır. Asistan/stajyer seansı bulunmaz.
                 </p>
               </div>
 
-              {/* Header Actions: Coach Filter & Create Session & Slot Settings */}
+              {/* Header Actions */}
               <div className="flex items-center gap-2 flex-wrap">
                 <button
                   type="button"
                   onClick={() => setIsCreateSessionOpen(true)}
-                  className="px-3.5 py-2 bg-[#0F172A] hover:bg-black text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-sm active:scale-98"
+                  className="px-4 py-2.5 bg-[#0F172A] hover:bg-black text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-sm active:scale-98"
                 >
                   <Plus className="w-3.5 h-3.5 text-emerald-400" />
                   <span>+ Manuel Seans Planla</span>
@@ -311,69 +459,186 @@ export const AdminPortal: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setAdminTab("coach_slots")}
-                  className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-[#0F172A] rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                  className="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-[#0F172A] rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
                 >
                   <Clock className="w-3.5 h-3.5 text-[#64748B]" />
                   <span>Saat & Mola Düzenle</span>
                 </button>
 
-                <div className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 rounded-xl text-xs font-semibold text-[#0F172A]">
-                  <User className="w-3.5 h-3.5 text-[#64748B]" />
-                  <span>Antrenör: İlker Yüksel</span>
+                <div className="inline-flex items-center gap-2 px-3 py-2 bg-slate-900 text-white rounded-xl text-xs font-semibold shadow-2xs">
+                  <User className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Koç: İlker Yüksel (Kurucu)</span>
                 </div>
               </div>
             </div>
 
-            <div className="space-y-3">
-              {bookedSessions
-                .map((sess) => (
+            {/* Schedule Notice Callout */}
+            <div className="p-3.5 bg-emerald-50/70 border border-emerald-200/60 rounded-2xl flex items-center justify-between gap-3 text-xs text-emerald-950">
+              <div className="flex items-center gap-2.5">
+                <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0" />
+                <span>
+                  <strong>1:1 Seans Protokolü:</strong> Her randevu arasında 15 dakikalık ekipman dezenfeksiyonu ve biyomekanik hazırlık molası otomatik uygulanır.
+                </span>
+              </div>
+              <span className="hidden sm:inline-block font-bold text-[11px] bg-white px-2.5 py-1 rounded-lg border border-emerald-200/60 shrink-0">
+                {bookedSessions.length} Seans Kayıtlı
+              </span>
+            </div>
+
+            {/* Detailed Sessions List */}
+            <div className="space-y-4">
+              {bookedSessions.map((sess) => {
+                const coachName = "İlker Yüksel";
+                const coachTitle = "Kurucu & Baş Antrenör (Founder & Head Coach)";
+                const memberName = sess.memberName || user?.fullName || "Ege Mert";
+                const memberNo = sess.memberNo || user?.memberNo || "CF-89210";
+                const stationName = sess.station || "Özel İstasyon A (Kuvvet Alanı)";
+                const focusArea = sess.focusArea || "Kuvvet & Biyomekanik (Deadlift & Core)";
+                const notes = sess.notes || "Ağır çekiş bloğu ve core stabilizasyonu çalışılacak.";
+
+                let startTime = sess.timeSlot;
+                let endTime = "";
+                if (sess.timeSlot.includes(" - ")) {
+                  [startTime, endTime] = sess.timeSlot.split(" - ");
+                }
+
+                return (
                   <div
                     key={sess.id}
-                    className="p-4 bg-[#F8FAFC] border border-black/[0.04] rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-black/[0.1] transition-all"
+                    className="p-5 sm:p-6 bg-[#F8FAFC] hover:bg-white border border-black/[0.05] hover:border-black/[0.12] rounded-2xl sm:rounded-3xl transition-all space-y-4 shadow-2xs"
                   >
-                    <div className="flex items-start gap-4">
-                      <div className="min-w-[70px] px-3 py-2 rounded-2xl bg-[#0F172A] text-white flex flex-col items-center justify-center shrink-0 shadow-2xs">
-                        <span className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400 leading-none mb-0.5">SAAT</span>
-                        <span className="text-sm font-black tracking-tight leading-tight text-white whitespace-nowrap">
-                          {sess.timeSlot.includes(" - ") ? sess.timeSlot.split(" - ")[0] : sess.timeSlot}
-                        </span>
-                        {sess.timeSlot.includes(" - ") && (
-                          <span className="text-[10px] font-semibold text-slate-400 leading-none mt-0.5 whitespace-nowrap">
-                            - {sess.timeSlot.split(" - ")[1]}
-                          </span>
-                        )}
-                      </div>
-
-                      <div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h4 className="font-bold text-sm text-[#0F172A]">
-                            {sess.memberName || user?.fullName || "Ege Mert"}
-                          </h4>
-                          <span className="text-xs text-[#64748B]">({sess.memberNo || user?.memberNo || "CF-89210"})</span>
-                          <span className="px-2 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold rounded-md">
-                            {sess.station}
+                    {/* Top Row: Time, Station, Date */}
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-black/[0.05] pb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="px-3.5 py-1.5 rounded-2xl bg-[#0F172A] text-white flex items-center gap-2 shadow-2xs">
+                          <Clock className="w-3.5 h-3.5 text-emerald-400" />
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-sm font-black tracking-tight">{startTime}</span>
+                            {endTime && <span className="text-xs text-slate-300 font-medium">- {endTime}</span>}
+                          </div>
+                          <span className="text-[10px] font-bold text-emerald-300 bg-emerald-950/80 px-1.5 py-0.5 rounded ml-1">
+                            60 Dk
                           </span>
                         </div>
 
-                        <p className="text-xs text-[#64748B] mt-1 font-medium">
-                          📅 {sess.date} • Koç: <strong className="text-[#0F172A]">{sess.coachName}</strong> ({sess.coachTitle})
-                        </p>
-                        <p className="text-xs text-[#334155] mt-1 bg-white p-2 rounded-lg border border-black/[0.04]">
-                          🎯 <strong>Odak:</strong> {sess.focusArea} {sess.notes ? `— ${sess.notes}` : ""}
-                        </p>
+                        <div className="flex items-center gap-1.5 px-3 py-1 bg-white border border-black/[0.06] rounded-xl text-xs font-semibold text-[#0F172A]">
+                          <Calendar className="w-3.5 h-3.5 text-slate-500" />
+                          <span>{sess.date}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className="px-3 py-1 bg-blue-50 text-blue-700 text-[10px] font-bold rounded-lg uppercase">
+                          {stationName}
+                        </span>
+                        <span className="px-3 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200/60 text-[10px] font-bold rounded-full">
+                          ✓ Onaylı 1:1 Randevu
+                        </span>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 self-end md:self-center">
-                      <button
-                        onClick={() => setActiveSessionToComplete(sess)}
-                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase rounded-xl transition-colors shadow-2xs"
-                      >
-                        ✓ Seansı Tamamla & Not Gir
-                      </button>
+                    {/* Member Details & Solo Coach Cards Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                      {/* Danışan / Üye Bilgi Kartı */}
+                      <div className="p-3.5 bg-white border border-black/[0.05] rounded-2xl space-y-1.5">
+                        <div className="flex items-center justify-between text-[10px] font-bold text-[#64748B] uppercase">
+                          <span className="flex items-center gap-1">
+                            <User className="w-3 h-3 text-slate-500" />
+                            <span>DANIŞAN PROFİLİ</span>
+                          </span>
+                          <span className="text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded">
+                            {remainingSessions} Seans Bakiye
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold text-xs shrink-0">
+                            {memberName.split(" ").map((n) => n[0]).join("")}
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-sm text-[#0F172A] leading-tight flex items-center gap-1.5">
+                              <span>{memberName}</span>
+                              <span className="text-xs text-[#64748B] font-mono">({memberNo})</span>
+                            </h4>
+                            <p className="text-[11px] text-[#64748B] mt-0.5">
+                              VIP 1:1 Personal Training • İletişim: {user?.phone || "+90 532 555 0124"}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Solo Koç İlker Yüksel Bilgi Kartı */}
+                      <div className="p-3.5 bg-gradient-to-br from-slate-900 to-[#1E293B] text-white rounded-2xl space-y-1.5 shadow-2xs">
+                        <div className="flex items-center justify-between text-[10px] font-bold text-emerald-400 uppercase">
+                          <span className="flex items-center gap-1">
+                            <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                            <span>TEK YETKİLİ KOÇ</span>
+                          </span>
+                          <span className="text-[9px] px-2 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 rounded-full">
+                            Birebir (1:1)
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src="https://images.unsplash.com/photo-1567013127542-490d757e51fc?auto=format&fit=crop&w=120&q=80"
+                            alt="İlker Yüksel"
+                            className="w-9 h-9 rounded-xl object-cover ring-1 ring-emerald-400/40 shrink-0"
+                          />
+                          <div>
+                            <h4 className="font-bold text-sm text-white leading-tight flex items-center gap-1">
+                              <span>{coachName}</span>
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                            </h4>
+                            <p className="text-[10px] text-slate-300 mt-0.5">
+                              {coachTitle} • NSCA-CSCS, NASM-CES
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Biomechanics Focus & Coach Protocol Notes */}
+                    <div className="p-3.5 bg-white border border-black/[0.05] rounded-2xl space-y-1.5 text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded uppercase">
+                          🎯 BİYOMEKANİK ODAK
+                        </span>
+                        <span className="font-bold text-[#0F172A]">{focusArea}</span>
+                      </div>
+                      <p className="text-xs text-[#475569] leading-relaxed pl-1.5 border-l-2 border-emerald-500 mt-1 italic">
+                        <strong className="text-[#0F172A] font-semibold not-italic">Koç Protokol Notu:</strong> &ldquo;{notes}&rdquo;
+                      </p>
+                    </div>
+
+                    {/* Operational Readiness Checklist & Actions */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+                      <div className="flex items-center gap-2 text-[10px] font-semibold text-[#64748B] flex-wrap">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-800 rounded-lg">
+                          <Check className="w-3 h-3 text-emerald-600" />
+                          İstasyon Sterilize
+                        </span>
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-800 rounded-lg">
+                          <Check className="w-3 h-3 text-emerald-600" />
+                          Nabız Bandı Hazır
+                        </span>
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 text-[#0F172A] rounded-lg">
+                          Doğrudan Kurucu Eşliğinde Seans
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2 self-end sm:self-center">
+                        <button
+                          onClick={() => setActiveSessionToComplete(sess)}
+                          className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-sm active:scale-98 flex items-center gap-1.5"
+                        >
+                          <Check className="w-3.5 h-3.5 stroke-[3]" />
+                          <span>✓ Seansı Tamamla & Not Gir</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
-                ))}
+                );
+              })}
             </div>
           </div>
         );
@@ -512,7 +777,7 @@ export const AdminPortal: React.FC = () => {
                           <span className="text-[10px] font-mono text-[#64748B]">{log.date} {log.time}</span>
                         </div>
                         <p className="text-[#64748B] text-[11px]">
-                          Eğitmen: <strong className="text-[#0F172A]">{log.coachName}</strong> • {log.keyMetric || "Standart Seans"}
+                          Eğitmen: <strong className="text-[#0F172A]">İlker Yüksel</strong> (Kurucu & Baş Antrenör) • {log.keyMetric || "Standart Seans"}
                         </p>
                         <p className="text-[11px] text-[#334155] italic bg-white p-2 rounded-lg border border-black/[0.03]">
                           &ldquo;{log.performanceNote}&rdquo;
@@ -989,7 +1254,7 @@ export const AdminPortal: React.FC = () => {
                 Seansı Tamamla & Koç Notu Gir
               </h3>
               <p className="text-xs text-[#64748B] mb-4">
-                {activeSessionToComplete.coachName} • {activeSessionToComplete.timeSlot} seansı
+                İlker Yüksel (Kurucu & Baş Antrenör) • {activeSessionToComplete.timeSlot} seansı
               </p>
 
               <form onSubmit={handleCompleteSession} className="space-y-3.5 text-xs font-sans">

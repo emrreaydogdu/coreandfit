@@ -174,10 +174,51 @@ export const MemberProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (savedExpiry) setPackageExpiry(savedExpiry);
 
       const savedBooked = localStorage.getItem(STORAGE_KEYS.BOOKED);
-      if (savedBooked) setBookedSessions(JSON.parse(savedBooked));
+      if (savedBooked) {
+        try {
+          const parsed = JSON.parse(savedBooked);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            // Zorunlu Sanitizasyon: Stüdyo tek koçlu (İlker Yüksel) olduğu için tüm geçmiş/kayıtlı seansları İlker Yüksel olarak güncelle
+            const sanitized: BookedSession[] = parsed.map((s: any) => ({
+              ...s,
+              coachId: "coach-1",
+              coachName: "İlker Yüksel",
+              coachTitle: "Kurucu & Baş Antrenör (Founder & Head Coach)",
+              coachAvatar:
+                "https://images.unsplash.com/photo-1567013127542-490d757e51fc?auto=format&fit=crop&w=400&q=80",
+            }));
+            setBookedSessions(sanitized);
+            localStorage.setItem(STORAGE_KEYS.BOOKED, JSON.stringify(sanitized));
+          } else {
+            setBookedSessions(INITIAL_BOOKED_SESSIONS);
+          }
+        } catch {
+          setBookedSessions(INITIAL_BOOKED_SESSIONS);
+        }
+      } else {
+        setBookedSessions(INITIAL_BOOKED_SESSIONS);
+      }
 
       const savedCheckIn = localStorage.getItem(STORAGE_KEYS.CHECKIN);
-      if (savedCheckIn) setCheckInLogs(JSON.parse(savedCheckIn));
+      if (savedCheckIn) {
+        try {
+          const parsed = JSON.parse(savedCheckIn);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const sanitized: CheckInLog[] = parsed.map((l: any) => ({
+              ...l,
+              coachName: "İlker Yüksel",
+            }));
+            setCheckInLogs(sanitized);
+            localStorage.setItem(STORAGE_KEYS.CHECKIN, JSON.stringify(sanitized));
+          } else {
+            setCheckInLogs(INITIAL_CHECKIN_LOGS);
+          }
+        } catch {
+          setCheckInLogs(INITIAL_CHECKIN_LOGS);
+        }
+      } else {
+        setCheckInLogs(INITIAL_CHECKIN_LOGS);
+      }
 
       const savedOrders = localStorage.getItem(STORAGE_KEYS.ORDERS);
       if (savedOrders) setOrders(JSON.parse(savedOrders));
@@ -192,7 +233,18 @@ export const MemberProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
       const savedSchedules = localStorage.getItem(STORAGE_KEYS.COACH_SCHEDULES);
       if (savedSchedules) {
-        setCoachSchedules(JSON.parse(savedSchedules));
+        try {
+          const parsed = JSON.parse(savedSchedules);
+          // Tek koç İlker Yüksel programını doğrula ve garanti et
+          if (Array.isArray(parsed) && parsed.length === 1 && parsed[0]?.coachName === "İlker Yüksel") {
+            setCoachSchedules(parsed);
+          } else {
+            setCoachSchedules(DEFAULT_COACH_SCHEDULES);
+            localStorage.setItem(STORAGE_KEYS.COACH_SCHEDULES, JSON.stringify(DEFAULT_COACH_SCHEDULES));
+          }
+        } catch {
+          setCoachSchedules(DEFAULT_COACH_SCHEDULES);
+        }
       } else {
         setCoachSchedules(DEFAULT_COACH_SCHEDULES);
         localStorage.setItem(STORAGE_KEYS.COACH_SCHEDULES, JSON.stringify(DEFAULT_COACH_SCHEDULES));
@@ -286,10 +338,11 @@ export const MemberProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     const newSession: BookedSession = {
       id: `sess-${Date.now()}`,
-      coachId: data.coachId,
-      coachName: data.coachName,
-      coachTitle: data.coachTitle,
-      coachAvatar: data.coachAvatar,
+      coachId: "coach-1",
+      coachName: "İlker Yüksel",
+      coachTitle: "Kurucu & Baş Antrenör (Founder & Head Coach)",
+      coachAvatar:
+        "https://images.unsplash.com/photo-1567013127542-490d757e51fc?auto=format&fit=crop&w=400&q=80",
       date: data.date,
       timeSlot: data.timeSlot,
       focusArea: data.focusArea,
@@ -310,7 +363,7 @@ export const MemberProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     return {
       success: true,
-      message: `${data.date} saat ${data.timeSlot} için ${data.coachName} ile seansınız onaylandı. 1 seans bakiyenizden düşüldü.`,
+      message: `${data.date} saat ${data.timeSlot} için Kurucu & Baş Antrenör İlker Yüksel ile seansınız onaylandı. 1 seans bakiyenizden düşüldü.`,
     };
   };
 
@@ -487,7 +540,7 @@ export const MemberProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       id: `log-${Date.now()}`,
       date: formattedDate,
       time: formattedTime,
-      coachName: data.coachName,
+      coachName: "İlker Yüksel",
       sessionType: data.sessionType,
       performanceNote: data.performanceNote,
       keyMetric: data.keyMetric,
@@ -523,7 +576,7 @@ export const MemberProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     saveToStorage(STORAGE_KEYS.BOOKED, updatedBooked);
 
     adminCheckInMember({
-      coachName: sess.coachName,
+      coachName: "İlker Yüksel",
       sessionType: sess.focusArea,
       performanceNote: coachNote,
       keyMetric: metric,
@@ -700,11 +753,10 @@ export const MemberProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       memberId: data.memberId || user?.id,
       memberName: data.memberName,
       memberNo: data.memberNo || user?.memberNo,
-      coachId: data.coachId,
-      coachName: data.coachName,
-      coachTitle: data.coachTitle || "Kıdemli Koç",
+      coachId: "coach-1",
+      coachName: "İlker Yüksel",
+      coachTitle: "Kurucu & Baş Antrenör (Founder & Head Coach)",
       coachAvatar:
-        data.coachAvatar ||
         "https://images.unsplash.com/photo-1567013127542-490d757e51fc?auto=format&fit=crop&w=400&q=80",
       date: data.date,
       timeSlot: data.timeSlot,

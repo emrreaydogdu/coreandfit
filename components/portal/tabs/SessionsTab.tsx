@@ -148,68 +148,78 @@ export const SessionsTab: React.FC = () => {
         </h3>
 
         {bookedSessions.length > 0 ? (
-          bookedSessions.map((session) => (
-            <div
-              key={session.id}
-              className="bg-white border border-black/[0.06] rounded-3xl p-5 sm:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-all shadow-[0_4px_24px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.05)]"
-            >
-              <div className="flex items-center gap-4">
-                <div className="relative w-16 h-16 rounded-2xl overflow-hidden border border-black/10 shrink-0 shadow-xs">
-                  <img
-                    src={session.coachAvatar}
-                    alt={session.coachName}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold font-sans text-[#2563EB]">
-                      {session.date} • {session.timeSlot}
-                    </span>
-                    <span className="px-2.5 py-0.5 bg-[#ECFDF5] text-[#059669] text-[10px] font-bold rounded-full uppercase">
-                      {session.status === "confirmed" ? "ONAYLANDI" : "TAMAMLANDI"}
-                    </span>
+          bookedSessions.map((session) => {
+            const coachName = "İlker Yüksel";
+            const coachTitle = "Kurucu & Baş Antrenör (Founder & Head Coach)";
+            return (
+              <div
+                key={session.id}
+                className="bg-white border border-black/[0.06] rounded-3xl p-5 sm:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-all shadow-[0_4px_24px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.05)]"
+              >
+                <div className="flex items-start sm:items-center gap-4">
+                  <div className="relative w-16 h-16 rounded-2xl overflow-hidden border border-black/10 shrink-0 shadow-xs">
+                    <img
+                      src="https://images.unsplash.com/photo-1567013127542-490d757e51fc?auto=format&fit=crop&w=400&q=80"
+                      alt={coachName}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute bottom-1 right-1 w-3 h-3 bg-emerald-500 rounded-full ring-2 ring-white" />
                   </div>
 
-                  <h4 className="text-base font-bold text-[#0F172A] uppercase font-display mt-0.5">
-                    {session.coachName} — {session.focusArea}
-                  </h4>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-bold font-sans text-[#2563EB]">
+                        {session.date} • {session.timeSlot}
+                      </span>
+                      <span className="px-2.5 py-0.5 bg-[#ECFDF5] text-[#059669] text-[10px] font-bold rounded-full uppercase">
+                        {session.status === "confirmed" ? "ONAYLANDI (1:1)" : "TAMAMLANDI"}
+                      </span>
+                    </div>
 
-                  <p className="text-xs text-[#64748B] font-sans flex items-center gap-1.5 mt-1">
-                    <MapPin className="w-3.5 h-3.5 text-[#10B981]" />
-                    <span>{session.station}</span>
-                  </p>
+                    <h4 className="text-base font-bold text-[#0F172A] uppercase font-display">
+                      {coachName} — {session.focusArea}
+                    </h4>
 
-                  {session.notes && (
-                    <p className="text-xs text-[#475569] italic mt-1 bg-[#F8FAFC] px-3 py-1.5 rounded-xl border border-black/[0.04]">
-                      "{session.notes}"
-                    </p>
-                  )}
+                    <div className="flex items-center gap-3 text-xs text-[#64748B] flex-wrap">
+                      <span className="flex items-center gap-1">
+                        <MapPin className="w-3.5 h-3.5 text-[#10B981]" />
+                        <span>{session.station}</span>
+                      </span>
+                      <span className="text-[11px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-medium">
+                        Bizzat Kurucu Baş Antrenör Eşliğinde
+                      </span>
+                    </div>
+
+                    {session.notes && (
+                      <p className="text-xs text-[#475569] italic bg-[#F8FAFC] px-3 py-1.5 rounded-xl border border-black/[0.04] mt-1">
+                        &ldquo;{session.notes}&rdquo;
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5 w-full md:w-auto justify-end pt-3 md:pt-0 border-t md:border-t-0 border-black/[0.06]">
+                  <button
+                    onClick={() => {
+                      if (
+                        confirm(
+                          "Bu seansı iptal etmek istediğinize emin misiniz? Seans krediniz hesabınıza derhal iade edilecektir."
+                        )
+                      ) {
+                        cancelSession(session.id);
+                      }
+                    }}
+                    className="px-3.5 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-xl transition-colors"
+                  >
+                    İptal Et
+                  </button>
+                  <div className="px-3.5 py-2 bg-[#F1F5F9] text-[#0F172A] rounded-xl text-xs font-semibold">
+                    1:1 Özel Seans
+                  </div>
                 </div>
               </div>
-
-              <div className="flex items-center gap-2.5 w-full md:w-auto justify-end pt-3 md:pt-0 border-t md:border-t-0 border-black/[0.06]">
-                <button
-                  onClick={() => {
-                    if (
-                      confirm(
-                        "Bu seansı iptal etmek istediğinize emin misiniz? Seans krediniz hesabınıza derhal iade edilecektir."
-                      )
-                    ) {
-                      cancelSession(session.id);
-                    }
-                  }}
-                  className="px-3.5 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-xl transition-colors"
-                >
-                  İptal Et
-                </button>
-                <div className="px-3.5 py-2 bg-[#F1F5F9] text-[#0F172A] rounded-xl text-xs font-semibold">
-                  1:1 Özel Seans
-                </div>
-              </div>
-            </div>
-          ))
+            );
+          })
         ) : (
           <div className="p-8 text-center bg-white border border-black/[0.06] rounded-3xl space-y-3 shadow-xs">
             <CalendarIcon className="w-10 h-10 text-[#94A3B8] mx-auto" />
@@ -257,56 +267,84 @@ export const SessionsTab: React.FC = () => {
                 </div>
               </div>
 
-              {/* Step 1: Select Coach */}
+              {/* Step 1: Select Coach (Ultra Detailed Solo Coach Presentation) */}
               {step === 1 && (
                 <div className="space-y-4">
-                  <h3 className="text-xl font-bold uppercase font-display text-[#0F172A]">
-                    1. Antrenörünüzü Seçiniz
-                  </h3>
-                  <p className="text-xs text-[#64748B]">
-                    Nişantaşı stüdyomuzda seansınızı yönetecek uzman koç:
-                  </p>
+                  <div>
+                    <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full uppercase tracking-wider inline-block mb-1">
+                      ● TEK KOÇLU BUTİK STÜDYO MODELİ
+                    </span>
+                    <h3 className="text-xl font-bold uppercase font-display text-[#0F172A]">
+                      1. Birebir Antrenörünüz
+                    </h3>
+                    <p className="text-xs text-[#64748B] mt-0.5">
+                      Core & Fit&apos;te tüm seanslar yalnızca kurucu baş antrenör İlker Yüksel tarafından 1:1 yönetilir. Stajyer veya asistan çalıştırılmaz.
+                    </p>
+                  </div>
 
-                  <div className="space-y-3">
-                    {COACHES_DATA.map((coach) => (
-                      <button
-                        key={coach.id}
-                        type="button"
-                        onClick={() => setSelectedCoach(coach)}
-                        className={`w-full p-4 rounded-2xl border flex items-center justify-between transition-all text-left ${
-                          selectedCoach.id === coach.id
-                            ? "border-[#0F172A] bg-[#F8FAFC] shadow-sm"
-                            : "border-black/[0.06] bg-white hover:border-black/[0.15]"
-                        }`}
-                      >
-                        <div className="flex items-center gap-3.5">
-                          <div className="w-14 h-14 rounded-2xl overflow-hidden border border-black/10 shrink-0 shadow-xs">
-                            <img
-                              src={coach.image}
-                              alt={coach.name}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                          <div>
-                            <span className="text-sm font-bold text-[#0F172A] block uppercase font-display">
-                              {coach.name}
-                            </span>
-                            <span className="text-xs text-[#2563EB] font-medium block">
-                              {coach.title}
-                            </span>
-                            <span className="text-[11px] text-[#94A3B8] mt-0.5 block">
-                              {coach.experience}
-                            </span>
-                          </div>
+                  {/* Detailed Solo Coach Spotlight Card */}
+                  <div className="p-5 rounded-2xl border-2 border-[#0F172A] bg-[#F8FAFC] shadow-sm space-y-4">
+                    <div className="flex items-start gap-4">
+                      <div className="relative w-16 h-16 rounded-2xl overflow-hidden border border-black/10 shrink-0 shadow-xs">
+                        <img
+                          src="https://images.unsplash.com/photo-1567013127542-490d757e51fc?auto=format&fit=crop&w=400&q=80"
+                          alt="İlker Yüksel"
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute bottom-1 right-1 w-3 h-3 bg-emerald-500 rounded-full ring-2 ring-white" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-base font-bold text-[#0F172A] block uppercase font-display">
+                            İlker Yüksel
+                          </span>
+                          <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full">
+                            ✓ Doğrulanmış Kurucu
+                          </span>
                         </div>
+                        <span className="text-xs text-[#2563EB] font-bold block">
+                          Kurucu & Baş Antrenör (Founder & Head Coach)
+                        </span>
+                        <span className="text-[11px] text-[#64748B] mt-0.5 block font-medium">
+                          10+ Yıl Deneyim • Marmara BESYO • Nişantaşı Studio
+                        </span>
+                      </div>
+                    </div>
 
-                        {selectedCoach.id === coach.id && (
-                          <div className="w-6 h-6 rounded-full bg-[#0F172A] text-white flex items-center justify-center shrink-0">
-                            <Check className="w-4 h-4" />
-                          </div>
-                        )}
-                      </button>
-                    ))}
+                    {/* Certifications & Specialties Badges */}
+                    <div className="space-y-2 pt-1 border-t border-black/[0.05]">
+                      <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider block">
+                        AKREDİTASYON & UZMANLIKLAR:
+                      </span>
+                      <div className="flex flex-wrap gap-1.5 text-[10px] font-semibold">
+                        <span className="px-2 py-0.5 bg-white border border-black/[0.08] rounded-md text-[#0F172A]">
+                          NSCA - CSCS
+                        </span>
+                        <span className="px-2 py-0.5 bg-white border border-black/[0.08] rounded-md text-[#0F172A]">
+                          NASM - CES
+                        </span>
+                        <span className="px-2 py-0.5 bg-white border border-black/[0.08] rounded-md text-[#0F172A]">
+                          FMS Level 1 & 2
+                        </span>
+                        <span className="px-2 py-0.5 bg-white border border-black/[0.08] rounded-md text-[#0F172A]">
+                          EXOS Specialist
+                        </span>
+                        <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 font-bold rounded-md">
+                          Biyomekanik & Omurga
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Studio Guarantee Callout */}
+                    <div className="p-3 bg-emerald-50/80 border border-emerald-200/60 rounded-xl text-[11px] text-emerald-950 space-y-1">
+                      <div className="font-bold flex items-center gap-1.5 text-emerald-900">
+                        <Sparkles className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span>%100 Birebir Kurucu Koçluğu Garantisi</span>
+                      </div>
+                      <p className="text-[#334155] leading-relaxed">
+                        Tüm randevularınız bizzat İlker Yüksel eşliğinde gerçekleşir. Antrenman programınız, form kontrolleriniz ve biyomekanik analizleriniz doğrudan baş antrenör tarafından takip edilir.
+                      </p>
+                    </div>
                   </div>
 
                   <div className="pt-4 flex justify-end">
