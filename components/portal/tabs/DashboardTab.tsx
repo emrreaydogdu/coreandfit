@@ -9,9 +9,9 @@ import {
   MapPin,
   ChevronRight,
   Flame,
-  Dumbbell,
   CheckCircle2,
   AlertCircle,
+  Zap,
 } from "lucide-react";
 import { useMember } from "@/context/MemberContext";
 import { DigitalPassCard } from "@/components/portal/DigitalPassCard";
@@ -47,13 +47,13 @@ export const DashboardTab: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-mono text-[#E8FF36] uppercase tracking-wider font-bold">
+            <span className="text-[11px] font-mono text-[#10B981] uppercase tracking-wider font-bold">
               KİŞİSEL ANTRENMAN PANELİ
             </span>
-            <span className="text-[#72757C]">•</span>
-            <span className="text-[11px] font-mono text-[#A5A7AD]">Nişantaşı Stüdyo</span>
+            <span className="text-[#CBD5E1]">•</span>
+            <span className="text-[11px] font-mono text-[#64748B]">Nişantaşı Private Studio</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold uppercase font-display text-white tracking-tight mt-0.5">
+          <h2 className="text-2xl sm:text-3xl font-extrabold uppercase font-display text-[#0F172A] tracking-tight mt-0.5">
             Hoş Geldin, {user.fullName.split(" ")[0]}
           </h2>
         </div>
@@ -61,9 +61,9 @@ export const DashboardTab: React.FC = () => {
         {/* Quick Booking Button */}
         <button
           onClick={() => setActiveTab("sessions")}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#E8FF36] text-[#08090B] font-bold text-xs uppercase tracking-wider rounded-xl hover:bg-[#D4EB2B] transition-all shadow-md active:scale-95 shrink-0"
+          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#0F172A] text-white font-bold text-xs uppercase tracking-wider rounded-full hover:bg-[#1E293B] transition-all shadow-sm active:scale-95 shrink-0"
         >
-          <Calendar className="w-4 h-4" />
+          <Calendar className="w-4 h-4 text-[#10B981]" />
           <span>Yeni Seans Ayırt</span>
         </button>
       </div>
@@ -79,21 +79,26 @@ export const DashboardTab: React.FC = () => {
         />
       </div>
 
-      {/* Upcoming Session Card */}
-      <div className="bg-[#0D0F12] border border-[#23272F] rounded-2xl p-5 sm:p-6">
+      {/* Upcoming Session Card (Apple Design) */}
+      <div className="bg-white border border-black/[0.06] rounded-3xl p-6 shadow-[0_4px_24px_rgba(0,0,0,0.02)]">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg bg-[#E8FF36]/10 text-[#E8FF36]">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-2xl bg-[#EFF6FF] text-[#2563EB]">
               <Clock className="w-4 h-4" />
             </div>
-            <h4 className="text-sm font-bold uppercase font-display text-white">
-              YAKLAŞAN İLK SEANSINIZ
-            </h4>
+            <div>
+              <h4 className="text-sm font-bold uppercase font-display text-[#0F172A] tracking-tight">
+                YAKLAŞAN İLK SEANSINIZ
+              </h4>
+              <span className="text-[10px] font-mono text-[#64748B] uppercase">
+                BİREBİR REZERVE EDİLMİŞ ANTRENMAN
+              </span>
+            </div>
           </div>
 
           <button
             onClick={() => setActiveTab("sessions")}
-            className="text-[11px] font-mono text-[#E8FF36] hover:underline flex items-center gap-1 uppercase"
+            className="text-xs font-semibold text-[#2563EB] hover:underline flex items-center gap-1"
           >
             <span>Tüm Seanslarım</span>
             <ChevronRight className="w-3.5 h-3.5" />
@@ -101,9 +106,9 @@ export const DashboardTab: React.FC = () => {
         </div>
 
         {upcomingSession ? (
-          <div className="bg-[#131519] border border-[#23272F] rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3.5">
-              <div className="relative w-14 h-14 rounded-xl overflow-hidden border border-[#23272F] shrink-0">
+          <div className="bg-[#F8FAFC] border border-black/[0.04] rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="relative w-16 h-16 rounded-2xl overflow-hidden border border-black/10 shrink-0 shadow-xs">
                 <img
                   src={upcomingSession.coachAvatar}
                   alt={upcomingSession.coachName}
@@ -113,53 +118,57 @@ export const DashboardTab: React.FC = () => {
 
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono text-[#E8FF36] uppercase font-bold">
+                  <span className="text-xs font-bold font-mono text-[#2563EB]">
                     {upcomingSession.date} • {upcomingSession.timeSlot}
                   </span>
-                  <span className="px-2 py-0.5 bg-[#25D366]/20 text-[#25D366] text-[9px] font-mono rounded-full font-bold uppercase">
+                  <span className="px-2.5 py-0.5 bg-[#ECFDF5] text-[#059669] text-[10px] font-bold rounded-full uppercase">
                     ONAYLANDI
                   </span>
                 </div>
 
-                <h5 className="text-base font-bold text-white uppercase font-display mt-0.5">
+                <h5 className="text-base font-bold text-[#0F172A] uppercase font-display mt-1">
                   {upcomingSession.coachName} ile {upcomingSession.focusArea}
                 </h5>
 
-                <p className="text-xs text-[#72757C] font-mono flex items-center gap-1 mt-1">
-                  <MapPin className="w-3.5 h-3.5 text-[#E8FF36]" />
-                  {upcomingSession.station}
+                <p className="text-xs text-[#64748B] font-mono flex items-center gap-1.5 mt-1">
+                  <MapPin className="w-3.5 h-3.5 text-[#10B981]" />
+                  <span>{upcomingSession.station}</span>
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 w-full sm:w-auto justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-[#23272F]">
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-end pt-3 sm:pt-0 border-t sm:border-t-0 border-black/[0.06]">
               <button
                 onClick={() => {
-                  if (confirm("Bu seansı iptal etmek istediğinize emin misiniz? 1 seans krediniz iade edilecektir.")) {
+                  if (
+                    confirm(
+                      "Bu seansı iptal etmek istediğinize emin misiniz? 1 seans krediniz iade edilecektir."
+                    )
+                  ) {
                     cancelSession(upcomingSession.id);
                   }
                 }}
-                className="px-3 py-2 text-xs font-mono text-rose-400 hover:text-rose-300 hover:bg-rose-950/20 rounded-lg transition-colors uppercase"
+                className="px-3.5 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-xl transition-colors"
               >
                 İptal Et
               </button>
               <button
                 onClick={() => setActiveTab("sessions")}
-                className="px-3.5 py-2 bg-[#1A1D24] text-white text-xs font-mono rounded-lg hover:bg-[#23272F] transition-colors uppercase font-semibold"
+                className="px-4 py-2 bg-white border border-black/[0.08] text-[#0F172A] text-xs font-semibold rounded-xl hover:bg-[#F1F5F9] transition-colors shadow-xs"
               >
                 Detaylar
               </button>
             </div>
           </div>
         ) : (
-          <div className="text-center py-8 bg-[#131519] rounded-xl border border-dashed border-[#23272F] space-y-3">
-            <AlertCircle className="w-8 h-8 text-[#72757C] mx-auto" />
-            <p className="text-xs text-[#A5A7AD] font-mono">
-              Yaklaşan aktif bir seansınız bulunmamaktadır.
+          <div className="text-center py-8 bg-[#F8FAFC] rounded-2xl border border-dashed border-black/[0.08] space-y-3">
+            <AlertCircle className="w-8 h-8 text-[#94A3B8] mx-auto" />
+            <p className="text-xs text-[#64748B]">
+              Şu anda planlanmış bir seansınız bulunmuyor.
             </p>
             <button
               onClick={() => setActiveTab("sessions")}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#E8FF36] text-[#08090B] font-bold text-xs uppercase font-mono rounded-lg hover:bg-[#D4EB2B]"
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0F172A] text-white font-bold text-xs uppercase font-mono rounded-full hover:bg-[#1E293B]"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Hemen Seans Ayırt</span>
@@ -168,49 +177,49 @@ export const DashboardTab: React.FC = () => {
         )}
       </div>
 
-      {/* Weekly Attendance Matrix */}
-      <div className="bg-[#0D0F12] border border-[#23272F] rounded-2xl p-5 sm:p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg bg-[#E8FF36]/10 text-[#E8FF36]">
+      {/* Weekly Attendance Matrix (Apple Health Style) */}
+      <div className="bg-white border border-black/[0.06] rounded-3xl p-6 shadow-[0_4px_24px_rgba(0,0,0,0.02)]">
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-2xl bg-[#FEF2F2] text-[#EF4444]">
               <Flame className="w-4 h-4" />
             </div>
             <div>
-              <h4 className="text-sm font-bold uppercase font-display text-white">
+              <h4 className="text-sm font-bold uppercase font-display text-[#0F172A] tracking-tight">
                 HAFTALIK ANTRENMAN DİSİPLİNİ
               </h4>
-              <span className="text-[10px] font-mono text-[#72757C] uppercase">
+              <span className="text-[10px] font-mono text-[#64748B] uppercase">
                 BU HAFTA 2 SEANS TAMAMLANDI • 1 SEANS BEKLİYOR
               </span>
             </div>
           </div>
 
-          <span className="px-2.5 py-1 bg-[#E8FF36]/10 text-[#E8FF36] text-[10px] font-mono rounded-full font-bold uppercase">
+          <span className="px-3 py-1 bg-[#FEF3C7] text-[#D97706] text-[10px] font-bold rounded-full uppercase">
             3 HAFTALIK SERİ 🔥
           </span>
         </div>
 
-        <div className="grid grid-cols-6 gap-2 sm:gap-3">
+        <div className="grid grid-cols-6 gap-2 sm:gap-3.5">
           {weekDays.map((w, idx) => (
             <div
               key={idx}
-              className={`p-3 rounded-xl border text-center transition-all ${
+              className={`p-3.5 rounded-2xl border text-center transition-all ${
                 w.visited && !w.isUpcoming
-                  ? "bg-[#162B16]/30 border-[#25D366]/40 text-white"
+                  ? "bg-[#ECFDF5] border-[#10B981]/30 text-[#0F172A]"
                   : w.isUpcoming
-                  ? "bg-[#E8FF36]/10 border-[#E8FF36] text-white"
-                  : "bg-[#131519] border-[#23272F] text-[#72757C]"
+                  ? "bg-[#EFF6FF] border-[#2563EB]/40 text-[#0F172A]"
+                  : "bg-[#F8FAFC] border-black/[0.04] text-[#94A3B8]"
               }`}
             >
-              <span className="text-xs font-bold font-mono block">{w.day}</span>
-              <span className="text-[10px] text-[#A5A7AD] block mt-0.5">{w.date}</span>
-              <div className="mt-2 flex justify-center">
+              <span className="text-xs font-bold block">{w.day}</span>
+              <span className="text-[10px] text-[#64748B] block mt-0.5">{w.date}</span>
+              <div className="mt-2.5 flex justify-center">
                 {w.visited && !w.isUpcoming ? (
-                  <CheckCircle2 className="w-4 h-4 text-[#25D366]" />
+                  <CheckCircle2 className="w-4 h-4 text-[#10B981]" />
                 ) : w.isUpcoming ? (
-                  <Clock className="w-4 h-4 text-[#E8FF36] animate-pulse" />
+                  <Clock className="w-4 h-4 text-[#2563EB] animate-pulse" />
                 ) : (
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#343A46]" />
+                  <span className="w-2 h-2 rounded-full bg-[#E2E8F0]" />
                 )}
               </div>
             </div>

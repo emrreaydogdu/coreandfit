@@ -18,10 +18,10 @@ export default function MemberPortalPage() {
 
   if (!mounted) {
     return (
-      <div className="min-h-screen bg-[#08090B] flex items-center justify-center text-white">
+      <div className="min-h-screen bg-[#F5F6FA] flex items-center justify-center text-[#0F172A]">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-8 h-8 text-[#E8FF36] animate-spin" />
-          <span className="text-xs font-mono uppercase tracking-widest text-[#72757C]">
+          <Loader2 className="w-8 h-8 text-[#10B981] animate-spin" />
+          <span className="text-xs font-mono uppercase tracking-widest text-[#64748B]">
             Üye Paneli Yükleniyor...
           </span>
         </div>

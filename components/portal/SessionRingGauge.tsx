@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { Flame, Plus, Calendar, CheckCircle2 } from "lucide-react";
+import { Plus, Calendar, CheckCircle2, Activity, ArrowUpRight } from "lucide-react";
 
 interface SessionRingGaugeProps {
   remaining: number;
@@ -21,23 +21,23 @@ export const SessionRingGauge: React.FC<SessionRingGaugeProps> = ({
   const percentage = Math.min(Math.round((remaining / safeTotal) * 100), 100);
   const used = Math.max(0, total - remaining);
 
-  const radius = 64;
-  const strokeWidth = 10;
+  const radius = 62;
+  const strokeWidth = 11;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (percentage / 100) * circumference;
 
   return (
-    <div className="bg-[#0D0F12] border border-[#23272F] rounded-2xl p-5 sm:p-6 relative overflow-hidden">
+    <div className="bg-white border border-black/[0.06] rounded-3xl p-6 shadow-[0_10px_35px_rgba(0,0,0,0.03)] relative overflow-hidden text-[#0F172A]">
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-[#E8FF36]/10 text-[#E8FF36]">
-            <Flame className="w-4 h-4" />
+        <div className="flex items-center gap-2.5">
+          <div className="p-2 rounded-2xl bg-[#ECFDF5] text-[#10B981]">
+            <Activity className="w-4 h-4" />
           </div>
           <div>
-            <h4 className="text-sm font-bold uppercase font-display text-white">
-              SEANS BAKIYESİ & KULLANIM
+            <h4 className="text-sm font-bold uppercase font-display text-[#0F172A] tracking-tight">
+              SEANS BAKIYESİ & İLERLEME
             </h4>
-            <span className="text-[10px] font-mono text-[#72757C] uppercase">
+            <span className="text-[10px] font-mono text-[#64748B] uppercase">
               1:1 PERSONAL TRAINING HAKLARI
             </span>
           </div>
@@ -45,32 +45,38 @@ export const SessionRingGauge: React.FC<SessionRingGaugeProps> = ({
 
         <button
           onClick={onAddSessions}
-          className="inline-flex items-center gap-1 text-[11px] font-mono uppercase tracking-wider text-[#08090B] bg-[#E8FF36] hover:bg-[#D4EB2B] px-3 py-1.5 rounded-lg font-bold transition-all shadow-sm active:scale-95"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-[#0F172A] hover:bg-[#1E293B] px-3.5 py-1.5 rounded-full transition-all shadow-sm active:scale-95"
         >
           <Plus className="w-3.5 h-3.5" />
-          <span>Paket Yükle</span>
+          <span>Paket Ekle</span>
         </button>
       </div>
 
       <div className="flex flex-col sm:flex-row items-center justify-between gap-6 py-2">
-        {/* Animated Circular Progress Gauge */}
+        {/* Apple Fitness Activity Ring */}
         <div className="relative w-36 h-36 shrink-0 flex items-center justify-center">
           <svg className="w-full h-full -rotate-90 transform" viewBox="0 0 160 160">
-            {/* Background Ring */}
+            {/* Background Activity Track */}
             <circle
               cx="80"
               cy="80"
               r={radius}
-              stroke="#1F232B"
+              stroke="#F1F5F9"
               strokeWidth={strokeWidth}
               fill="transparent"
             />
-            {/* Animated Dynamic Progress Ring */}
+            {/* Apple Activity Ring Dynamic Gradient */}
+            <defs>
+              <linearGradient id="appleRingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#10B981" />
+                <stop offset="100%" stopColor="#059669" />
+              </linearGradient>
+            </defs>
             <motion.circle
               cx="80"
               cy="80"
               r={radius}
-              stroke="#E8FF36"
+              stroke="url(#appleRingGrad)"
               strokeWidth={strokeWidth}
               strokeLinecap="round"
               fill="transparent"
@@ -83,36 +89,36 @@ export const SessionRingGauge: React.FC<SessionRingGaugeProps> = ({
 
           {/* Center Metric Label */}
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-            <span className="text-3xl font-black font-mono text-white tracking-tighter leading-none">
+            <span className="text-4xl font-black font-display text-[#0F172A] tracking-tighter leading-none">
               {remaining}
             </span>
-            <span className="text-[10px] font-mono uppercase tracking-widest text-[#A5A7AD] mt-1">
+            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#64748B] mt-1">
               SEANS KALDI
             </span>
-            <span className="text-[9px] font-mono text-[#E8FF36] font-bold mt-0.5">
+            <span className="text-[10px] font-bold text-[#10B981] mt-0.5 bg-[#ECFDF5] px-2 py-0.5 rounded-full">
               %{percentage} Kalan
             </span>
           </div>
         </div>
 
-        {/* Breakdown Stats */}
-        <div className="flex-1 w-full space-y-3 font-mono text-xs">
-          <div className="flex items-center justify-between p-2.5 bg-[#131519] border border-[#23272F] rounded-xl">
-            <span className="text-[#A5A7AD]">Tamamlanan Ders:</span>
-            <span className="font-bold text-white flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-[#25D366]" />
+        {/* Breakdown Stats (Apple Health Style) */}
+        <div className="flex-1 w-full space-y-2.5 font-sans text-xs">
+          <div className="flex items-center justify-between p-3 bg-[#F8FAFC] border border-black/[0.04] rounded-2xl">
+            <span className="text-[#64748B] font-medium">Tamamlanan Seans:</span>
+            <span className="font-bold text-[#0F172A] flex items-center gap-1.5">
+              <CheckCircle2 className="w-3.5 h-3.5 text-[#10B981]" />
               {used} Seans
             </span>
           </div>
 
-          <div className="flex items-center justify-between p-2.5 bg-[#131519] border border-[#23272F] rounded-xl">
-            <span className="text-[#A5A7AD]">Toplam Paket Kapasitesi:</span>
-            <span className="font-bold text-white">{total} Seans</span>
+          <div className="flex items-center justify-between p-3 bg-[#F8FAFC] border border-black/[0.04] rounded-2xl">
+            <span className="text-[#64748B] font-medium">Toplam Paket Kapasitesi:</span>
+            <span className="font-bold text-[#0F172A]">{total} Seans</span>
           </div>
 
-          <div className="flex items-center justify-between p-2.5 bg-[#131519] border border-[#23272F] rounded-xl">
-            <span className="text-[#A5A7AD]">Son Geçerlilik:</span>
-            <span className="font-bold text-[#E8FF36] flex items-center gap-1">
+          <div className="flex items-center justify-between p-3 bg-[#F8FAFC] border border-black/[0.04] rounded-2xl">
+            <span className="text-[#64748B] font-medium">Son Geçerlilik:</span>
+            <span className="font-bold text-[#2563EB] flex items-center gap-1">
               <Calendar className="w-3.5 h-3.5" />
               {expiryDate}
             </span>

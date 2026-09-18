@@ -33,22 +33,22 @@ export const ProfileTab: React.FC = () => {
       {/* Header */}
       <div>
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-mono text-[#E8FF36] uppercase tracking-wider font-bold">
+          <span className="text-[11px] font-mono text-[#10B981] uppercase tracking-wider font-bold">
             HESAP & ÖDEME GEÇMİŞİ
           </span>
-          <span className="text-[#72757C]">•</span>
-          <span className="text-[11px] font-mono text-[#A5A7AD]">Üye Profili</span>
+          <span className="text-[#94A3B8]">•</span>
+          <span className="text-[11px] font-mono text-[#64748B]">Üye Profili</span>
         </div>
-        <h2 className="text-2xl sm:text-3xl font-extrabold uppercase font-display text-white tracking-tight mt-0.5">
+        <h2 className="text-2xl sm:text-3xl font-extrabold uppercase font-display text-[#0F172A] tracking-tight mt-0.5">
           Üye Bilgileri & Siparişler
         </h2>
       </div>
 
       {/* Profile Details Card */}
-      <div className="bg-[#0D0F12] border border-[#23272F] rounded-2xl p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#191B20] pb-6 mb-6">
+      <div className="bg-white border border-black/[0.06] rounded-2xl p-6 shadow-[0_4px_24px_rgba(0,0,0,0.02)]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-black/[0.05] pb-6 mb-6">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-[#E8FF36] shrink-0">
+            <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-emerald-500/30 shrink-0 shadow-xs">
               <img
                 src={user.avatarUrl}
                 alt={user.fullName}
@@ -57,14 +57,14 @@ export const ProfileTab: React.FC = () => {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-xl font-bold uppercase font-display text-white">
+                <h3 className="text-xl font-bold uppercase font-display text-[#0F172A]">
                   {user.fullName}
                 </h3>
-                <span className="px-2 py-0.5 bg-[#E8FF36]/10 text-[#E8FF36] border border-[#E8FF36]/30 text-[10px] font-mono rounded font-bold">
+                <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200/80 text-[10px] font-mono rounded-md font-bold">
                   {user.memberNo}
                 </span>
               </div>
-              <p className="text-xs text-[#A5A7AD] font-mono mt-0.5">
+              <p className="text-xs text-[#64748B] font-mono mt-0.5">
                 {user.membershipTier} • Kayıt: {user.joinDate}
               </p>
             </div>
@@ -72,7 +72,7 @@ export const ProfileTab: React.FC = () => {
 
           <button
             onClick={logout}
-            className="inline-flex items-center gap-2 px-4 py-2 border border-rose-900/40 bg-rose-950/20 text-rose-300 hover:bg-rose-900/40 rounded-xl text-xs font-mono transition-colors self-start sm:self-center"
+            className="inline-flex items-center gap-2 px-4 py-2 border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl text-xs font-mono font-medium transition-colors self-start sm:self-center"
           >
             <LogOut className="w-4 h-4" />
             <span>Çıkış Yap</span>
@@ -81,38 +81,46 @@ export const ProfileTab: React.FC = () => {
 
         {/* Info Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 font-mono text-xs">
-          <div className="p-3 bg-[#131519] border border-[#23272F] rounded-xl flex items-center gap-3">
-            <Mail className="w-4 h-4 text-[#E8FF36] shrink-0" />
+          <div className="p-3.5 bg-[#F8FAFC] border border-black/[0.04] rounded-xl flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-[#10B981] shrink-0">
+              <Mail className="w-4 h-4" />
+            </div>
             <div>
-              <span className="text-[10px] text-[#72757C] block uppercase">E-POSTA</span>
-              <span className="text-white">{user.email}</span>
+              <span className="text-[10px] text-[#64748B] block uppercase font-medium">E-POSTA</span>
+              <span className="text-[#0F172A] font-semibold">{user.email}</span>
             </div>
           </div>
 
-          <div className="p-3 bg-[#131519] border border-[#23272F] rounded-xl flex items-center gap-3">
-            <Phone className="w-4 h-4 text-[#E8FF36] shrink-0" />
+          <div className="p-3.5 bg-[#F8FAFC] border border-black/[0.04] rounded-xl flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-[#10B981] shrink-0">
+              <Phone className="w-4 h-4" />
+            </div>
             <div>
-              <span className="text-[10px] text-[#72757C] block uppercase">TELEFON</span>
-              <span className="text-white">{user.phone}</span>
+              <span className="text-[10px] text-[#64748B] block uppercase font-medium">TELEFON</span>
+              <span className="text-[#0F172A] font-semibold">{user.phone}</span>
             </div>
           </div>
 
           {user.emergencyContact && (
-            <div className="p-3 bg-[#131519] border border-[#23272F] rounded-xl flex items-center gap-3">
-              <Shield className="w-4 h-4 text-[#E8FF36] shrink-0" />
+            <div className="p-3.5 bg-[#F8FAFC] border border-black/[0.04] rounded-xl flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-[#10B981] shrink-0">
+                <Shield className="w-4 h-4" />
+              </div>
               <div>
-                <span className="text-[10px] text-[#72757C] block uppercase">ACİL DURUM İLETİŞİM</span>
-                <span className="text-white">{user.emergencyContact}</span>
+                <span className="text-[10px] text-[#64748B] block uppercase font-medium">ACİL DURUM İLETİŞİM</span>
+                <span className="text-[#0F172A] font-semibold">{user.emergencyContact}</span>
               </div>
             </div>
           )}
 
           {user.healthNotes && (
-            <div className="p-3 bg-[#131519] border border-[#23272F] rounded-xl flex items-center gap-3">
-              <HeartPulse className="w-4 h-4 text-[#E8FF36] shrink-0" />
+            <div className="p-3.5 bg-[#F8FAFC] border border-black/[0.04] rounded-xl flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-[#10B981] shrink-0">
+                <HeartPulse className="w-4 h-4" />
+              </div>
               <div>
-                <span className="text-[10px] text-[#72757C] block uppercase">SAĞLIK & POSTÜR NOTU</span>
-                <span className="text-white">{user.healthNotes}</span>
+                <span className="text-[10px] text-[#64748B] block uppercase font-medium">SAĞLIK & POSTÜR NOTU</span>
+                <span className="text-[#0F172A] font-semibold">{user.healthNotes}</span>
               </div>
             </div>
           )}
@@ -120,17 +128,17 @@ export const ProfileTab: React.FC = () => {
       </div>
 
       {/* Orders & Payments List */}
-      <div className="bg-[#0D0F12] border border-[#23272F] rounded-2xl p-6">
+      <div className="bg-white border border-black/[0.06] rounded-2xl p-6 shadow-[0_4px_24px_rgba(0,0,0,0.02)]">
         <div className="flex items-center gap-2 mb-4">
-          <Receipt className="w-4 h-4 text-[#E8FF36]" />
-          <h3 className="text-base font-bold font-display uppercase text-white">
+          <Receipt className="w-4 h-4 text-[#10B981]" />
+          <h3 className="text-base font-bold font-display uppercase text-[#0F172A]">
             Geçmiş Ödemeler & Faturalar ({orders.length})
           </h3>
         </div>
 
         {downloadSuccess && (
-          <div className="mb-4 p-3 bg-[#162B16] border border-[#25D366] text-[#25D366] text-xs font-mono rounded-xl flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 shrink-0" />
+          <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-mono rounded-xl flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-[#10B981] shrink-0" />
             <span>Fatura/Makbuz ({downloadSuccess}) hazırlandı ve indirildi.</span>
           </div>
         )}
@@ -139,16 +147,16 @@ export const ProfileTab: React.FC = () => {
           {orders.map((ord) => (
             <div
               key={ord.id}
-              className="p-4 bg-[#131519] border border-[#23272F] rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 font-mono text-xs"
+              className="p-4 bg-[#F8FAFC] border border-black/[0.04] rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 font-mono text-xs hover:border-black/[0.09] transition-all"
             >
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-white">{ord.packageName}</span>
+                  <span className="font-bold text-[#0F172A]">{ord.packageName}</span>
                   <span
                     className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
                       ord.paymentStatus === "completed"
-                        ? "bg-[#25D366]/20 text-[#25D366]"
-                        : "bg-amber-400/20 text-amber-300"
+                        ? "bg-emerald-100 text-emerald-800"
+                        : "bg-amber-100 text-amber-800"
                     }`}
                   >
                     {ord.paymentStatus === "completed"
@@ -160,22 +168,22 @@ export const ProfileTab: React.FC = () => {
                       : "Havale Bekliyor"}
                   </span>
                 </div>
-                <span className="text-[11px] text-[#72757C] block mt-1">
+                <span className="text-[11px] text-[#64748B] block mt-1">
                   {ord.orderNumber} • {ord.createdAt} • {ord.paymentMethod.toUpperCase()}
                 </span>
               </div>
 
-              <div className="flex items-center gap-4 justify-between sm:justify-end border-t sm:border-t-0 border-[#191B20] pt-2 sm:pt-0">
-                <span className="font-black text-sm text-[#E8FF36]">
+              <div className="flex items-center gap-4 justify-between sm:justify-end border-t sm:border-t-0 border-black/[0.05] pt-2 sm:pt-0">
+                <span className="font-black text-sm text-[#0F172A]">
                   {ord.formattedAmount}
                 </span>
 
                 <button
                   onClick={() => handleDownloadReceipt(ord.orderNumber)}
-                  className="p-2 bg-white/5 hover:bg-white/10 text-[#A5A7AD] hover:text-white rounded-lg flex items-center gap-1 text-[11px] transition-colors"
+                  className="px-3 py-1.5 bg-white border border-black/[0.08] hover:bg-slate-100 text-[#334155] rounded-lg flex items-center gap-1.5 text-[11px] font-medium transition-colors shadow-2xs"
                   title="Makbuzu İndir"
                 >
-                  <FileText className="w-3.5 h-3.5 text-[#E8FF36]" />
+                  <FileText className="w-3.5 h-3.5 text-[#10B981]" />
                   <span>Makbuz</span>
                 </button>
               </div>

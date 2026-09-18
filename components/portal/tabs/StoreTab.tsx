@@ -7,113 +7,114 @@ import {
   CreditCard,
   Banknote,
   Building2,
-  Sparkles,
-  ShieldCheck,
   ChevronRight,
+  ShieldCheck,
 } from "lucide-react";
 import { PORTAL_PACKAGES } from "@/data/portal-mock";
-import { PortalPackage, OrderItem } from "@/types/portal";
+import { PortalPackage } from "@/types/portal";
 import { CheckoutModal } from "@/components/portal/CheckoutModal";
 
 export const StoreTab: React.FC = () => {
   const [selectedPkg, setSelectedPkg] = useState<PortalPackage | null>(null);
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-6 pb-12 text-[#0F172A]">
       {/* Header */}
       <div>
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-mono text-[#E8FF36] uppercase tracking-wider font-bold">
+          <span className="text-[11px] font-mono text-[#10B981] uppercase tracking-wider font-bold">
             ÖZEL DERS & SEANS MAĞAZASI
           </span>
-          <span className="text-[#72757C]">•</span>
-          <span className="text-[11px] font-mono text-[#A5A7AD]">1:1 Kişisel Koçluk</span>
+          <span className="text-[#CBD5E1]">•</span>
+          <span className="text-[11px] font-mono text-[#64748B]">1:1 Kişisel Koçluk</span>
         </div>
-        <h2 className="text-2xl sm:text-3xl font-extrabold uppercase font-display text-white tracking-tight mt-0.5">
+        <h2 className="text-2xl sm:text-3xl font-extrabold uppercase font-display text-[#0F172A] tracking-tight mt-0.5">
           Paket Satın Al & Seans Yükle
         </h2>
-        <p className="text-xs text-[#A5A7AD] font-mono mt-1 max-w-2xl leading-relaxed">
+        <p className="text-xs text-[#64748B] font-medium mt-1 max-w-2xl leading-relaxed">
           Hedefinize ve antrenman sıklığınıza uygun paketi seçerek seanslarınızı hemen yükleyin. Online kart, stüdyo kasasında nakit veya POS taksit imkanıyla ödeme yapabilirsiniz.
         </p>
       </div>
 
-      {/* Payment Security / Options Banner */}
+      {/* Payment Security / Options Banner (Apple Style Clean Pills) */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="p-3 bg-[#0D0F12] border border-[#23272F] rounded-xl flex items-center gap-2.5">
-          <CreditCard className="w-4 h-4 text-[#E8FF36] shrink-0" />
-          <span className="text-[11px] font-mono text-white">Online Kredi Kartı</span>
+        <div className="p-3.5 bg-white border border-black/[0.06] rounded-2xl flex items-center gap-3 shadow-xs">
+          <CreditCard className="w-4 h-4 text-[#2563EB] shrink-0" />
+          <span className="text-xs font-semibold text-[#0F172A]">Online Kart</span>
         </div>
-        <div className="p-3 bg-[#0D0F12] border border-[#23272F] rounded-xl flex items-center gap-2.5">
-          <Banknote className="w-4 h-4 text-[#E8FF36] shrink-0" />
-          <span className="text-[11px] font-mono text-white">Kasada Nakit Ödeme</span>
+        <div className="p-3.5 bg-white border border-black/[0.06] rounded-2xl flex items-center gap-3 shadow-xs">
+          <Banknote className="w-4 h-4 text-[#10B981] shrink-0" />
+          <span className="text-xs font-semibold text-[#0F172A]">Kasada Nakit</span>
         </div>
-        <div className="p-3 bg-[#0D0F12] border border-[#23272F] rounded-xl flex items-center gap-2.5">
-          <CreditCard className="w-4 h-4 text-[#E8FF36] shrink-0" />
-          <span className="text-[11px] font-mono text-white">Kasada POS / Taksit</span>
+        <div className="p-3.5 bg-white border border-black/[0.06] rounded-2xl flex items-center gap-3 shadow-xs">
+          <CreditCard className="w-4 h-4 text-[#D97706] shrink-0" />
+          <span className="text-xs font-semibold text-[#0F172A]">Kasada POS</span>
         </div>
-        <div className="p-3 bg-[#0D0F12] border border-[#23272F] rounded-xl flex items-center gap-2.5">
-          <Building2 className="w-4 h-4 text-[#E8FF36] shrink-0" />
-          <span className="text-[11px] font-mono text-white">Havale / FAST</span>
+        <div className="p-3.5 bg-white border border-black/[0.06] rounded-2xl flex items-center gap-3 shadow-xs">
+          <Building2 className="w-4 h-4 text-[#6366F1] shrink-0" />
+          <span className="text-xs font-semibold text-[#0F172A]">Havale / FAST</span>
         </div>
       </div>
 
-      {/* Package Grid */}
+      {/* Package Grid (Apple White Cards) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {PORTAL_PACKAGES.map((pkg) => (
           <div
             key={pkg.id}
-            className={`relative bg-[#0D0F12] border rounded-2xl p-6 flex flex-col justify-between transition-all hover:border-[#E8FF36]/60 ${
-              pkg.badge ? "border-[#E8FF36] shadow-[0_0_25px_rgba(232,255,54,0.08)]" : "border-[#23272F]"
+            className={`relative bg-white border rounded-3xl p-7 flex flex-col justify-between transition-all duration-300 hover:shadow-[0_16px_45px_rgba(0,0,0,0.06)] ${
+              pkg.badge
+                ? "border-[#0F172A] shadow-[0_8px_30px_rgba(0,0,0,0.06)] ring-1 ring-black/[0.08]"
+                : "border-black/[0.06] shadow-[0_4px_24px_rgba(0,0,0,0.02)]"
             }`}
           >
             {pkg.badge && (
-              <div className="absolute -top-3 right-6 bg-[#E8FF36] text-[#08090B] px-3 py-0.5 rounded-full text-[10px] font-mono font-black uppercase tracking-wider shadow">
+              <div className="absolute -top-3 right-6 bg-[#0F172A] text-white px-3.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-sm">
                 {pkg.badge}
               </div>
             )}
 
             <div>
               <div className="flex items-center justify-between gap-2 mb-2">
-                <span className="text-[11px] font-mono text-[#E8FF36] uppercase tracking-wider font-bold">
+                <span className="text-xs font-bold font-mono text-[#10B981] uppercase tracking-wider">
                   {pkg.sessionCount} SEANS • {pkg.validityDays} GÜN
                 </span>
               </div>
 
-              <h3 className="text-xl font-bold uppercase font-display text-white">
+              <h3 className="text-2xl font-bold uppercase font-display text-[#0F172A]">
                 {pkg.name}
               </h3>
-              <p className="text-xs text-[#A5A7AD] font-mono mt-1 mb-4 leading-relaxed">
+              <p className="text-xs text-[#64748B] font-medium mt-1 mb-5 leading-relaxed">
                 {pkg.subtitle}
               </p>
 
-              <div className="py-4 border-y border-[#191B20] my-4">
-                <span className="text-3xl font-black font-mono text-white tracking-tight">
+              <div className="py-4 border-y border-black/[0.06] my-4">
+                <span className="text-4xl font-black font-display text-[#0F172A] tracking-tight">
                   {pkg.formattedPrice}
                 </span>
-                <span className="text-xs text-[#72757C] font-mono block mt-0.5">
+                <span className="text-xs text-[#64748B] font-medium block mt-1">
                   Seans başı ~₺{Math.round(pkg.price / pkg.sessionCount).toLocaleString("tr-TR")}
                 </span>
               </div>
 
               {/* Features list */}
-              <ul className="space-y-2.5 my-4">
+              <ul className="space-y-3 my-5">
                 {pkg.features.map((feat, i) => (
-                  <li key={i} className="flex items-start gap-2.5 text-xs text-[#A5A7AD]">
-                    <Check className="w-3.5 h-3.5 text-[#E8FF36] shrink-0 mt-0.5" />
+                  <li key={i} className="flex items-start gap-2.5 text-xs text-[#334155] font-medium">
+                    <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
                     <span>{feat}</span>
                   </li>
                 ))}
               </ul>
             </div>
 
-            {/* Purchase CTA */}
+            {/* Purchase CTA Button */}
             <div className="pt-4 mt-2">
               <button
                 onClick={() => setSelectedPkg(pkg)}
-                className={`w-full py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider font-mono flex items-center justify-center gap-2 transition-all active:scale-95 ${
+                className={`w-full py-4 rounded-full font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-95 shadow-sm ${
                   pkg.badge
-                    ? "bg-[#E8FF36] text-[#08090B] hover:bg-[#D4EB2B] shadow-[0_0_20px_rgba(232,255,54,0.2)]"
-                    : "bg-[#131519] border border-[#23272F] text-white hover:border-[#E8FF36] hover:text-[#E8FF36]"
+                    ? "bg-[#0F172A] text-white hover:bg-[#1E293B]"
+                    : "bg-[#F8FAFC] border border-black/[0.12] text-[#0F172A] hover:bg-[#F1F5F9]"
                 }`}
               >
                 <span>Paketi Satın Al</span>
@@ -129,9 +130,7 @@ export const StoreTab: React.FC = () => {
         <CheckoutModal
           pkg={selectedPkg}
           onClose={() => setSelectedPkg(null)}
-          onSuccess={(order) => {
-            // modal handles the success view internally
-          }}
+          onSuccess={() => {}}
         />
       )}
     </div>
