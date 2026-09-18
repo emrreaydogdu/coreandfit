@@ -1,4 +1,13 @@
-import { MemberUser, BookedSession, CheckInLog, PortalPackage, OrderItem } from "@/types/portal";
+import {
+  MemberUser,
+  BookedSession,
+  CheckInLog,
+  PortalPackage,
+  OrderItem,
+  StudioSettings,
+  StudioBankAccount,
+  CoachScheduleProfile,
+} from "@/types/portal";
 
 export const DEMO_USER: MemberUser = {
   id: "user-demo-1",
@@ -196,17 +205,97 @@ export const INITIAL_ORDERS: OrderItem[] = [
   },
 ];
 
-export const STUDIO_BANK_ACCOUNTS = [
+export const STUDIO_BANK_ACCOUNTS: StudioBankAccount[] = [
   {
+    id: "bank-1",
     bankName: "Garanti BBVA",
     accountHolder: "Core & Fit Spor ve Sağlıklı Yaşam Hizmetleri A.Ş.",
     iban: "TR34 0006 2000 1234 5678 9012 34",
     branch: "Nişantaşı Şubesi (Kod: 123)",
   },
   {
+    id: "bank-2",
     bankName: "Yapı Kredi",
     accountHolder: "Core & Fit Spor ve Sağlıklı Yaşam Hizmetleri A.Ş.",
     iban: "TR92 0006 7010 0000 0098 7654 32",
     branch: "Teşvikiye Şubesi (Kod: 456)",
   },
 ];
+
+export const DEFAULT_STUDIO_SETTINGS: StudioSettings = {
+  studioName: "Core & Fit Nişantaşı Studio",
+  legalTitle: "Core & Fit Spor ve Sağlıklı Yaşam Hizmetleri A.Ş.",
+  address: "Abdi İpekçi Cad. No: 42/A, Nişantaşı, Şişli / İstanbul",
+  phone: "+90 212 234 56 78",
+  whatsapp: "+90 532 555 0124",
+  email: "info@coreandfit.com",
+  maxCapacity: 20,
+  turnstileRelayDelay: 5,
+  qrRefreshSeconds: 60,
+  autoDeductOnTurnstile: true,
+  weekdayHours: "07:00 - 22:00",
+  weekendHours: "08:30 - 20:00",
+  bankAccounts: STUDIO_BANK_ACCOUNTS,
+};
+
+const BASE_WEEKLY_DAYS: { dayKey: "pzt" | "sal" | "car" | "per" | "cum" | "cts" | "paz"; dayName: string }[] = [
+  { dayKey: "pzt", dayName: "Pazartesi" },
+  { dayKey: "sal", dayName: "Salı" },
+  { dayKey: "car", dayName: "Çarşamba" },
+  { dayKey: "per", dayName: "Perşembe" },
+  { dayKey: "cum", dayName: "Cuma" },
+  { dayKey: "cts", dayName: "Cumartesi" },
+  { dayKey: "paz", dayName: "Pazar" },
+];
+
+const DEFAULT_DAY_SLOTS = [
+  { id: "slot-1", time: "08:00 - 09:00", isAvailable: true },
+  { id: "slot-2", time: "09:30 - 10:30", isAvailable: true },
+  { id: "slot-3", time: "11:00 - 12:00", isAvailable: true },
+  { id: "slot-4", time: "13:00 - 14:00", isAvailable: false, label: "Öğle Molası" },
+  { id: "slot-5", time: "14:30 - 15:30", isAvailable: true },
+  { id: "slot-6", time: "16:00 - 17:00", isAvailable: true },
+  { id: "slot-7", time: "17:30 - 18:30", isAvailable: true },
+  { id: "slot-8", time: "19:00 - 20:00", isAvailable: true },
+  { id: "slot-9", time: "20:30 - 21:30", isAvailable: false, label: "Akşam Kapanış" },
+];
+
+export const DEFAULT_COACH_SCHEDULES: CoachScheduleProfile[] = [
+  {
+    coachId: "coach-1",
+    coachName: "Mert Aksoy",
+    coachTitle: "Baş Antrenör (Head Coach)",
+    sessionDurationMin: 60,
+    weeklySchedule: BASE_WEEKLY_DAYS.map((d) => ({
+      dayKey: d.dayKey,
+      dayName: d.dayName,
+      isWorkingDay: d.dayKey !== "paz",
+      slots: DEFAULT_DAY_SLOTS.map((s) => ({ ...s, id: `${d.dayKey}-${s.id}` })),
+    })),
+  },
+  {
+    coachId: "coach-2",
+    coachName: "Selin Yılmaz",
+    coachTitle: "Kıdemli Performans Koçu",
+    sessionDurationMin: 60,
+    weeklySchedule: BASE_WEEKLY_DAYS.map((d) => ({
+      dayKey: d.dayKey,
+      dayName: d.dayName,
+      isWorkingDay: d.dayKey !== "cts" && d.dayKey !== "paz",
+      slots: DEFAULT_DAY_SLOTS.map((s) => ({ ...s, id: `${d.dayKey}-${s.id}` })),
+    })),
+  },
+  {
+    coachId: "coach-3",
+    coachName: "Can Demir",
+    coachTitle: "Kuvvet & Kondisyon Uzmanı",
+    sessionDurationMin: 60,
+    weeklySchedule: BASE_WEEKLY_DAYS.map((d) => ({
+      dayKey: d.dayKey,
+      dayName: d.dayName,
+      isWorkingDay: d.dayKey !== "paz",
+      slots: DEFAULT_DAY_SLOTS.map((s) => ({ ...s, id: `${d.dayKey}-${s.id}` })),
+    })),
+  },
+];
+

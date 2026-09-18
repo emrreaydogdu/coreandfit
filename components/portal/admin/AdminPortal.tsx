@@ -32,12 +32,17 @@ import {
   Smartphone,
   Monitor,
   Camera,
+  Settings,
+  CalendarPlus,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useMember } from "@/context/MemberContext";
 import { PaymentMethod } from "@/types/portal";
 import { AdminQrScannerModal } from "@/components/portal/admin/AdminQrScannerModal";
 import { AdminFloatingNav, AdminTab } from "@/components/portal/admin/AdminFloatingNav";
+import { AdminCreateSessionModal } from "@/components/portal/admin/AdminCreateSessionModal";
+import { AdminStudioSettingsTab } from "@/components/portal/admin/AdminStudioSettingsTab";
+import { AdminCoachSlotsTab } from "@/components/portal/admin/AdminCoachSlotsTab";
 
 export const AdminPortal: React.FC = () => {
   const {
@@ -58,6 +63,7 @@ export const AdminPortal: React.FC = () => {
   const [adminTab, setAdminTab] = useState<AdminTab>("overview");
   const [viewMode, setViewMode] = useState<"responsive" | "app_frame">("responsive");
   const [isScannerOpen, setIsScannerOpen] = useState<boolean>(false);
+  const [isCreateSessionOpen, setIsCreateSessionOpen] = useState<boolean>(false);
 
   // Filter states
   const [coachFilter, setCoachFilter] = useState<string>("all");
@@ -178,12 +184,21 @@ export const AdminPortal: React.FC = () => {
                       Yaklaşan Seanslar ({bookedSessions.length})
                     </h3>
                   </div>
-                  <button
-                    onClick={() => setAdminTab("schedule")}
-                    className="text-xs font-semibold text-[#2563EB] hover:underline"
-                  >
-                    Tüm Programı Gör →
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setIsCreateSessionOpen(true)}
+                      className="px-2.5 py-1 bg-[#0F172A] hover:bg-black text-white rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors"
+                    >
+                      <Plus className="w-3 h-3" />
+                      <span>+ Seans Oluştur</span>
+                    </button>
+                    <button
+                      onClick={() => setAdminTab("schedule")}
+                      className="text-xs font-semibold text-[#2563EB] hover:underline"
+                    >
+                      Tüm Programı Gör →
+                    </button>
+                  </div>
                 </div>
 
                 <div className="space-y-3">
@@ -198,7 +213,7 @@ export const AdminPortal: React.FC = () => {
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <h4 className="font-bold text-xs text-[#0F172A]">{user?.fullName || "Ege Mert"}</h4>
+                            <h4 className="font-bold text-xs text-[#0F172A]">{sess.memberName || user?.fullName || "Ege Mert"}</h4>
                             <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded-md">
                               {sess.station}
                             </span>
@@ -220,36 +235,40 @@ export const AdminPortal: React.FC = () => {
                 </div>
               </div>
 
-              {/* Quick Turnstile Action Widget */}
-              <div className="bg-gradient-to-br from-slate-900 to-[#0F172A] text-white rounded-3xl p-6 shadow-xl flex flex-col justify-between">
-                <div>
-                  <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mb-4">
-                    <Zap className="w-5 h-5" />
+              {/* Quick Turnstile Action Widget - Apple White Liquid Glass */}
+              <div className="bg-white/85 backdrop-blur-2xl border border-black/[0.06] rounded-[32px] p-6 sm:p-7 shadow-[0_4px_24px_rgba(0,0,0,0.03)] flex flex-col justify-between relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none -mr-12 -mt-12" />
+                <div className="relative z-10">
+                  <div className="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-200/50 flex items-center justify-center mb-4 shadow-2xs">
+                    <Zap className="w-5 h-5 fill-emerald-600" />
                   </div>
-                  <h3 className="text-lg font-bold uppercase tracking-tight">
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2.5 py-1 rounded-full uppercase tracking-wider inline-block mb-2">
+                    ⚡ OPTİK DİJİTAL GEÇİŞ
+                  </span>
+                  <h3 className="text-lg font-bold uppercase tracking-tight text-[#0F172A]">
                     Otomatik QR Turnike Terminali
                   </h3>
-                  <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                  <p className="text-xs text-[#64748B] mt-1 leading-relaxed">
                     Üyenin ekranındaki 60 saniyelik dinamik QR kodunu kamerayla okutarak anında seans düşüşü yapın.
                   </p>
 
-                  <div className="mt-5 p-4 bg-white/5 border border-white/10 rounded-2xl space-y-2 text-xs">
+                  <div className="mt-5 p-4 bg-[#F8FAFC] border border-black/[0.04] rounded-2xl space-y-2 text-xs">
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Örnek Üye:</span>
-                      <span className="font-bold text-white">{user?.fullName} ({user?.memberNo})</span>
+                      <span className="text-[#64748B]">Örnek Üye:</span>
+                      <span className="font-bold text-[#0F172A]">{user?.fullName} ({user?.memberNo})</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Kalan Seans:</span>
-                      <span className="font-bold text-emerald-400">{remainingSessions} Seans</span>
+                      <span className="text-[#64748B]">Kalan Seans:</span>
+                      <span className="font-bold text-emerald-600">{remainingSessions} Seans</span>
                     </div>
                   </div>
                 </div>
 
                 <button
                   onClick={() => setIsScannerOpen(true)}
-                  className="w-full mt-6 py-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-md flex items-center justify-center gap-2 active:scale-98"
+                  className="relative z-10 w-full mt-6 py-3.5 bg-[#0F172A] hover:bg-black text-white font-bold text-xs uppercase tracking-wider rounded-2xl transition-all shadow-md flex items-center justify-center gap-2 active:scale-98"
                 >
-                  <QrCode className="w-4 h-4" />
+                  <QrCode className="w-4 h-4 text-emerald-400" />
                   <span>Kamerayı / QR Okuyucuyu Başlat →</span>
                 </button>
               </div>
@@ -270,19 +289,39 @@ export const AdminPortal: React.FC = () => {
                 </p>
               </div>
 
-              {/* Coach Filter */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-[#64748B] font-medium">Koç:</span>
-                <select
-                  value={coachFilter}
-                  onChange={(e) => setCoachFilter(e.target.value)}
-                  className="p-2 border border-black/[0.08] rounded-xl text-xs font-medium bg-[#F8FAFC] text-[#0F172A]"
+              {/* Header Actions: Coach Filter & Create Session & Slot Settings */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setIsCreateSessionOpen(true)}
+                  className="px-3.5 py-2 bg-[#0F172A] hover:bg-black text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-sm active:scale-98"
                 >
-                  <option value="all">Tüm Koçlar</option>
-                  <option value="Mert Aksoy">Mert Aksoy</option>
-                  <option value="Selin Yılmaz">Selin Yılmaz</option>
-                  <option value="Can Demir">Can Demir</option>
-                </select>
+                  <Plus className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>+ Manuel Seans Planla</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setAdminTab("coach_slots")}
+                  className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-[#0F172A] rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                >
+                  <Clock className="w-3.5 h-3.5 text-[#64748B]" />
+                  <span>Saat & Mola Düzenle</span>
+                </button>
+
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-[#64748B] font-medium">Koç:</span>
+                  <select
+                    value={coachFilter}
+                    onChange={(e) => setCoachFilter(e.target.value)}
+                    className="p-2 border border-black/[0.08] rounded-xl text-xs font-medium bg-[#F8FAFC] text-[#0F172A]"
+                  >
+                    <option value="all">Tüm Koçlar</option>
+                    <option value="Mert Aksoy">Mert Aksoy</option>
+                    <option value="Selin Yılmaz">Selin Yılmaz</option>
+                    <option value="Can Demir">Can Demir</option>
+                  </select>
+                </div>
               </div>
             </div>
 
@@ -303,9 +342,9 @@ export const AdminPortal: React.FC = () => {
                       <div>
                         <div className="flex items-center gap-2 flex-wrap">
                           <h4 className="font-bold text-sm text-[#0F172A]">
-                            {user?.fullName || "Ege Mert"}
+                            {sess.memberName || user?.fullName || "Ege Mert"}
                           </h4>
-                          <span className="text-xs text-[#64748B]">({user?.memberNo})</span>
+                          <span className="text-xs text-[#64748B]">({sess.memberNo || user?.memberNo || "CF-89210"})</span>
                           <span className="px-2 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold rounded-md">
                             {sess.station}
                           </span>
@@ -315,7 +354,7 @@ export const AdminPortal: React.FC = () => {
                           📅 {sess.date} • Koç: <strong className="text-[#0F172A]">{sess.coachName}</strong> ({sess.coachTitle})
                         </p>
                         <p className="text-xs text-[#334155] mt-1 bg-white p-2 rounded-lg border border-black/[0.04]">
-                          🎯 <strong>Odak:</strong> {sess.focusArea} — {sess.notes}
+                          🎯 <strong>Odak:</strong> {sess.focusArea} {sess.notes ? `— ${sess.notes}` : ""}
                         </p>
                       </div>
                     </div>
@@ -334,29 +373,36 @@ export const AdminPortal: React.FC = () => {
           </div>
         );
 
+      case "coach_slots":
+        return <AdminCoachSlotsTab />;
+
+      case "settings":
+        return <AdminStudioSettingsTab />;
+
       case "turnstile":
         return (
           <div className="space-y-6">
-            {/* Direct Auto Scanner Launcher Hero */}
-            <div className="bg-gradient-to-r from-slate-950 via-[#0B131E] to-slate-900 rounded-3xl p-6 sm:p-8 text-white border border-white/10 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
-              <div className="space-y-2 text-center md:text-left">
-                <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 rounded-full text-xs font-bold uppercase tracking-wider">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            {/* Direct Auto Scanner Launcher Hero - Apple White Liquid Glass */}
+            <div className="bg-white/85 backdrop-blur-2xl border border-black/[0.06] rounded-[32px] p-6 sm:p-8 text-[#0F172A] shadow-[0_4px_24px_rgba(0,0,0,0.03)] flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
+              <div className="space-y-2 text-center md:text-left relative z-10">
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-full text-xs font-bold uppercase tracking-wider">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                   <span>Optik Turnike Kapı Sensörü</span>
                 </div>
-                <h3 className="text-2xl font-bold font-display uppercase tracking-tight">
+                <h3 className="text-2xl font-bold font-display uppercase tracking-tight text-[#0F172A]">
                   Kamera & Turnike QR Okuyucu
                 </h3>
-                <p className="text-xs text-slate-300 max-w-lg leading-relaxed">
+                <p className="text-xs text-[#64748B] max-w-lg leading-relaxed">
                   Kapıya gelen üyenin telefonundaki 60 saniyelik dinamik kodu kameraya gösterin. Sistem turnikeyi anında açar ve bakiyeden seans düşer.
                 </p>
               </div>
 
               <button
                 onClick={() => setIsScannerOpen(true)}
-                className="px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs uppercase tracking-wider rounded-2xl transition-all shadow-lg flex items-center gap-2.5 shrink-0 active:scale-98"
+                className="relative z-10 px-8 py-4 bg-[#0F172A] hover:bg-black text-white font-bold text-xs uppercase tracking-wider rounded-2xl transition-all shadow-lg flex items-center gap-2.5 shrink-0 active:scale-98"
               >
-                <Camera className="w-5 h-5" />
+                <Camera className="w-5 h-5 text-emerald-400" />
                 <span>Kamerayı & Okuyucuyu Başlat</span>
               </button>
             </div>
@@ -648,52 +694,61 @@ export const AdminPortal: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F6FA] text-[#0F172A] font-sans antialiased pb-24">
-      {/* Top Admin Header Bar */}
-      <header className="sticky top-0 z-40 bg-slate-900 text-white border-b border-slate-800 shadow-md">
+    <div className="min-h-screen bg-[#F5F5F7] text-[#0F172A] font-sans antialiased pb-28">
+      {/* Top Admin Header Bar - Apple Frosted Liquid Glass */}
+      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-2xl border-b border-black/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.03)] transition-all">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <a
               href="/portal"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-full text-xs font-semibold text-slate-200 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-black/[0.04] hover:bg-black/[0.08] rounded-full text-xs font-semibold text-[#0F172A] border border-black/[0.04] transition-all"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Üye Paneline Dön</span>
             </a>
 
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <h1 className="font-bold text-sm tracking-tight uppercase">
-                CORE & FIT STUDIO OS <span className="text-slate-400 font-normal">| Yönetici & Koç Portalı</span>
+              <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
+              <h1 className="font-bold text-xs sm:text-sm tracking-tight uppercase text-[#0F172A]">
+                CORE & FIT STUDIO OS <span className="text-[#64748B] font-normal hidden sm:inline">| Yönetici & Koç Portalı</span>
               </h1>
             </div>
           </div>
 
-          {/* Header Actions: Auto QR Scanner & View Mode Toggle */}
-          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+          {/* Header Actions: Manual Session, Auto QR Scanner & View Mode Toggle */}
+          <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
+            {/* Quick Manual Session Create Button */}
+            <button
+              onClick={() => setIsCreateSessionOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#0F172A] hover:bg-black text-white font-bold text-xs rounded-full shadow-sm transition-all active:scale-98"
+            >
+              <Plus className="w-3.5 h-3.5 text-emerald-400" />
+              <span>+ Manuel Seans</span>
+            </button>
+
             {/* Quick Auto QR Scanner Button */}
             <button
               onClick={() => setIsScannerOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-full shadow-md transition-all active:scale-98"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200/80 font-bold text-xs rounded-full transition-all active:scale-98"
             >
-              <Zap className="w-3.5 h-3.5 fill-slate-950" />
+              <Zap className="w-3.5 h-3.5 text-emerald-600 fill-emerald-600" />
               <span>⚡ Turnike QR Tara</span>
             </button>
 
             {/* View Mode Switcher (Desktop Only) */}
             <button
               onClick={() => setViewMode(viewMode === "app_frame" ? "responsive" : "app_frame")}
-              className="hidden lg:inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white/10 hover:bg-white/20 border border-white/10 rounded-full text-xs font-semibold text-white transition-all shadow-xs"
+              className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 bg-black/[0.04] hover:bg-black/[0.08] border border-black/[0.06] rounded-full text-xs font-semibold text-[#0F172A] transition-all shadow-2xs"
               title={viewMode === "app_frame" ? "Geniş Ekran Görünümüne Geç" : "iPhone Görünümüne Geç"}
             >
               {viewMode === "app_frame" ? (
                 <>
-                  <Monitor className="w-3.5 h-3.5 text-emerald-400" />
+                  <Monitor className="w-3.5 h-3.5 text-emerald-600" />
                   <span>Geniş Ekran</span>
                 </>
               ) : (
                 <>
-                  <Smartphone className="w-3.5 h-3.5 text-emerald-400" />
+                  <Smartphone className="w-3.5 h-3.5 text-emerald-600" />
                   <span>iPhone Görünümü</span>
                 </>
               )}
@@ -703,7 +758,7 @@ export const AdminPortal: React.FC = () => {
             <select
               value={selectedRole}
               onChange={(e) => setSelectedRole(e.target.value)}
-              className="bg-slate-800 border border-slate-700 text-white text-xs font-medium rounded-xl px-3 py-1.5 focus:outline-none focus:border-emerald-400"
+              className="bg-white/90 hover:bg-white border border-black/[0.08] text-[#0F172A] text-xs font-medium rounded-full px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-black/10 shadow-2xs"
             >
               <option value="Genel Stüdyo Yöneticisi">👑 Genel Stüdyo Yöneticisi</option>
               <option value="Mert Aksoy (Baş Antrenör)">🏋️ Mert Aksoy (Baş Antrenör)</option>
@@ -730,13 +785,22 @@ export const AdminPortal: React.FC = () => {
                 <span className="font-black text-xs uppercase tracking-tight text-[#0F172A]">
                   CORE & FIT OS
                 </span>
-                <button
-                  onClick={() => setIsScannerOpen(true)}
-                  className="p-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-[10px] font-bold flex items-center gap-1"
-                >
-                  <QrCode className="w-3.5 h-3.5" />
-                  <span>Tara</span>
-                </button>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setIsCreateSessionOpen(true)}
+                    className="p-1.5 bg-slate-900 text-white rounded-lg text-[10px] font-bold flex items-center gap-1"
+                  >
+                    <Plus className="w-3 h-3" />
+                    <span>Seans</span>
+                  </button>
+                  <button
+                    onClick={() => setIsScannerOpen(true)}
+                    className="p-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-[10px] font-bold flex items-center gap-1"
+                  >
+                    <QrCode className="w-3.5 h-3.5" />
+                    <span>Tara</span>
+                  </button>
+                </div>
               </div>
 
               {/* Scrollable App Body */}
@@ -760,73 +824,75 @@ export const AdminPortal: React.FC = () => {
         ) : (
           /* Wide Full-Width Responsive Dashboard */
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-            {/* Top KPI Metric Cards */}
+            {/* Top KPI Metric Cards - Apple Glass Aesthetic */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-white border border-black/[0.06] rounded-3xl p-5 shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
+              <div className="bg-white/85 backdrop-blur-xl border border-black/[0.05] rounded-[28px] p-5 shadow-[0_2px_12px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.04)] transition-all">
                 <div className="flex items-center justify-between text-xs text-[#64748B] mb-2 font-medium">
-                  <span>GÜNLÜK TURNİKE GİRİŞİ</span>
-                  <div className="w-8 h-8 rounded-xl bg-emerald-50 text-[#10B981] flex items-center justify-center">
+                  <span className="tracking-tight text-[11px] font-bold uppercase">GÜNLÜK TURNİKE GİRİŞİ</span>
+                  <div className="w-8 h-8 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shadow-2xs">
                     <UserCheck className="w-4 h-4" />
                   </div>
                 </div>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-black text-[#0F172A]">{checkInLogs.length + 34}</span>
+                  <span className="text-2xl font-black text-[#0F172A] tracking-tight">{checkInLogs.length + 34}</span>
                   <span className="text-xs font-semibold text-emerald-600">↑ %14 artış</span>
                 </div>
                 <span className="text-[11px] text-[#94A3B8] block mt-1">Bugün tamamlanan seanslar</span>
               </div>
 
-              <div className="bg-white border border-black/[0.06] rounded-3xl p-5 shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
+              <div className="bg-white/85 backdrop-blur-xl border border-black/[0.05] rounded-[28px] p-5 shadow-[0_2px_12px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.04)] transition-all">
                 <div className="flex items-center justify-between text-xs text-[#64748B] mb-2 font-medium">
-                  <span>STÜDYO DOLULUK ORANI</span>
-                  <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#2563EB] flex items-center justify-center">
+                  <span className="tracking-tight text-[11px] font-bold uppercase">STÜDYO DOLULUK ORANI</span>
+                  <div className="w-8 h-8 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shadow-2xs">
                     <Activity className="w-4 h-4" />
                   </div>
                 </div>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-black text-[#0F172A]">%70</span>
+                  <span className="text-2xl font-black text-[#0F172A] tracking-tight">%70</span>
                   <span className="text-xs text-[#64748B]">14 / 20 İstasyon</span>
                 </div>
                 <span className="text-[11px] text-[#94A3B8] block mt-1">Nişantaşı anlık kapasite</span>
               </div>
 
-              <div className="bg-white border border-black/[0.06] rounded-3xl p-5 shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
+              <div className="bg-white/85 backdrop-blur-xl border border-black/[0.05] rounded-[28px] p-5 shadow-[0_2px_12px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.04)] transition-all">
                 <div className="flex items-center justify-between text-xs text-[#64748B] mb-2 font-medium">
-                  <span>AYLIK TOPLAM CİRO</span>
-                  <div className="w-8 h-8 rounded-xl bg-emerald-50 text-[#10B981] flex items-center justify-center">
+                  <span className="tracking-tight text-[11px] font-bold uppercase">AYLIK TOPLAM CİRO</span>
+                  <div className="w-8 h-8 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center shadow-2xs">
                     <DollarSign className="w-4 h-4" />
                   </div>
                 </div>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-black text-[#0F172A]">₺428.000</span>
+                  <span className="text-2xl font-black text-[#0F172A] tracking-tight">₺428.000</span>
                   <span className="text-xs font-semibold text-emerald-600">Hedef: %107</span>
                 </div>
                 <span className="text-[11px] text-[#94A3B8] block mt-1">Eylül 2026 gerçekleşen ciro</span>
               </div>
 
-              <div className="bg-white border border-black/[0.06] rounded-3xl p-5 shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
+              <div className="bg-white/85 backdrop-blur-xl border border-black/[0.05] rounded-[28px] p-5 shadow-[0_2px_12px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.04)] transition-all">
                 <div className="flex items-center justify-between text-xs text-[#64748B] mb-2 font-medium">
-                  <span>BEKLEYEN KASA TAHSİLATI</span>
-                  <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                  <span className="tracking-tight text-[11px] font-bold uppercase">BEKLEYEN KASA TAHSİLATI</span>
+                  <div className="w-8 h-8 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shadow-2xs">
                     <Banknote className="w-4 h-4" />
                   </div>
                 </div>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-black text-amber-600">{pendingOrdersCount} Sipariş</span>
+                  <span className="text-2xl font-black text-amber-600 tracking-tight">{pendingOrdersCount} Sipariş</span>
                   <span className="text-xs font-semibold text-[#64748B]">Kasada / Havale</span>
                 </div>
                 <span className="text-[11px] text-[#94A3B8] block mt-1">Onay bekleyen ödemeler</span>
               </div>
             </div>
 
-            {/* Desktop Navigation Tabs */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-black/[0.06]">
+            {/* Apple macOS / iOS Segmented Tab Navigation Bar */}
+            <div className="p-1.5 bg-black/[0.03] backdrop-blur-2xl border border-black/[0.05] rounded-[26px] flex items-center gap-1.5 overflow-x-auto shadow-inner">
               {[
                 { id: "overview", label: "Genel Bakış", icon: TrendingUp },
-                { id: "turnstile", label: "Turnike & Hızlı QR Giriş", icon: QrCode },
-                { id: "schedule", label: "Seans Programı & Randevular", icon: Calendar, badge: bookedSessions.length },
-                { id: "cashier", label: "Kasa & Ödeme Onayları", icon: CreditCard, badge: pendingOrdersCount },
-                { id: "members", label: "Üye Yönetimi (CRM)", icon: Users },
+                { id: "turnstile", label: "Turnike & Hızlı QR", icon: QrCode },
+                { id: "schedule", label: "Seans Programı", icon: Calendar, badge: bookedSessions.length },
+                { id: "coach_slots", label: "Koç Randevu Saatleri", icon: Clock },
+                { id: "cashier", label: "Kasa & Ödemeler", icon: CreditCard, badge: pendingOrdersCount },
+                { id: "members", label: "Üye Rehberi (CRM)", icon: Users },
+                { id: "settings", label: "İşletme Ayarları", icon: Settings },
               ].map((tab) => {
                 const Icon = tab.icon;
                 const isActive = adminTab === tab.id;
@@ -834,17 +900,17 @@ export const AdminPortal: React.FC = () => {
                   <button
                     key={tab.id}
                     onClick={() => setAdminTab(tab.id as any)}
-                    className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-semibold whitespace-nowrap transition-all ${
+                    className={`relative inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-semibold whitespace-nowrap transition-all duration-200 outline-none ${
                       isActive
-                        ? "bg-[#0F172A] text-white shadow-md shadow-slate-900/10"
-                        : "bg-white text-[#64748B] hover:bg-slate-100 hover:text-[#0F172A] border border-black/[0.05]"
+                        ? "bg-white text-[#0F172A] shadow-[0_2px_10px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] font-bold"
+                        : "text-[#64748B] hover:text-[#0F172A] hover:bg-white/50"
                     }`}
                   >
-                    <Icon className="w-4 h-4" />
+                    <Icon className={`w-4 h-4 ${isActive ? "text-[#0F172A]" : "text-[#64748B]"}`} />
                     <span>{tab.label}</span>
                     {tab.badge !== undefined && tab.badge > 0 && (
                       <span
-                        className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                        className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
                           isActive ? "bg-emerald-500 text-white" : "bg-emerald-100 text-emerald-800"
                         }`}
                       >
@@ -870,6 +936,13 @@ export const AdminPortal: React.FC = () => {
           onOpenScanner={() => setIsScannerOpen(true)}
         />
       </div>
+
+      {/* MODAL 0: Manual Create Session */}
+      <AdminCreateSessionModal
+        isOpen={isCreateSessionOpen}
+        onClose={() => setIsCreateSessionOpen(false)}
+        defaultCoachName={selectedRole}
+      />
 
       {/* MODAL 1: Auto Optical QR Scanner Terminal */}
       <AdminQrScannerModal

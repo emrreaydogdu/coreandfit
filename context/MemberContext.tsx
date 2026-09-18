@@ -10,6 +10,11 @@ import {
   PaymentMethod,
   SavedCard,
   UserAddress,
+  StudioSettings,
+  StudioBankAccount,
+  CoachScheduleProfile,
+  CoachDaySchedule,
+  CoachTimeSlot,
 } from "@/types/portal";
 import {
   DEMO_USER,
@@ -17,6 +22,8 @@ import {
   INITIAL_CHECKIN_LOGS,
   INITIAL_ORDERS,
   PORTAL_PACKAGES,
+  DEFAULT_STUDIO_SETTINGS,
+  DEFAULT_COACH_SCHEDULES,
 } from "@/data/portal-mock";
 
 interface MemberContextType {
@@ -36,6 +43,37 @@ interface MemberContextType {
   bookedSessions: BookedSession[];
   checkInLogs: CheckInLog[];
   orders: OrderItem[];
+
+  // İşletme & Stüdyo Ayarları
+  studioSettings: StudioSettings;
+  updateStudioSettings: (newSettings: Partial<StudioSettings>) => void;
+  addStudioBankAccount: (account: Omit<StudioBankAccount, "id">) => void;
+  removeStudioBankAccount: (accountId: string) => void;
+
+  // Koç Randevu Saatleri & Müsaitlik
+  coachSchedules: CoachScheduleProfile[];
+  updateCoachDayStatus: (coachId: string, dayKey: string, isWorkingDay: boolean) => void;
+  toggleCoachSlotAvailability: (coachId: string, dayKey: string, slotId: string) => void;
+  addCoachSlot: (coachId: string, dayKey: string, time: string, label?: string) => void;
+  removeCoachSlot: (coachId: string, dayKey: string, slotId: string) => void;
+  copyCoachScheduleToWeekdays: (coachId: string, sourceDayKey: string) => void;
+
+  // Yönetici Manuel Seans Planlama
+  adminCreateSession: (data: {
+    memberId?: string;
+    memberName: string;
+    memberNo?: string;
+    coachId: string;
+    coachName: string;
+    coachTitle?: string;
+    coachAvatar?: string;
+    date: string;
+    timeSlot: string;
+    focusArea: string;
+    station: string;
+    notes?: string;
+    deductCredit: boolean;
+  }) => { success: boolean; message: string; session: BookedSession };
 
   // Fonksiyonlar
   login: (email: string, pass: string) => boolean;
@@ -95,6 +133,8 @@ const STORAGE_KEYS = {
   CHECKIN: "cf_member_checkin_logs",
   ORDERS: "cf_member_orders",
   VIEW_MODE: "cf_member_view_mode",
+  STUDIO_SETTINGS: "cf_studio_settings",
+  COACH_SCHEDULES: "cf_coach_schedules",
 };
 
 export const MemberProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -109,6 +149,8 @@ export const MemberProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [bookedSessions, setBookedSessions] = useState<BookedSession[]>(INITIAL_BOOKED_SESSIONS);
   const [checkInLogs, setCheckInLogs] = useState<CheckInLog[]>(INITIAL_CHECKIN_LOGS);
   const [orders, setOrders] = useState<OrderItem[]>(INITIAL_ORDERS);
+  const [studioSettings, setStudioSettings] = useState<StudioSettings>(DEFAULT_STUDIO_SETTINGS);
+  const [coachSchedules, setCoachSchedules] = useState<CoachScheduleProfile[]>(DEFAULT_COACH_SCHEDULES);
 
   // LocalStorage senkronizasyonu
   useEffect(() => {
@@ -139,6 +181,22 @@ export const MemberProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
       const savedOrders = localStorage.getItem(STORAGE_KEYS.ORDERS);
       if (savedOrders) setOrders(JSON.parse(savedOrders));
+
+      const savedSettings = localStorage.getItem(STORAGE_KEYS.STUDIO_SETTINGS);
+      if (savedSettings) {
+        setStudioSettings(JSON.parse(savedSettings));
+      } else {
+        setStudioSettings(DEFAULT_STUDIO_SETTINGS);
+        localStorage.setItem(STORAGE_KEYS.STUDIO_SETTINGS, JSON.stringify(DEFAULT_STUDIO_SETTINGS));
+      }
+
+      const savedSchedules = localStorage.getItem(STORAGE_KEYS.COACH_SCHEDULES);
+      if (savedSchedules) {
+        setCoachSchedules(JSON.parse(savedSchedules));
+      } else {
+        setCoachSchedules(DEFAULT_COACH_SCHEDULES);
+        localStorage.setItem(STORAGE_KEYS.COACH_SCHEDULES, JSON.stringify(DEFAULT_COACH_SCHEDULES));
+      }
 
       const savedViewMode = localStorage.getItem(STORAGE_KEYS.VIEW_MODE);
       if (savedViewMode === "app_frame" || savedViewMode === "responsive") {
@@ -472,6 +530,210 @@ export const MemberProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     });
   };
 
+  // İşletme Ayarları Yönetimi
+  const updateStudioSettings = (newSettings: Partial<StudioSettings>) => {
+    setStudioSettings((prev) => {
+      const updated = { ...prev, ...newSettings };
+      saveToStorage(STORAGE_KEYS.STUDIO_SETTINGS, updated);
+      return updated;
+    });
+  };
+
+  const addStudioBankAccount = (account: Omit<StudioBankAccount, "id">) => {
+    setStudioSettings((prev) => {
+      const newAcc: StudioBankAccount = {
+        ...account,
+        id: `bank-${Date.now()}`,
+      };
+      const updated = {
+        ...prev,
+        bankAccounts: [...prev.bankAccounts, newAcc],
+      };
+      saveToStorage(STORAGE_KEYS.STUDIO_SETTINGS, updated);
+      return updated;
+    });
+  };
+
+  const removeStudioBankAccount = (accountId: string) => {
+    setStudioSettings((prev) => {
+      const updated = {
+        ...prev,
+        bankAccounts: prev.bankAccounts.filter((b) => b.id !== accountId),
+      };
+      saveToStorage(STORAGE_KEYS.STUDIO_SETTINGS, updated);
+      return updated;
+    });
+  };
+
+  // Koç Randevu Saatleri & Müsaitlik Yönetimi
+  const updateCoachDayStatus = (coachId: string, dayKey: string, isWorkingDay: boolean) => {
+    setCoachSchedules((prev) => {
+      const updated = prev.map((coach) => {
+        if (coach.coachId !== coachId) return coach;
+        return {
+          ...coach,
+          weeklySchedule: coach.weeklySchedule.map((day) => {
+            if (day.dayKey !== dayKey) return day;
+            return { ...day, isWorkingDay };
+          }),
+        };
+      });
+      saveToStorage(STORAGE_KEYS.COACH_SCHEDULES, updated);
+      return updated;
+    });
+  };
+
+  const toggleCoachSlotAvailability = (coachId: string, dayKey: string, slotId: string) => {
+    setCoachSchedules((prev) => {
+      const updated = prev.map((coach) => {
+        if (coach.coachId !== coachId) return coach;
+        return {
+          ...coach,
+          weeklySchedule: coach.weeklySchedule.map((day) => {
+            if (day.dayKey !== dayKey) return day;
+            return {
+              ...day,
+              slots: day.slots.map((slot) => {
+                if (slot.id !== slotId) return slot;
+                return { ...slot, isAvailable: !slot.isAvailable };
+              }),
+            };
+          }),
+        };
+      });
+      saveToStorage(STORAGE_KEYS.COACH_SCHEDULES, updated);
+      return updated;
+    });
+  };
+
+  const addCoachSlot = (coachId: string, dayKey: string, time: string, label?: string) => {
+    setCoachSchedules((prev) => {
+      const updated = prev.map((coach) => {
+        if (coach.coachId !== coachId) return coach;
+        return {
+          ...coach,
+          weeklySchedule: coach.weeklySchedule.map((day) => {
+            if (day.dayKey !== dayKey) return day;
+            const newSlot: CoachTimeSlot = {
+              id: `${dayKey}-custom-${Date.now()}`,
+              time,
+              isAvailable: true,
+              label,
+            };
+            return {
+              ...day,
+              slots: [...day.slots, newSlot],
+            };
+          }),
+        };
+      });
+      saveToStorage(STORAGE_KEYS.COACH_SCHEDULES, updated);
+      return updated;
+    });
+  };
+
+  const removeCoachSlot = (coachId: string, dayKey: string, slotId: string) => {
+    setCoachSchedules((prev) => {
+      const updated = prev.map((coach) => {
+        if (coach.coachId !== coachId) return coach;
+        return {
+          ...coach,
+          weeklySchedule: coach.weeklySchedule.map((day) => {
+            if (day.dayKey !== dayKey) return day;
+            return {
+              ...day,
+              slots: day.slots.filter((s) => s.id !== slotId),
+            };
+          }),
+        };
+      });
+      saveToStorage(STORAGE_KEYS.COACH_SCHEDULES, updated);
+      return updated;
+    });
+  };
+
+  const copyCoachScheduleToWeekdays = (coachId: string, sourceDayKey: string) => {
+    setCoachSchedules((prev) => {
+      const targetCoach = prev.find((c) => c.coachId === coachId);
+      if (!targetCoach) return prev;
+      const sourceDay = targetCoach.weeklySchedule.find((d) => d.dayKey === sourceDayKey);
+      if (!sourceDay) return prev;
+
+      const weekdays = ["pzt", "sal", "car", "per", "cum"];
+      const updated = prev.map((coach) => {
+        if (coach.coachId !== coachId) return coach;
+        return {
+          ...coach,
+          weeklySchedule: coach.weeklySchedule.map((day) => {
+            if (!weekdays.includes(day.dayKey)) return day;
+            return {
+              ...day,
+              isWorkingDay: sourceDay.isWorkingDay,
+              slots: sourceDay.slots.map((s) => ({ ...s, id: `${day.dayKey}-${s.id.split("-").slice(1).join("-")}` })),
+            };
+          }),
+        };
+      });
+      saveToStorage(STORAGE_KEYS.COACH_SCHEDULES, updated);
+      return updated;
+    });
+  };
+
+  // Yönetici Tarafından Manuel Seans Oluşturma
+  const adminCreateSession = (data: {
+    memberId?: string;
+    memberName: string;
+    memberNo?: string;
+    coachId: string;
+    coachName: string;
+    coachTitle?: string;
+    coachAvatar?: string;
+    date: string;
+    timeSlot: string;
+    focusArea: string;
+    station: string;
+    notes?: string;
+    deductCredit: boolean;
+  }) => {
+    const newSession: BookedSession = {
+      id: `sess-adm-${Date.now()}`,
+      memberId: data.memberId || user?.id,
+      memberName: data.memberName,
+      memberNo: data.memberNo || user?.memberNo,
+      coachId: data.coachId,
+      coachName: data.coachName,
+      coachTitle: data.coachTitle || "Kıdemli Koç",
+      coachAvatar:
+        data.coachAvatar ||
+        "https://images.unsplash.com/photo-1567013127542-490d757e51fc?auto=format&fit=crop&w=400&q=80",
+      date: data.date,
+      timeSlot: data.timeSlot,
+      focusArea: data.focusArea,
+      station: data.station,
+      status: "confirmed",
+      notes: data.notes,
+      createdAt: "Yönetici Tarafından Eklendi",
+    };
+
+    const nextBooked = [newSession, ...bookedSessions];
+    setBookedSessions(nextBooked);
+    saveToStorage(STORAGE_KEYS.BOOKED, nextBooked);
+
+    let creditMsg = "";
+    if (data.deductCredit && remainingSessions > 0) {
+      const nextRemaining = remainingSessions - 1;
+      setRemainingSessions(nextRemaining);
+      saveToStorage(STORAGE_KEYS.REMAINING, nextRemaining.toString());
+      creditMsg = ` (1 seans kredisi düşüldü, kalan: ${nextRemaining})`;
+    }
+
+    return {
+      success: true,
+      message: `${data.memberName} için ${data.date} saat ${data.timeSlot} seansı başarıyla oluşturuldu!${creditMsg}`,
+      session: newSession,
+    };
+  };
+
   return (
     <MemberContext.Provider
       value={{
@@ -489,6 +751,17 @@ export const MemberProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         bookedSessions,
         checkInLogs,
         orders,
+        studioSettings,
+        updateStudioSettings,
+        addStudioBankAccount,
+        removeStudioBankAccount,
+        coachSchedules,
+        updateCoachDayStatus,
+        toggleCoachSlotAvailability,
+        addCoachSlot,
+        removeCoachSlot,
+        copyCoachScheduleToWeekdays,
+        adminCreateSession,
         login,
         loginDemo,
         logout,

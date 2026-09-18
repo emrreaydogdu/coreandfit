@@ -50,6 +50,9 @@ export interface MemberUser {
 
 export interface BookedSession {
   id: string;
+  memberId?: string;
+  memberName?: string;
+  memberNo?: string;
   coachId: string;
   coachName: string;
   coachTitle: string;
@@ -106,3 +109,49 @@ export type PortalTab =
   | "store" 
   | "history" 
   | "profile";
+
+export interface StudioBankAccount {
+  id: string;
+  bankName: string;
+  accountHolder: string;
+  iban: string;
+  branch: string;
+}
+
+export interface StudioSettings {
+  studioName: string;
+  legalTitle: string;
+  address: string;
+  phone: string;
+  whatsapp: string;
+  email: string;
+  maxCapacity: number;
+  turnstileRelayDelay: number; // in seconds, e.g. 5
+  qrRefreshSeconds: number; // e.g. 60
+  autoDeductOnTurnstile: boolean;
+  weekdayHours: string; // e.g. "07:00 - 22:00"
+  weekendHours: string; // e.g. "08:30 - 20:00"
+  bankAccounts: StudioBankAccount[];
+}
+
+export interface CoachTimeSlot {
+  id: string;
+  time: string; // e.g. "09:30 - 10:30" or "09:30"
+  isAvailable: boolean;
+  label?: string; // e.g. "Öğle Molası", "VIP Özel"
+}
+
+export interface CoachDaySchedule {
+  dayKey: "pzt" | "sal" | "car" | "per" | "cum" | "cts" | "paz";
+  dayName: string; // e.g. "Pazartesi"
+  isWorkingDay: boolean;
+  slots: CoachTimeSlot[];
+}
+
+export interface CoachScheduleProfile {
+  coachId: string;
+  coachName: string;
+  coachTitle: string;
+  sessionDurationMin: number; // e.g. 60
+  weeklySchedule: CoachDaySchedule[];
+}

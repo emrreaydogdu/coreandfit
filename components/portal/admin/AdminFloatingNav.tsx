@@ -8,9 +8,18 @@ import {
   CreditCard,
   Users,
   QrCode,
+  Clock,
+  Settings,
 } from "lucide-react";
 
-export type AdminTab = "overview" | "schedule" | "turnstile" | "cashier" | "members";
+export type AdminTab = 
+  | "overview" 
+  | "schedule" 
+  | "coach_slots" 
+  | "turnstile" 
+  | "cashier" 
+  | "members" 
+  | "settings";
 
 interface AdminFloatingNavProps {
   activeTab: AdminTab;
@@ -29,8 +38,10 @@ const ADMIN_TABS: AdminTabItem[] = [
   { id: "overview", label: "Özet", icon: TrendingUp },
   { id: "turnstile", label: "Turnike", icon: QrCode },
   { id: "schedule", label: "Program", icon: Calendar },
+  { id: "coach_slots", label: "Saatler", icon: Clock },
   { id: "cashier", label: "Kasa", icon: CreditCard },
   { id: "members", label: "Üyeler", icon: Users },
+  { id: "settings", label: "Ayarlar", icon: Settings },
 ];
 
 export const AdminFloatingNav: React.FC<AdminFloatingNavProps> = ({
@@ -54,7 +65,7 @@ export const AdminFloatingNav: React.FC<AdminFloatingNavProps> = ({
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`relative flex flex-col items-center justify-center py-1.5 px-3 sm:px-4 rounded-2xl transition-all duration-200 outline-none min-w-[56px] sm:min-w-[64px] ${
+              className={`relative flex flex-col items-center justify-center py-1.5 px-2 sm:px-3 rounded-2xl transition-all duration-200 outline-none min-w-[42px] sm:min-w-[56px] ${
                 isActive ? "text-white" : "text-[#64748B] hover:text-[#0F172A]"
               }`}
               title={tab.label}
@@ -75,7 +86,7 @@ export const AdminFloatingNav: React.FC<AdminFloatingNavProps> = ({
               {/* Icon */}
               <span className="relative z-10 flex items-center justify-center">
                 <Icon
-                  className={`w-4 h-4 sm:w-4.5 sm:h-4.5 transition-transform duration-200 ${
+                  className={`w-3.5 h-3.5 sm:w-4.5 sm:h-4.5 transition-transform duration-200 ${
                     isActive ? "scale-105 stroke-[2.3] text-white" : "stroke-[1.8] text-[#64748B]"
                   }`}
                 />
@@ -83,7 +94,7 @@ export const AdminFloatingNav: React.FC<AdminFloatingNavProps> = ({
 
               {/* Text Label Underneath */}
               <span
-                className={`relative z-10 text-[10px] font-sans mt-0.5 tracking-tight transition-colors duration-200 ${
+                className={`relative z-10 text-[9px] sm:text-[10px] font-sans mt-0.5 tracking-tight transition-colors duration-200 ${
                   isActive ? "text-white font-bold" : "text-[#64748B] font-medium"
                 }`}
               >
