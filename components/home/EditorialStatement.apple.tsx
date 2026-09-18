@@ -1,0 +1,100 @@
+"use client";
+
+import React from "react";
+import { ScrollReveal } from "@/components/ui/ScrollReveal";
+import { Sparkles } from "lucide-react";
+
+export const EditorialStatement: React.FC = () => {
+  return (
+    <section className="py-20 lg:py-28 bg-[#F5F5F7] dark:bg-[#0A0A0C] border-y border-black/[0.06] dark:border-white/[0.08] relative overflow-hidden">
+      {/* Subtle Glow */}
+      <div className="absolute -top-40 right-1/4 w-[500px] h-[500px] bg-emerald-500/5 dark:bg-emerald-500/10 rounded-full blur-[140px] pointer-events-none" />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+          {/* Editorial Headline & Statement */}
+          <div className="lg:col-span-7 flex flex-col gap-6">
+            <ScrollReveal variant="fade-up">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[11px] font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>MARKA FELSEFESİ</span>
+              </div>
+            </ScrollReveal>
+
+            <ScrollReveal variant="fade-up" delay={0.1}>
+              <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-[1.12]">
+                Her tekrarın <br />
+                <span className="text-slate-600 dark:text-slate-400">bilimsel bir amacı var.</span>
+              </h2>
+            </ScrollReveal>
+
+            <ScrollReveal variant="fade-up" delay={0.2}>
+              <div className="space-y-4 text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed">
+                <p>
+                  Core & Fit&apos;te antrenman programları internetten indirilen hazır şablonlardan oluşmaz. Vücut postürünüz, eklem mobiliteniz, metabolik kapasiteniz ve hedeflerinize göre milimetrik olarak kurgulanır.
+                </p>
+                <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Sıradan bir salonda makineler arasında kaybolmak yerine; her hareketin anatomik gerekçesini bilerek, doğru açıyla ve kesintisiz gözetim altında çalışırsınız.
+                </p>
+              </div>
+            </ScrollReveal>
+
+            {/* Apple Liquid Glass Stat Capsules */}
+            <ScrollReveal variant="fade-up" delay={0.3}>
+              <div className="pt-4 grid grid-cols-3 gap-4">
+                <div className="p-5 rounded-[22px] bg-white/70 dark:bg-[#121214]/70 backdrop-blur-xl border border-black/[0.06] dark:border-white/[0.08] shadow-sm">
+                  <span className="block text-2xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">1:1</span>
+                  <span className="text-slate-600 dark:text-slate-400 text-xs font-medium mt-1 block">Birebir Koçluk</span>
+                </div>
+                <div className="p-5 rounded-[22px] bg-white/70 dark:bg-[#121214]/70 backdrop-blur-xl border border-black/[0.06] dark:border-white/[0.08] shadow-sm">
+                  <span className="block text-2xl sm:text-4xl font-extrabold text-emerald-600 dark:text-emerald-400 tracking-tight">50&apos;</span>
+                  <span className="text-slate-600 dark:text-slate-400 text-xs font-medium mt-1 block">Net Odaklanma</span>
+                </div>
+                <div className="p-5 rounded-[22px] bg-white/70 dark:bg-[#121214]/70 backdrop-blur-xl border border-black/[0.06] dark:border-white/[0.08] shadow-sm">
+                  <span className="block text-2xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">%100</span>
+                  <span className="text-slate-600 dark:text-slate-400 text-xs font-medium mt-1 block">Kişisel Takip</span>
+                </div>
+              </div>
+            </ScrollReveal>
+          </div>
+
+          {/* Editorial Atmospheric Video with Apple Continuous Rounded Frame */}
+          <div className="lg:col-span-5 relative">
+            <ScrollReveal variant="zoom-in" delay={0.2} duration={0.8}>
+              <div className="relative aspect-[4/5] w-full rounded-[32px] border border-black/[0.08] dark:border-white/[0.12] overflow-hidden group bg-black shadow-2xl">
+                <video
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  preload="auto"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                >
+                  <source src="/15079453_1080_1920_30fps.mp4" type="video/mp4" />
+                  Tarayıcınız video etiketini desteklemiyor.
+                </video>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-60 pointer-events-none" />
+
+                {/* Floating Frosted Glass Capsule */}
+                <div className="absolute bottom-5 left-5 right-5 p-4 rounded-2xl bg-white/80 dark:bg-[#121214]/85 backdrop-blur-2xl border border-black/[0.08] dark:border-white/[0.12] shadow-lg z-10">
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <p className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 tracking-wider">
+                      NİŞANTAŞI STÜDYO DENEYİMİ
+                    </p>
+                    <span className="inline-flex items-center gap-1.5 text-[10px] font-medium text-slate-600 dark:text-slate-400">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      CANLI ODAK
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-700 dark:text-slate-300 mt-1">
+                    Özel randevu ile sınırlı sayıda üye kabul eden butik performans alanı.
+                  </p>
+                </div>
+              </div>
+            </ScrollReveal>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};

@@ -7,6 +7,8 @@ import { StickyMobileBar } from "@/components/layout/StickyMobileBar";
 import { SmoothScroll } from "@/components/ui/SmoothScroll";
 import { ScrollProgress } from "@/components/ui/ScrollProgress";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import { DesignModeProvider } from "@/components/providers/DesignModeProvider";
+import { DesignThemeSwitcher } from "@/components/ui/DesignThemeSwitcher";
 import { MemberProvider } from "@/context/MemberContext";
 import { BUSINESS_CONFIG } from "@/config/business";
 import { generateLocalBusinessSchema } from "@/lib/schema";
@@ -82,7 +84,7 @@ export default function RootLayout({
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('coreandfit_theme')||'light';if(t==='dark'){document.documentElement.classList.add('dark');document.documentElement.classList.remove('light');document.documentElement.setAttribute('data-theme','dark');}else{document.documentElement.classList.add('light');document.documentElement.classList.remove('dark');document.documentElement.setAttribute('data-theme','light');}}catch(e){}})();`,
+            __html: `(function(){try{var t=localStorage.getItem('coreandfit_theme')||'light';if(t==='dark'){document.documentElement.classList.add('dark');document.documentElement.classList.remove('light');document.documentElement.setAttribute('data-theme','dark');}else{document.documentElement.classList.add('light');document.documentElement.classList.remove('dark');document.documentElement.setAttribute('data-theme','light');}var d=localStorage.getItem('coreandfit_design_mode')||'apple';document.documentElement.setAttribute('data-design',d);if(d==='classic'){document.documentElement.classList.add('design-classic');}else{document.documentElement.classList.add('design-apple');}}catch(e){}})();`,
           }}
         />
         <script
@@ -92,15 +94,18 @@ export default function RootLayout({
       </head>
       <body className="bg-[#FBFBFD] dark:bg-[#000000] text-[#1D1D1F] dark:text-[#F5F5F7] antialiased flex flex-col min-h-screen selection:bg-emerald-500/20 selection:text-emerald-900 transition-colors duration-300">
         <ThemeProvider>
-          <MemberProvider>
-            <ScrollProgress />
-            <SmoothScroll>
-              <Header />
-              <main className="flex-grow">{children}</main>
-              <Footer />
-              <StickyMobileBar />
-            </SmoothScroll>
-          </MemberProvider>
+          <DesignModeProvider>
+            <DesignThemeSwitcher variant="floating-bar" />
+            <MemberProvider>
+              <ScrollProgress />
+              <SmoothScroll>
+                <Header />
+                <main className="flex-grow">{children}</main>
+                <Footer />
+                <StickyMobileBar />
+              </SmoothScroll>
+            </MemberProvider>
+          </DesignModeProvider>
         </ThemeProvider>
       </body>
     </html>

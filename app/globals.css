@@ -261,47 +261,72 @@ html.light .bg-white.text-\[\#08090B\]:hover {
   background-color: #1F242F !important;
 }
 
-/* Apple Emerald Accent Harmonization: replaces harsh lime with luxury Apple Emerald */
-.bg-\[\#E8FF36\] {
+/* ==========================================================================
+   THEME STYLING: APPLE CUPERTINO vs CLASSIC ATHLETIC
+   ========================================================================== */
+
+/* --- CLASSIC ATHLETIC THEME (ORIGINAL) --- */
+html[data-design="classic"] {
+  --color-brand-accent: #E8FF36 !important;
+  --color-brand-accent-hover: #D4EB2B !important;
+  --color-brand-accent-subtle: rgba(232, 255, 54, 0.15) !important;
+}
+
+html[data-design="classic"] body {
+  font-family: var(--font-archivo), var(--font-inter), sans-serif !important;
+}
+
+html[data-design="classic"]:not(.light) body {
+  background-color: #08090B !important;
+}
+
+/* --- APPLE CUPERTINO THEME (PRECISION EMERALD & LIQUID GLASS) --- */
+html[data-design="apple"] {
+  --color-brand-accent: #10B981 !important;
+  --color-brand-accent-hover: #059669 !important;
+  --color-brand-accent-subtle: rgba(16, 185, 129, 0.12) !important;
+}
+
+html[data-design="apple"] .bg-\[\#E8FF36\] {
   background-color: #10B981 !important;
   color: #FFFFFF !important;
 }
-.bg-\[\#E8FF36\] * {
+html[data-design="apple"] .bg-\[\#E8FF36\] * {
   color: #FFFFFF !important;
 }
-.bg-\[\#E8FF36\]:hover {
+html[data-design="apple"] .bg-\[\#E8FF36\]:hover {
   background-color: #059669 !important;
 }
 
-html.light .bg-\[\#E8FF36\] {
+html[data-design="apple"].light .bg-\[\#E8FF36\] {
   background-color: #059669 !important;
   color: #FFFFFF !important;
 }
-html.light .bg-\[\#E8FF36\] * {
+html[data-design="apple"].light .bg-\[\#E8FF36\] * {
   color: #FFFFFF !important;
 }
-html.light .bg-\[\#E8FF36\]:hover {
+html[data-design="apple"].light .bg-\[\#E8FF36\]:hover {
   background-color: #047857 !important;
 }
 
-/* Subtle Accent Badges */
-.bg-\[\#E8FF36\]\/10,
-html.light .bg-\[\#E8FF36\]\/10 {
+/* Apple Subtle Accent Badges */
+html[data-design="apple"] .bg-\[\#E8FF36\]\/10,
+html[data-design="apple"].light .bg-\[\#E8FF36\]\/10 {
   background-color: rgba(16, 185, 129, 0.12) !important;
 }
-.bg-\[\#E8FF36\]\/20,
-html.light .bg-\[\#E8FF36\]\/20 {
+html[data-design="apple"] .bg-\[\#E8FF36\]\/20,
+html[data-design="apple"].light .bg-\[\#E8FF36\]\/20 {
   background-color: rgba(16, 185, 129, 0.22) !important;
 }
-.border-\[\#E8FF36\],
-html.light .border-\[\#E8FF36\] {
+html[data-design="apple"] .border-\[\#E8FF36\],
+html[data-design="apple"].light .border-\[\#E8FF36\] {
   border-color: #10B981 !important;
 }
 
-.text-\[\#E8FF36\] {
+html[data-design="apple"] .text-\[\#E8FF36\] {
   color: #10B981 !important;
 }
-html.light .text-\[\#E8FF36\] {
+html[data-design="apple"].light .text-\[\#E8FF36\] {
   color: #059669 !important;
 }
 
