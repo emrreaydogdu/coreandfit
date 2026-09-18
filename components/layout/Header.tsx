@@ -5,10 +5,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BUSINESS_CONFIG } from "@/config/business";
 import { buildQuickChatWhatsAppUrl } from "@/lib/whatsapp";
-import { Menu, X, MessageSquare, Phone, ChevronRight } from "lucide-react";
+import { Menu, X, MessageSquare, Phone, ChevronRight, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { useMember } from "@/context/MemberContext";
 
 const NAV_LINKS = [
   { label: "Ana Sayfa", href: "/" },
@@ -27,6 +28,7 @@ export const Header: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const { user, remainingSessions } = useMember();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -35,6 +37,11 @@ export const Header: React.FC = () => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // Portal sayfalarında marketing header render edilmez
+  if (pathname?.startsWith("/portal")) {
+    return null;
+  }
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -112,6 +119,29 @@ export const Header: React.FC = () => {
           <div className="hidden xl:flex items-center gap-2.5 2xl:gap-3 shrink-0 ml-4 2xl:ml-8">
             <LanguageSwitcher />
             <ThemeToggle />
+
+            {/* Member Portal Quick Access */}
+            {user ? (
+              <Link
+                href="/portal"
+                className="inline-flex items-center gap-1.5 px-3 py-2 bg-[#131519] border border-[#E8FF36]/50 hover:border-[#E8FF36] text-white rounded-lg text-[11px] 2xl:text-xs font-mono transition-all group shrink-0 shadow-sm"
+                title="Üye Paneline Geç"
+              >
+                <span className="w-2 h-2 rounded-full bg-[#25D366] animate-pulse shrink-0" />
+                <User className="w-3.5 h-3.5 text-[#E8FF36] shrink-0" />
+                <span className="font-bold">{user.fullName.split(" ")[0]}</span>
+                <span className="text-[#E8FF36] font-bold">({remainingSessions} Seans)</span>
+              </Link>
+            ) : (
+              <Link
+                href="/portal/giris"
+                className="inline-flex items-center gap-1.5 px-3 py-2 bg-[#131519] border border-[#23272F] hover:border-[#343A46] text-[#A5A7AD] hover:text-white rounded-lg text-[11px] 2xl:text-xs font-mono transition-all shrink-0"
+              >
+                <User className="w-3.5 h-3.5 text-[#E8FF36]" />
+                <span>Üye Girişi</span>
+              </Link>
+            )}
+
             <a
               href={buildQuickChatWhatsAppUrl()}
               target="_blank"
@@ -131,6 +161,19 @@ export const Header: React.FC = () => {
 
           {/* Mobile / Tablet Trigger */}
           <div className="flex items-center gap-2 xl:hidden shrink-0">
+            {/* Mobile Member Portal Quick Icon */}
+            <Link
+              href={user ? "/portal" : "/portal/giris"}
+              className="p-2 border border-[#23272F] text-white bg-[#0D0F12] relative"
+              aria-label="Üye Paneli"
+              title="Üye Paneli"
+            >
+              <User className="w-4 h-4 text-[#E8FF36]" />
+              {user && (
+                <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-[#25D366] animate-pulse" />
+              )}
+            </Link>
+
             <LanguageSwitcher variant="compact" hideScripts />
             <ThemeToggle />
             <Link
@@ -185,6 +228,41 @@ export const Header: React.FC = () => {
           </div>
 
           <div className="flex flex-col gap-3 mt-auto">
+            {/* Member Card in Mobile Drawer */}
+            {user ? (
+              <Link
+                href="/portal"
+                className="w-full flex items-center justify-between p-3.5 bg-[#131519] border border-[#E8FF36]/40 text-white rounded-xl font-mono text-xs mb-1 group"
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-full overflow-hidden border border-[#E8FF36]">
+                    <img
+                      src={user.avatarUrl}
+                      alt={user.fullName}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div>
+                    <span className="font-bold block text-white group-hover:text-[#E8FF36]">
+                      {user.fullName}
+                    </span>
+                    <span className="text-[10px] text-[#72757C]">Üye Paneli & Seanslarım</span>
+                  </div>
+                </div>
+                <span className="text-xs text-[#E8FF36] font-bold">
+                  {remainingSessions} Seans →
+                </span>
+              </Link>
+            ) : (
+              <Link
+                href="/portal/giris"
+                className="w-full flex items-center justify-center gap-2 p-3 bg-[#131519] border border-[#23272F] hover:border-[#E8FF36] text-white text-xs font-mono uppercase tracking-wider rounded-xl mb-1 transition-colors"
+              >
+                <User className="w-4 h-4 text-[#E8FF36]" />
+                <span>Üye Girişi / Mobil Panel</span>
+              </Link>
+            )}
+
             <LanguageSwitcher variant="drawer" hideScripts className="mb-2" />
             <ThemeToggle variant="drawer" className="mb-1" />
             <Link

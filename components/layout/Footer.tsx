@@ -1,5 +1,8 @@
+"use client";
+
 import React from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { BUSINESS_CONFIG } from "@/config/business";
 import { buildQuickChatWhatsAppUrl } from "@/lib/whatsapp";
 import { Phone, MessageSquare, MapPin, ArrowUpRight } from "lucide-react";
@@ -8,6 +11,12 @@ import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 export const Footer: React.FC = () => {
+  const pathname = usePathname();
+
+  // Portal sayfalarında marketing footer render edilmez
+  if (pathname?.startsWith("/portal")) {
+    return null;
+  }
   return (
     <footer className="bg-[#050607] border-t border-[#191B20] pt-16 pb-28 md:pb-16 text-[#A5A7AD]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -115,6 +124,15 @@ export const Footer: React.FC = () => {
               <li>
                 <Link href="/randevu" className="hover:text-[#E8FF36] transition-colors">
                   Randevu Oluştur
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/portal"
+                  className="hover:text-[#E8FF36] transition-colors flex items-center gap-1.5 text-[#E8FF36] font-bold"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#E8FF36] animate-pulse" />
+                  <span>Üye Portalı & Mobil Giriş</span>
                 </Link>
               </li>
             </ul>

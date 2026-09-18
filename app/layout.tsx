@@ -7,6 +7,7 @@ import { StickyMobileBar } from "@/components/layout/StickyMobileBar";
 import { SmoothScroll } from "@/components/ui/SmoothScroll";
 import { ScrollProgress } from "@/components/ui/ScrollProgress";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import { MemberProvider } from "@/context/MemberContext";
 import { BUSINESS_CONFIG } from "@/config/business";
 import { generateLocalBusinessSchema } from "@/lib/schema";
 
@@ -91,13 +92,15 @@ export default function RootLayout({
       </head>
       <body className="bg-[#08090B] text-white antialiased flex flex-col min-h-screen selection:bg-[#E8FF36] selection:text-[#08090B]">
         <ThemeProvider>
-          <ScrollProgress />
-          <SmoothScroll>
-            <Header />
-            <main className="flex-grow">{children}</main>
-            <Footer />
-            <StickyMobileBar />
-          </SmoothScroll>
+          <MemberProvider>
+            <ScrollProgress />
+            <SmoothScroll>
+              <Header />
+              <main className="flex-grow">{children}</main>
+              <Footer />
+              <StickyMobileBar />
+            </SmoothScroll>
+          </MemberProvider>
         </ThemeProvider>
       </body>
     </html>
