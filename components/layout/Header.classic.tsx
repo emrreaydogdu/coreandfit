@@ -49,15 +49,23 @@ export const Header: React.FC = () => {
     setMobileMenuOpen(false);
   }, [pathname]);
 
-  // Lock body scroll when mobile menu is open
   useEffect(() => {
     if (mobileMenuOpen) {
       document.body.style.overflow = "hidden";
+      document.body.setAttribute("data-mobile-menu", "open");
+      document.body.classList.add("mobile-menu-open");
+      window.dispatchEvent(new CustomEvent("mobile-menu-toggle", { detail: true }));
     } else {
       document.body.style.overflow = "unset";
+      document.body.removeAttribute("data-mobile-menu");
+      document.body.classList.remove("mobile-menu-open");
+      window.dispatchEvent(new CustomEvent("mobile-menu-toggle", { detail: false }));
     }
     return () => {
       document.body.style.overflow = "unset";
+      document.body.removeAttribute("data-mobile-menu");
+      document.body.classList.remove("mobile-menu-open");
+      window.dispatchEvent(new CustomEvent("mobile-menu-toggle", { detail: false }));
     };
   }, [mobileMenuOpen]);
 
@@ -206,7 +214,7 @@ export const Header: React.FC = () => {
 
       {/* Mobile Drawer Overlay */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-40 bg-[#08090B] flex flex-col pt-24 pb-8 px-6 overflow-y-auto xl:hidden animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[70] bg-[#08090B] flex flex-col pt-24 pb-8 px-6 overflow-y-auto xl:hidden animate-in fade-in duration-200">
           <div className="flex flex-col gap-1 border-b border-[#23272F] pb-6 mb-6">
             <span className="text-[11px] font-mono text-[#72757C] uppercase tracking-widest mb-2">
               MENÜ & SİSTEM

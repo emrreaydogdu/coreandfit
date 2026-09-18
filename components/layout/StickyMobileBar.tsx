@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { buildQuickChatWhatsAppUrl } from "@/lib/whatsapp";
@@ -8,9 +8,44 @@ import { MessageSquare, Calendar } from "lucide-react";
 
 export const StickyMobileBar: React.FC = () => {
   const pathname = usePathname();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Hide sticky bar on consultation funnel, booking wizard, or inside member portal / admin
+  useEffect(() => {
+    const checkMenu = () => {
+      setIsMobileMenuOpen(
+        document.body.classList.contains("mobile-menu-open") ||
+        document.body.getAttribute("data-mobile-menu") === "open"
+      );
+    };
+
+    checkMenu();
+
+    const observer = new MutationObserver(checkMenu);
+    observer.observe(document.body, {
+      attributes: true,
+      attributeFilter: ["class", "data-mobile-menu"],
+    });
+
+    const handleCustomToggle = (e: Event) => {
+      const customEvent = e as CustomEvent<boolean>;
+      if (typeof customEvent.detail === "boolean") {
+        setIsMobileMenuOpen(customEvent.detail);
+      } else {
+        checkMenu();
+      }
+    };
+
+    window.addEventListener("mobile-menu-toggle", handleCustomToggle);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("mobile-menu-toggle", handleCustomToggle);
+    };
+  }, []);
+
+  // Hide sticky bar when mobile drawer is open, or on checkout/booking/portal/admin pages
   if (
+    isMobileMenuOpen ||
     pathname === "/on-gorusme" ||
     pathname === "/randevu" ||
     pathname?.startsWith("/portal") ||

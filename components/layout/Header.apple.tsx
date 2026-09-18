@@ -49,11 +49,20 @@ export const Header: React.FC = () => {
   useEffect(() => {
     if (mobileMenuOpen) {
       document.body.style.overflow = "hidden";
+      document.body.setAttribute("data-mobile-menu", "open");
+      document.body.classList.add("mobile-menu-open");
+      window.dispatchEvent(new CustomEvent("mobile-menu-toggle", { detail: true }));
     } else {
       document.body.style.overflow = "unset";
+      document.body.removeAttribute("data-mobile-menu");
+      document.body.classList.remove("mobile-menu-open");
+      window.dispatchEvent(new CustomEvent("mobile-menu-toggle", { detail: false }));
     }
     return () => {
       document.body.style.overflow = "unset";
+      document.body.removeAttribute("data-mobile-menu");
+      document.body.classList.remove("mobile-menu-open");
+      window.dispatchEvent(new CustomEvent("mobile-menu-toggle", { detail: false }));
     };
   }, [mobileMenuOpen]);
 
@@ -178,7 +187,7 @@ export const Header: React.FC = () => {
 
       {/* Mobile Drawer with Apple Liquid Glass Backdrop */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-3xl flex flex-col pt-32 pb-8 px-6 overflow-y-auto lg:hidden animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[70] bg-black/50 backdrop-blur-3xl flex flex-col pt-32 pb-8 px-6 overflow-y-auto lg:hidden animate-in fade-in duration-200">
           <div className="flex flex-col gap-1 liquid-glass-panel rounded-3xl p-5 mb-4 shadow-xl">
             <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest px-2 mb-1">
               Sayfalar

@@ -493,6 +493,16 @@ html.light aside[aria-label="Hızlı İşlemler"] {
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.06) !important;
 }
 
+/* Hide sticky mobile bottom bar when hamburger menu is open */
+body[data-mobile-menu="open"] aside[aria-label="Hızlı İşlemler"],
+body.mobile-menu-open aside[aria-label="Hızlı İşlemler"],
+html:has(body[data-mobile-menu="open"]) aside[aria-label="Hızlı İşlemler"],
+html:has(body.mobile-menu-open) aside[aria-label="Hızlı İşlemler"] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
 /* --- Inputs & Interactive Controls in Light Mode --- */
 html.light input,
 html.light textarea,
