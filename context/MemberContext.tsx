@@ -253,8 +253,16 @@ export const MemberProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         try {
           const parsed = JSON.parse(savedBooked);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            // Zorunlu Sanitizasyon: Stüdyo tek koçlu (İlker Yüksel) olduğu için tüm geçmiş/kayıtlı seansları İlker Yüksel olarak güncelle
-            const sanitized: BookedSession[] = parsed.map((s: any) => ({
+            // Zorunlu Sanitizasyon: Stüdyo tek koçlu (İlker Yüksel) ve demo seansların (Örn: bugünkü 17:30 seansı) kaybolmamasını garanti et
+            const existingIds = new Set(parsed.map((s: any) => s.id));
+            const merged = [...parsed];
+            INITIAL_BOOKED_SESSIONS.forEach((initSess) => {
+              if (!existingIds.has(initSess.id)) {
+                merged.push(initSess);
+              }
+            });
+
+            const sanitized: BookedSession[] = merged.map((s: any) => ({
               ...s,
               coachId: "coach-1",
               coachName: "İlker Yüksel",
@@ -447,7 +455,30 @@ export const MemberProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const normalizeDateStr = (rawDate: string): string => {
     if (!rawDate) return "";
     const trimmed = rawDate.trim();
+
+    // Standard YYYY-MM-DD
     if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+
+    // DD.MM.YYYY or DD/MM/YYYY
+    const dmyMatch = trimmed.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/);
+    if (dmyMatch) {
+      const day = dmyMatch[1].padStart(2, "0");
+      const month = dmyMatch[2].padStart(2, "0");
+      const year = dmyMatch[3];
+      return `${year}-${month}-${day}`;
+    }
+
+    const todayObj = new Date();
+    const todayIso = `${todayObj.getFullYear()}-${String(todayObj.getMonth() + 1).padStart(2, "0")}-${String(todayObj.getDate()).padStart(2, "0")}`;
+
+    if (trimmed.toLowerCase() === "bugün" || trimmed.toLowerCase() === "today") {
+      return todayIso;
+    }
+    if (trimmed.toLowerCase() === "yarın" || trimmed.toLowerCase() === "tomorrow") {
+      const tom = new Date(todayObj);
+      tom.setDate(todayObj.getDate() + 1);
+      return `${tom.getFullYear()}-${String(tom.getMonth() + 1).padStart(2, "0")}-${String(tom.getDate()).padStart(2, "0")}`;
+    }
 
     const trMonths: Record<string, string> = {
       ocak: "01", oca: "01",
@@ -464,14 +495,16 @@ export const MemberProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       aralik: "12", aralık: "12", ara: "12",
     };
 
-    const parts = trimmed.toLowerCase().split(/\s+/);
+    const parts = trimmed.toLowerCase().split(/[\s,]+/);
     if (parts.length >= 2) {
-      const day = parts[0].padStart(2, "0");
+      const dayMatch = parts[0].match(/\d+/);
+      const day = dayMatch ? dayMatch[0].padStart(2, "0") : "";
       const monthKey = parts[1].replace(/[^a-zçşğüöı]/gi, "");
       const month = trMonths[monthKey];
-      const year = parts[2] ? parts[2].replace(/\D/g, "") : "2026";
+      const yearMatch = parts.find((p, idx) => idx >= 2 && /^\d{4}$/.test(p));
+      const year = yearMatch || String(todayObj.getFullYear());
       if (day && month) {
-        return `${year || "2026"}-${month}-${day}`;
+        return `${year}-${month}-${day}`;
       }
     }
     return trimmed;
@@ -479,17 +512,39 @@ export const MemberProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const isTimeSlotOverlap = (timeA: string, timeB: string): boolean => {
     if (!timeA || !timeB) return false;
-    const normA = timeA.trim();
-    const normB = timeB.trim();
-    if (normA === normB) return true;
+    const cleanA = timeA.replace(/\./g, ":").trim();
+    const cleanB = timeB.replace(/\./g, ":").trim();
+    if (cleanA === cleanB) return true;
 
-    const startA = normA.split(/[-–\s]/)[0].trim();
-    const startB = normB.split(/[-–\s]/)[0].trim();
-    if (startA === startB) return true;
+    // Direct includes match (e.g. "17:30" in "17:30 - 18:30")
+    if (cleanA.includes(cleanB) || cleanB.includes(cleanA)) return true;
 
-    const hourA = startA.split(":")[0];
-    const hourB = startB.split(":")[0];
-    if (hourA && hourB && hourA === hourB) return true;
+    // Parse all HH:MM or HH in strings
+    const parseSlotTimes = (str: string) => {
+      const matches = Array.from(str.matchAll(/(\d{1,2}):(\d{2})/g));
+      if (matches.length === 0) {
+        const hourOnly = Array.from(str.matchAll(/(\d{1,2})/g));
+        if (hourOnly.length === 0) return null;
+        const h = parseInt(hourOnly[0][1], 10);
+        return { start: h * 60, end: h * 60 + 60 };
+      }
+      const start = parseInt(matches[0][1], 10) * 60 + parseInt(matches[0][2], 10);
+      let end = matches.length > 1
+        ? parseInt(matches[1][1], 10) * 60 + parseInt(matches[1][2], 10)
+        : start + 60;
+      if (end <= start) end = start + 60;
+      return { start, end };
+    };
+
+    const rangeA = parseSlotTimes(cleanA);
+    const rangeB = parseSlotTimes(cleanB);
+
+    if (rangeA && rangeB) {
+      if (rangeA.start === rangeB.start) return true;
+      if (Math.max(rangeA.start, rangeB.start) < Math.min(rangeA.end, rangeB.end)) {
+        return true;
+      }
+    }
 
     return false;
   };

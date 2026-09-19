@@ -33,7 +33,7 @@ const TIME_SLOTS = [
 ];
 
 export const BookingWizard: React.FC = () => {
-  const { checkSlotAvailability } = useMember();
+  const { checkSlotAvailability, adminCreateSession } = useMember();
   const [step, setStep] = useState(1);
 
   // Generate the next 10 days for booking
@@ -90,6 +90,22 @@ export const BookingWizard: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (adminCreateSession) {
+      const matchedDate = dates.find((d) => d.fullDate === formData.date);
+      const bookingDate = matchedDate ? matchedDate.id : formData.date;
+
+      adminCreateSession({
+        memberName: formData.name.trim() || "Ön Görüşme Danışanı",
+        coachId: "coach-1",
+        coachName: "İlker Yüksel",
+        date: bookingDate,
+        timeSlot: formData.timeSlot,
+        focusArea: formData.bookingType,
+        station: "Ön Görüşme & Danışmanlık",
+        notes: `Telefon: ${formData.phone.trim() || "-"} | E-posta: ${formData.email.trim() || "-"}`,
+        deductCredit: false,
+      });
+    }
     setSubmitted(true);
   };
 

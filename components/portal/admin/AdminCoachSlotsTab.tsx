@@ -50,6 +50,7 @@ export const AdminCoachSlotsTab: React.FC = () => {
     checkSlotAvailability,
     toggleCoachSlotForDate,
     coachBlockedDateSlots,
+    bookedSessions,
   } = useMember();
 
   const [selectedCoachId, setSelectedCoachId] = useState<string>("coach-1");
@@ -136,11 +137,11 @@ export const AdminCoachSlotsTab: React.FC = () => {
     toggleCoachSlotForDate(dateStr, timeSlot);
     const prevStatus = checkSlotAvailability(dateStr, timeSlot);
     if (prevStatus.isAvailable) {
-      setToastMessage(`${dayText} saat ${timeSlot} DOLU / BLOKELİ yapıldı. Müşteriler randevu alırken bu saati DOLU görecek.`);
+      setToastMessage(`${dayText} ${timeSlot} slotu kapatıldı (bloke).`);
     } else {
-      setToastMessage(`${dayText} saat ${timeSlot} tekrar randevuya açıldı.`);
+      setToastMessage(`${dayText} ${timeSlot} slotu tekrar randevuya açıldı.`);
     }
-    setTimeout(() => setToastMessage(null), 3500);
+    setTimeout(() => setToastMessage(null), 2500);
   };
 
   const handleToggleDayWorking = (dayKey: "pzt" | "sal" | "car" | "per" | "cum" | "cts" | "paz", working: boolean) => {
@@ -167,14 +168,41 @@ export const AdminCoachSlotsTab: React.FC = () => {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // Collect all unique time slot strings across the week for the calendar table
+  // Collect all unique time slot strings across the week and booked sessions for the calendar table
   const allTimeSlotStrings = useMemo(() => {
     const set = new Set<string>();
+
+    const STANDARD_SLOTS = [
+      "08:00 - 09:00",
+      "09:30 - 10:30",
+      "11:00 - 12:00",
+      "13:00 - 14:00",
+      "14:30 - 15:30",
+      "16:00 - 17:00",
+      "17:30 - 18:30",
+      "19:00 - 20:00",
+      "20:30 - 21:30",
+    ];
+    STANDARD_SLOTS.forEach((s) => set.add(s));
+
     currentCoachProfile?.weeklySchedule.forEach((day) => {
       day.slots.forEach((s) => set.add(s.time));
     });
-    return Array.from(set);
-  }, [currentCoachProfile]);
+
+    bookedSessions.forEach((sess) => {
+      if (sess.timeSlot && sess.status !== "cancelled") {
+        set.add(sess.timeSlot);
+      }
+    });
+
+    return Array.from(set).sort((a, b) => {
+      const getMin = (str: string) => {
+        const m = str.replace(/\./g, ":").match(/(\d{1,2}):(\d{2})/);
+        return m ? parseInt(m[1], 10) * 60 + parseInt(m[2], 10) : 0;
+      };
+      return getMin(a) - getMin(b);
+    });
+  }, [currentCoachProfile, bookedSessions]);
 
   // Total available slots count
   const totalAvailableSlots = useMemo(() => {
@@ -300,18 +328,11 @@ export const AdminCoachSlotsTab: React.FC = () => {
         <div className="bg-white border border-black/[0.06] rounded-3xl p-5 sm:p-7 shadow-[0_2px_12px_rgba(0,0,0,0.03)] space-y-5">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-black/[0.05] pb-4">
             <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-blue-50 text-blue-800 border border-blue-200/60 rounded-full text-[10px] font-bold uppercase tracking-wider">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-                  <span>TARİH ENTEGRELİ CANLI TAKVİM</span>
-                </span>
-                <span className="text-xs font-semibold text-slate-500">• {weekTitle}</span>
-              </div>
-              <h4 className="font-bold text-base text-[#0F172A] uppercase font-display">
-                7 Günlük Müsaitlik Matrisi & Takvim Tablosu
+              <h4 className="font-bold text-base sm:text-lg text-[#0F172A] font-display">
+                Haftalık Çalışma & Randevu Çizelgesi
               </h4>
               <p className="text-xs text-[#64748B] mt-0.5">
-                Danışan rezervasyonları (Örn: Deniz Aydın) ve koç blokajları tarihe bağlı olarak canlı yansır. Slotlara tıklayarak o tarihi müşterilere kapatabilir veya açabilirsiniz.
+                Haftalık seans saatleri, danışan rezervasyonları ve dinlenme durumları.
               </p>
             </div>
 
@@ -327,7 +348,7 @@ export const AdminCoachSlotsTab: React.FC = () => {
                   <ChevronLeft className="w-4 h-4" />
                 </button>
 
-                <div className="px-3 text-xs font-bold text-[#0F172A] flex items-center gap-1.5">
+                <div className="px-3.5 text-xs font-bold text-[#0F172A] flex items-center gap-1.5">
                   <Calendar className="w-3.5 h-3.5 text-emerald-600" />
                   <span>{weekTitle}</span>
                 </div>
@@ -354,33 +375,33 @@ export const AdminCoachSlotsTab: React.FC = () => {
             </div>
           </div>
 
-          {/* Quick Helper Callouts / Status Legend */}
-          <div className="flex items-center gap-2 sm:gap-3 text-xs font-semibold flex-wrap">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-900 rounded-xl border border-emerald-200/60 text-[11px]">
-              <span className="w-2 h-2 rounded-full bg-emerald-500" />
-              <span>Yeşil = Müsait (Açık)</span>
+          {/* Clean Minimal Status Legend */}
+          <div className="flex items-center gap-4 sm:gap-6 text-xs text-[#64748B] font-medium flex-wrap">
+            <span className="inline-flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+              <span>Müsait</span>
             </span>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 text-blue-900 rounded-xl border border-blue-200/60 text-[11px]">
-              <span className="w-2 h-2 rounded-full bg-blue-600" />
-              <span>Mavi = DOLU (Rezerve Seans)</span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
+              <span>Rezerve (Dolu)</span>
             </span>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-rose-50 text-rose-900 rounded-xl border border-rose-200/60 text-[11px]">
-              <span className="w-2 h-2 rounded-full bg-rose-500" />
-              <span>Kırmızı = DOLU (Koç Bloke)</span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
+              <span>Blokeli</span>
             </span>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 text-slate-700 rounded-xl text-[11px]">
-              <span className="w-2 h-2 rounded-full bg-slate-400" />
-              <span>Gri = Mola / İzinli Gün</span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-slate-400" />
+              <span>Mola / İzinli</span>
             </span>
           </div>
 
           {/* Table Matrix Container */}
           <div className="overflow-x-auto rounded-2xl border border-black/[0.08] shadow-2xs">
-            <table className="w-full border-collapse min-w-[920px] text-left">
+            <table className="w-full border-collapse min-w-[940px] text-left">
               <thead>
                 <tr className="bg-slate-900 text-white border-b border-slate-800">
-                  <th className="p-3.5 text-[11px] font-extrabold uppercase tracking-wider text-slate-400 w-28 sticky left-0 z-20 bg-slate-900 border-r border-slate-800">
-                    <div className="flex items-center gap-1.5">
+                  <th className="p-4 text-[11px] font-extrabold uppercase tracking-wider text-slate-400 w-32 sticky left-0 z-20 bg-slate-900 border-r border-slate-800 text-center">
+                    <div className="flex items-center justify-center gap-1.5">
                       <Clock className="w-3.5 h-3.5 text-emerald-400" />
                       <span>SAAT</span>
                     </div>
@@ -393,17 +414,17 @@ export const AdminCoachSlotsTab: React.FC = () => {
                     return (
                       <th
                         key={day.dateStr}
-                        className={`p-3 text-center border-r border-slate-800 last:border-r-0 ${
+                        className={`p-3.5 text-center border-r border-slate-800 last:border-r-0 ${
                           day.isToday ? "bg-slate-800/90" : ""
                         }`}
                       >
                         <div className="flex flex-col items-center">
-                          <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-300">
+                          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
                             {day.name}
                           </span>
                           <div className="flex items-center gap-1.5 mt-0.5">
                             <span
-                              className={`text-sm font-black font-display ${
+                              className={`text-base font-black font-display ${
                                 day.isToday ? "text-emerald-400" : "text-white"
                               }`}
                             >
@@ -418,12 +439,12 @@ export const AdminCoachSlotsTab: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => handleToggleDayWorking(day.key, !isWorking)}
-                            className={`mt-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full transition-all flex items-center gap-1 ${
+                            className={`mt-1.5 text-[10px] font-bold px-2.5 py-0.5 rounded-full transition-all flex items-center gap-1 ${
                               isWorking
                                 ? "bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 hover:bg-emerald-500/30"
                                 : "bg-rose-500/20 text-rose-300 border border-rose-400/30 hover:bg-rose-500/30"
                             }`}
-                            title="Günün çalışma durumunu aç/kapat"
+                            title="Günün çalışma durumunu değiştir"
                           >
                             <span className={`w-1.5 h-1.5 rounded-full ${isWorking ? "bg-emerald-400" : "bg-rose-400"}`} />
                             <span>{isWorking ? "Açık" : "İzinli"}</span>
@@ -438,7 +459,7 @@ export const AdminCoachSlotsTab: React.FC = () => {
               <tbody className="divide-y divide-black/[0.06] text-xs font-sans">
                 {allTimeSlotStrings.map((timeStr) => (
                   <tr key={timeStr} className="hover:bg-slate-50/50 transition-colors group">
-                    <td className="p-3 font-bold text-[#0F172A] whitespace-nowrap bg-slate-50/80 sticky left-0 z-10 border-r border-black/[0.06] group-hover:bg-slate-100/80">
+                    <td className="p-3.5 font-bold text-[#0F172A] whitespace-nowrap bg-slate-50/80 sticky left-0 z-10 border-r border-black/[0.06] group-hover:bg-slate-100/80 text-center">
                       <span className="text-xs font-extrabold tracking-tight">{timeStr}</span>
                     </td>
 
@@ -451,9 +472,11 @@ export const AdminCoachSlotsTab: React.FC = () => {
                         return (
                           <td
                             key={`${day.dateStr}-${timeStr}`}
-                            className="p-2 border-r border-black/[0.04] last:border-r-0 text-center bg-slate-50/70"
+                            className="p-2 border-r border-black/[0.04] last:border-r-0 text-center bg-slate-50/50 align-middle min-w-[125px]"
                           >
-                            <span className="text-[10px] text-slate-400 font-semibold italic">İzinli Gün</span>
+                            <div className="w-full min-h-[74px] rounded-2xl bg-slate-50 border border-slate-200/60 text-slate-400 flex flex-col items-center justify-center">
+                              <span className="text-xs font-medium italic">İzinli Gün</span>
+                            </div>
                           </td>
                         );
                       }
@@ -461,28 +484,28 @@ export const AdminCoachSlotsTab: React.FC = () => {
                       // Check date-integrated slot availability
                       const slotStatus = checkSlotAvailability(day.dateStr, timeStr);
 
-                      // 1. Randevulu seans (Örn: Deniz Aydın, 21 Eylül Pazartesi 09:30)
+                      // 1. Randevulu seans (Dolu)
                       if (!slotStatus.isAvailable && slotStatus.reason === "booked") {
                         const bookedSess = slotStatus.session;
                         return (
                           <td
                             key={`${day.dateStr}-${timeStr}`}
-                            className="p-1.5 border-r border-black/[0.04] last:border-r-0 align-middle"
+                            className="p-2 border-r border-black/[0.04] last:border-r-0 align-middle min-w-[125px]"
                           >
-                            <div className="w-full p-2.5 rounded-xl bg-blue-50 border border-blue-300 text-blue-950 flex flex-col justify-between gap-1 shadow-2xs">
+                            <div className="w-full min-h-[74px] p-2.5 rounded-2xl bg-blue-50/95 border border-blue-200/90 text-blue-950 flex flex-col justify-between shadow-2xs">
                               <div className="flex items-center justify-between gap-1">
-                                <span className="inline-flex items-center gap-1 text-[10px] font-black text-blue-700 uppercase tracking-tight">
-                                  <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
-                                  DOLU
+                                <span className="inline-flex items-center gap-1 text-[11px] font-black text-blue-700">
+                                  <span className="w-2 h-2 rounded-full bg-blue-600" />
+                                  Dolu
                                 </span>
                                 <span className="text-[9px] px-1.5 py-0.2 bg-blue-100 text-blue-800 font-bold rounded">
-                                  1:1 Seans
+                                  1:1
                                 </span>
                               </div>
-                              <div className="text-[11px] font-bold text-slate-900 truncate" title={bookedSess?.memberName}>
+                              <div className="text-xs font-bold text-slate-900 truncate my-0.5" title={bookedSess?.memberName}>
                                 {bookedSess?.memberName || "Danışan Randevusu"}
                               </div>
-                              <div className="text-[9px] text-blue-700/90 truncate font-medium">
+                              <div className="text-[10px] text-blue-700/90 truncate font-medium">
                                 {bookedSess?.focusArea?.split("&")[0] || "Özel Seans"}
                               </div>
                             </div>
@@ -490,25 +513,25 @@ export const AdminCoachSlotsTab: React.FC = () => {
                         );
                       }
 
-                      // 2. Koç tarafından o spesifik tarihe özel kapatılmış slot
+                      // 2. Koç tarafından o spesifik tarihe özel kapatılmış slot (Blokeli)
                       if (!slotStatus.isAvailable && slotStatus.reason === "blocked") {
                         return (
                           <td
                             key={`${day.dateStr}-${timeStr}`}
-                            className="p-1.5 border-r border-black/[0.04] last:border-r-0 align-middle"
+                            className="p-2 border-r border-black/[0.04] last:border-r-0 align-middle min-w-[125px]"
                           >
                             <button
                               type="button"
                               onClick={() => handleToggleDateSlot(day.dateStr, timeStr, day.fullText)}
-                              className="w-full p-2 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-300 text-rose-950 flex flex-col items-center justify-center gap-1 transition-all group/btn shadow-2xs"
-                              title="Bu slot bu tarihte DOLU / BLOKELİ. Tıklayarak randevuya açabilirsiniz."
+                              className="w-full min-h-[74px] p-2.5 rounded-2xl bg-rose-50/80 hover:bg-rose-100/90 border border-rose-200 text-rose-950 flex flex-col items-center justify-center gap-1 transition-all group/btn shadow-2xs active:scale-[0.98]"
+                              title="Bu slot kapalı. Tıklayarak randevuya tekrar açabilirsiniz."
                             >
-                              <div className="flex items-center gap-1 text-[10px] font-black text-rose-700 uppercase">
+                              <div className="flex items-center gap-1.5 text-xs font-bold text-rose-800">
                                 <span className="w-2 h-2 rounded-full bg-rose-500" />
-                                ⛔ DOLU / BLOKE
+                                <span>Blokeli</span>
                               </div>
-                              <span className="text-[9px] font-semibold text-rose-600 group-hover/btn:underline">
-                                Tıkla: Müsait Yap
+                              <span className="text-[10px] font-medium text-rose-600/80">
+                                Randevuya Kapalı
                               </span>
                             </button>
                           </td>
@@ -520,44 +543,44 @@ export const AdminCoachSlotsTab: React.FC = () => {
                         return (
                           <td
                             key={`${day.dateStr}-${timeStr}`}
-                            className="p-1.5 border-r border-black/[0.04] last:border-r-0 align-middle"
+                            className="p-2 border-r border-black/[0.04] last:border-r-0 align-middle min-w-[125px]"
                           >
                             <button
                               type="button"
                               onClick={() => slot && handleToggleSlot(day.key, slot.id)}
-                              className="w-full p-2 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 flex flex-col items-center justify-center gap-0.5 transition-all"
-                              title="Genel haftalık mola saati. Tıklayarak genel plana açabilirsiniz."
+                              className="w-full min-h-[74px] p-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200/80 border border-slate-200 text-slate-700 flex flex-col items-center justify-center gap-0.5 transition-all"
+                              title="Haftalık mola. Tıklayarak açabilirsiniz."
                             >
-                              <div className="flex items-center gap-1 text-[10px] font-bold text-slate-600">
+                              <div className="flex items-center gap-1 text-xs font-semibold text-slate-600">
                                 <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-                                Mola / Kapalı
+                                <span>Mola</span>
                               </div>
-                              <span className="text-[9px] text-slate-500 truncate max-w-[80px]">
-                                {slot?.label || "Haftalık Mola"}
+                              <span className="text-[10px] text-slate-500 truncate max-w-[95px]">
+                                {slot?.label || "Dinlenme"}
                               </span>
                             </button>
                           </td>
                         );
                       }
 
-                      // 4. Müsait Slot (Açık) -> Tıklanınca o tarihte DOLU yapılır
+                      // 4. Müsait Slot (Açık) -> Tıklanınca o tarihte kapatılır
                       return (
                         <td
                           key={`${day.dateStr}-${timeStr}`}
-                          className="p-1.5 border-r border-black/[0.04] last:border-r-0 align-middle"
+                          className="p-2 border-r border-black/[0.04] last:border-r-0 align-middle min-w-[125px]"
                         >
                           <button
                             type="button"
                             onClick={() => handleToggleDateSlot(day.dateStr, timeStr, day.fullText)}
-                            className="w-full p-2 rounded-xl bg-emerald-50 hover:bg-emerald-100/90 border border-emerald-300 text-emerald-950 flex flex-col items-center justify-center gap-1 transition-all group/btn shadow-2xs active:scale-95"
-                            title="Slot randevuya MÜSAİT. Tıklayarak bu tarihi müşterilere DOLU / BLOKELİ yapabilirsiniz."
+                            className="w-full min-h-[74px] p-2.5 rounded-2xl bg-white hover:bg-emerald-50/70 border border-black/[0.08] hover:border-emerald-400 text-emerald-950 flex flex-col items-center justify-center gap-1 transition-all group/btn shadow-2xs active:scale-[0.98]"
+                            title="Slot müsait. Tıklayarak bu tarihi randevuya kapatabilirsiniz."
                           >
-                            <div className="flex items-center gap-1 text-[10px] font-black text-emerald-800">
-                              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                              ✓ Müsait (Açık)
+                            <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-800">
+                              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                              <span>Müsait</span>
                             </div>
-                            <span className="text-[9px] font-semibold text-emerald-700 group-hover/btn:text-rose-700 group-hover/btn:underline">
-                              Tıkla: Dolu Yap
+                            <span className="text-[10px] font-medium text-emerald-700/70">
+                              Randevuya Açık
                             </span>
                           </button>
                         </td>
@@ -778,11 +801,11 @@ export const AdminCoachSlotsTab: React.FC = () => {
                   >
                     <span
                       className={`w-2 h-2 rounded-full ${
-                        isAvail ? "bg-emerald-500 animate-pulse" : "bg-slate-400"
+                        isAvail ? "bg-emerald-500" : "bg-slate-400"
                       }`}
                     />
                     <span>
-                      {isAvail ? "✓ Randevuya Açık (Müsait)" : "⛔ Kapalı / Mola / Blokeli"}
+                      {isAvail ? "Randevuya Açık" : "Kapalı / Mola"}
                     </span>
                   </button>
                 </div>
