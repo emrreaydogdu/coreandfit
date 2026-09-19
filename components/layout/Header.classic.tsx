@@ -131,7 +131,7 @@ export const Header: React.FC = () => {
               >
                 <span className="w-2 h-2 rounded-full bg-[#25D366] animate-pulse shrink-0" />
                 <User className="w-3.5 h-3.5 text-[#E8FF36] shrink-0" />
-                <span className="font-bold">{user.fullName.split(" ")[0]}</span>
+                <span className="font-bold">{(user?.fullName || "Ege").split(" ")[0]}</span>
                 <span className="text-[#E8FF36] font-bold">({remainingSessions} Seans)</span>
               </Link>
             ) : (
@@ -246,14 +246,14 @@ export const Header: React.FC = () => {
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-full overflow-hidden border border-[#E8FF36]">
                     <img
-                      src={user.avatarUrl}
-                      alt={user.fullName}
+                      src={user?.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80"}
+                      alt={user?.fullName || "Üye"}
                       className="w-full h-full object-cover"
                     />
                   </div>
                   <div>
                     <span className="font-bold block text-white group-hover:text-[#E8FF36]">
-                      {user.fullName}
+                      {user?.fullName || "Ege Mert"}
                     </span>
                     <span className="text-[10px] text-[#72757C]">Üye Paneli & Seanslarım</span>
                   </div>

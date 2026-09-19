@@ -33,12 +33,14 @@ export const DigitalPassCard: React.FC<DigitalPassCardProps> = ({
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
 
   const generateToken = async () => {
+    const memberNo = user?.memberNo || "CF-89210";
+    const fullName = user?.fullName || "Ege Mert";
     const currentMinute = Math.floor(Date.now() / 60000);
     const hash = Math.abs(
-      (user.memberNo.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0) * 31 + currentMinute) % 900000
+      (memberNo.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0) * 31 + currentMinute) % 900000
     ) + 100000;
     const otpStr = `${String(hash).slice(0, 3)} ${String(hash).slice(3, 6)}`;
-    const fullToken = `CF-PASS|${user.memberNo}|${user.fullName}|${currentMinute}|${hash}`;
+    const fullToken = `CF-PASS|${memberNo}|${fullName}|${currentMinute}|${hash}`;
     setDynamicOtp(otpStr);
     setRefreshToken(fullToken);
 
@@ -74,7 +76,7 @@ export const DigitalPassCard: React.FC<DigitalPassCardProps> = ({
     syncTime();
     const interval = setInterval(syncTime, 1000);
     return () => clearInterval(interval);
-  }, [user.memberNo, user.fullName]);
+  }, [user?.memberNo, user?.fullName]);
 
   const handleManualRefresh = (e: React.MouseEvent) => {
     e.stopPropagation();

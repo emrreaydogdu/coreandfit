@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { usePathname } from "next/navigation";
 import { useDesignMode } from "@/components/providers/DesignModeProvider";
 import { cn } from "@/lib/utils";
 import { Sparkles, Zap } from "lucide-react";
@@ -15,8 +16,10 @@ export const DesignThemeSwitcher: React.FC<DesignThemeSwitcherProps> = ({
   variant = "floating-bar",
 }) => {
   const { designMode, setDesignMode, mounted } = useDesignMode();
+  const pathname = usePathname();
 
-  if (!mounted) {
+  // Müşteri paneli ve admin kısımlarında tema seçici butonunu gizle
+  if (!mounted || pathname?.startsWith("/portal") || pathname?.startsWith("/admin")) {
     return null;
   }
 

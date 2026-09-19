@@ -11,8 +11,9 @@ export const HeroSection: React.FC = () => {
   return (
     <section className="relative min-h-[96vh] lg:min-h-screen flex items-center pt-36 sm:pt-40 lg:pt-44 pb-20 lg:pb-28 overflow-hidden bg-[#FBFBFD] dark:bg-[#000000]">
       {/* Environmental Ambient Light Orbs - Refracted through Liquid Glass */}
-      <div className="absolute top-24 left-1/2 -translate-x-1/2 w-[700px] sm:w-[950px] h-[550px] bg-gradient-to-tr from-emerald-500/15 via-teal-400/10 to-transparent rounded-full blur-[150px] pointer-events-none" />
-      <div className="absolute top-1/3 -right-20 w-[500px] h-[500px] bg-emerald-500/10 dark:bg-emerald-600/15 rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-[850px] sm:w-[1200px] h-[600px] bg-gradient-to-b from-emerald-500/20 via-teal-500/12 to-transparent rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute top-1/4 -right-10 w-[550px] h-[550px] bg-emerald-500/15 dark:bg-emerald-500/22 rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute top-1/2 -left-20 w-[450px] h-[450px] bg-teal-500/10 dark:bg-teal-500/15 rounded-full blur-[130px] pointer-events-none" />
 
       {/* Cinematic Studio Photography Layer with Smooth Vignette */}
       <motion.div

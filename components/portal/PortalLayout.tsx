@@ -91,17 +91,8 @@ export const PortalLayout: React.FC = () => {
             </div>
           </div>
 
-          {/* Controls: Admin Link, View Mode, Web Link, Avatar */}
+          {/* Controls: View Mode, Web Link, Avatar */}
           <div className="flex items-center gap-2 sm:gap-2.5">
-            {/* Coach & Admin Portal Link */}
-            <Link
-              href="/portal/admin"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-black text-white rounded-full text-xs font-semibold transition-all shadow-xs"
-              title="Yönetici ve Antrenör Paneli"
-            >
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="hidden sm:inline">Koç & Yönetici</span>
-            </Link>
 
             {/* View Mode Switcher (Desktop Only) */}
             <button

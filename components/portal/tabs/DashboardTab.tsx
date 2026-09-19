@@ -54,7 +54,7 @@ export const DashboardTab: React.FC = () => {
             <span className="text-[11px] font-sans text-[#64748B]">Nişantaşı Private Studio</span>
           </div>
           <h2 className="text-2xl sm:text-3xl font-extrabold uppercase font-display text-[#0F172A] tracking-tight mt-0.5">
-            Hoş Geldin, {user.fullName.split(" ")[0]}
+            Hoş Geldin, {(user?.fullName || "Ege Mert").split(" ")[0]}
           </h2>
         </div>
 

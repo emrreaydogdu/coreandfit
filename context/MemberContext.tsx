@@ -157,7 +157,18 @@ export const MemberProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     try {
       const savedUser = localStorage.getItem(STORAGE_KEYS.USER);
       if (savedUser) {
-        setUser(JSON.parse(savedUser));
+        try {
+          const parsed = JSON.parse(savedUser);
+          if (parsed && typeof parsed === "object") {
+            setUser({ ...DEMO_USER, ...parsed });
+          } else {
+            setUser(DEMO_USER);
+            localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(DEMO_USER));
+          }
+        } catch {
+          setUser(DEMO_USER);
+          localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(DEMO_USER));
+        }
       } else {
         // Varsayılan olarak hazır demo kullanıcı oturumu açık olsun (müşteriye anında çalışan deneyim)
         setUser(DEMO_USER);

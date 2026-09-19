@@ -130,7 +130,7 @@ export const Header: React.FC = () => {
                 title="Üye Paneli"
               >
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                <span>{user.fullName.split(" ")[0]}</span>
+                <span>{(user?.fullName || "Ege").split(" ")[0]}</span>
                 <span className="text-emerald-600 dark:text-emerald-400 font-bold">
                   ({remainingSessions} Hak)
                 </span>
@@ -222,14 +222,14 @@ export const Header: React.FC = () => {
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-full overflow-hidden border border-emerald-500">
                     <img
-                      src={user.avatarUrl}
-                      alt={user.fullName}
+                      src={user?.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80"}
+                      alt={user?.fullName || "Üye"}
                       className="w-full h-full object-cover"
                     />
                   </div>
                   <div>
                     <span className="font-bold block text-slate-900 dark:text-white">
-                      {user.fullName}
+                      {user?.fullName || "Ege Mert"}
                     </span>
                     <span className="text-[10px] text-slate-500">Üye Portalı & Seanslar</span>
                   </div>
