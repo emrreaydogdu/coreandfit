@@ -39,11 +39,6 @@ export const Header: React.FC = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Portal ve Admin sayfalarında marketing header render edilmez
-  if (pathname?.startsWith("/portal") || pathname?.startsWith("/admin")) {
-    return null;
-  }
-
   // Close mobile menu on route change
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -59,6 +54,11 @@ export const Header: React.FC = () => {
       unlockBodyScroll();
     };
   }, [mobileMenuOpen]);
+
+  // Portal ve Admin sayfalarında marketing header render edilmez
+  if (pathname?.startsWith("/portal") || pathname?.startsWith("/admin")) {
+    return null;
+  }
 
   return (
     <>

@@ -38,10 +38,6 @@ export const Header: React.FC = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  if (pathname?.startsWith("/portal") || pathname?.startsWith("/admin")) {
-    return null;
-  }
-
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [pathname]);
@@ -56,6 +52,10 @@ export const Header: React.FC = () => {
       unlockBodyScroll();
     };
   }, [mobileMenuOpen]);
+
+  if (pathname?.startsWith("/portal") || pathname?.startsWith("/admin")) {
+    return null;
+  }
 
   return (
     <>

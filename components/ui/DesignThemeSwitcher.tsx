@@ -34,7 +34,7 @@ export const DesignThemeSwitcher: React.FC<DesignThemeSwitcherProps> = ({
             Canlı Tasarım Teması
           </span>
           <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-bold">
-            {isApple ? "APPLE" : "ORİJİNAL"}
+            {isApple ? "CAM TEMA" : "ORİJİNAL TEMA"}
           </span>
         </div>
         <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-black/[0.04] dark:bg-black/40">
@@ -47,7 +47,8 @@ export const DesignThemeSwitcher: React.FC<DesignThemeSwitcherProps> = ({
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             )}
           >
-            <span>🍏 Apple</span>
+            <Sparkles className="w-3.5 h-3.5 text-cyan-500" />
+            <span>Cam Tema</span>
           </button>
           <button
             onClick={() => setDesignMode("classic")}
@@ -59,7 +60,7 @@ export const DesignThemeSwitcher: React.FC<DesignThemeSwitcherProps> = ({
             )}
           >
             <Zap className="w-3.5 h-3.5 text-amber-500" />
-            <span>Orijinal</span>
+            <span>Orijinal Tema</span>
           </button>
         </div>
       </div>
@@ -77,27 +78,28 @@ export const DesignThemeSwitcher: React.FC<DesignThemeSwitcherProps> = ({
         <button
           onClick={() => setDesignMode("apple")}
           className={cn(
-            "px-3 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1 transition-all duration-200",
+            "px-3 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1.5 transition-all duration-200",
             isApple
               ? "bg-white dark:bg-white/[0.18] text-slate-900 dark:text-white shadow-[0_2px_8px_rgba(0,0,0,0.08)] border border-black/[0.06] dark:border-white/10 scale-[1.02]"
               : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
           )}
-          title="Apple Cupertino Teması"
+          title="Cam Tema"
         >
-          <span>🍏 Apple</span>
+          <Sparkles className="w-3 h-3 text-cyan-500" />
+          <span>Cam Tema</span>
         </button>
         <button
           onClick={() => setDesignMode("classic")}
           className={cn(
-            "px-3 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1 transition-all duration-200",
+            "px-3 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1.5 transition-all duration-200",
             !isApple
               ? "bg-[#E8FF36] text-[#08090B] font-bold shadow-sm scale-[1.02]"
               : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
           )}
-          title="Orijinal Atletik Tema"
+          title="Orijinal Tema"
         >
           <Zap className="w-3 h-3 text-amber-500" />
-          <span>Orijinal</span>
+          <span>Orijinal Tema</span>
         </button>
       </div>
     );
@@ -127,8 +129,10 @@ export const DesignThemeSwitcher: React.FC<DesignThemeSwitcherProps> = ({
               ? "bg-white dark:bg-white/[0.18] text-slate-900 dark:text-white shadow-[0_2px_8px_rgba(0,0,0,0.08)] border border-black/[0.06] dark:border-white/10 scale-[1.02]"
               : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
           )}
+          title="Cam Tema"
         >
-          <span>🍏 Apple Standartı</span>
+          <Sparkles className="w-3 h-3 text-cyan-500" />
+          <span>Cam Tema</span>
         </button>
 
         <button
@@ -139,9 +143,10 @@ export const DesignThemeSwitcher: React.FC<DesignThemeSwitcherProps> = ({
               ? "bg-[#E8FF36] text-[#08090B] font-bold shadow-sm scale-[1.02]"
               : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
           )}
+          title="Orijinal Tema"
         >
           <Zap className="w-3 h-3 text-amber-500" />
-          <span>⚡ Orijinal Atletik</span>
+          <span>Orijinal Tema</span>
         </button>
       </div>
     </div>
