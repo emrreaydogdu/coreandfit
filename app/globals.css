@@ -238,13 +238,33 @@ html.light .text-\[\#E8FF36\] {
   color: #557200 !important;
 }
 
-/* Preserve White Text for elements that must stay white (e.g. WhatsApp green, dark buttons) */
+/* Preserve White Text for elements that must stay white (e.g. WhatsApp green, dark buttons, dark pills, badges) */
 html.light .bg-\[\#25D366\],
 html.light .bg-\[\#25D366\] *,
 html.light a.bg-\[\#25D366\],
+html.light .bg-black.text-white,
 html.light .bg-black .text-white,
+html.light .bg-black.text-white *,
+html.light .bg-black .text-white *,
+html.light .bg-slate-900.text-white,
+html.light .bg-slate-900 .text-white,
+html.light .bg-slate-900.text-white *,
+html.light .bg-slate-900 .text-white *,
+html.light .bg-slate-800.text-white,
+html.light .bg-slate-800 .text-white,
+html.light .bg-slate-800.text-white *,
+html.light .liquid-glass-btn-primary,
+html.light .liquid-glass-btn-primary *,
+html.light .liquid-glass-btn-primary:hover,
+html.light .liquid-glass-btn-primary:hover *,
+html.light .liquid-glass-btn-emerald,
+html.light .liquid-glass-btn-emerald *,
+html.light .liquid-glass-btn-emerald:hover,
+html.light .liquid-glass-btn-emerald:hover *,
 html.light .btn-dark-stay,
-html.light [data-keep-white] {
+html.light .btn-dark-stay *,
+html.light [data-keep-white],
+html.light [data-keep-white] * {
   color: #FFFFFF !important;
 }
 
@@ -406,8 +426,12 @@ html[data-design="apple"].light .text-\[\#E8FF36\] {
   box-shadow: 
     inset 0 1px 1px 0 rgba(255, 255, 255, 0.45),
     0 10px 25px -4px rgba(15, 23, 42, 0.25);
-  color: #FFFFFF;
+  color: #FFFFFF !important;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.liquid-glass-btn-primary * {
+  color: #FFFFFF !important;
 }
 
 .dark .liquid-glass-btn-primary {
@@ -416,21 +440,35 @@ html[data-design="apple"].light .text-\[\#E8FF36\] {
   box-shadow: 
     inset 0 1px 1px 0 #FFFFFF,
     0 10px 25px -4px rgba(255, 255, 255, 0.2);
-  color: #000000;
+  color: #000000 !important;
+}
+
+.dark .liquid-glass-btn-primary * {
+  color: #000000 !important;
 }
 
 .liquid-glass-btn-primary:hover {
   transform: translateY(-1.5px);
+  color: #FFFFFF !important;
   box-shadow: 
     inset 0 1px 1px 0 rgba(255, 255, 255, 0.6),
     0 14px 32px -4px rgba(15, 23, 42, 0.35);
 }
 
+.liquid-glass-btn-primary:hover * {
+  color: #FFFFFF !important;
+}
+
 .dark .liquid-glass-btn-primary:hover {
   transform: translateY(-1.5px);
+  color: #000000 !important;
   box-shadow: 
     inset 0 1px 1px 0 #FFFFFF,
     0 14px 32px -4px rgba(255, 255, 255, 0.3);
+}
+
+.dark .liquid-glass-btn-primary:hover * {
+  color: #000000 !important;
 }
 
 .liquid-glass-btn-primary:active {
@@ -445,15 +483,24 @@ html[data-design="apple"].light .text-\[\#E8FF36\] {
   box-shadow: 
     inset 0 1px 1px 0 rgba(255, 255, 255, 0.55),
     0 10px 25px -4px rgba(16, 185, 129, 0.35);
-  color: #FFFFFF;
+  color: #FFFFFF !important;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.liquid-glass-btn-emerald * {
+  color: #FFFFFF !important;
 }
 
 .liquid-glass-btn-emerald:hover {
   transform: translateY(-1.5px);
+  color: #FFFFFF !important;
   box-shadow: 
     inset 0 1px 1px 0 rgba(255, 255, 255, 0.75),
     0 14px 32px -4px rgba(16, 185, 129, 0.45);
+}
+
+.liquid-glass-btn-emerald:hover * {
+  color: #FFFFFF !important;
 }
 
 .liquid-glass-btn-emerald:active {

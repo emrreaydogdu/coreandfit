@@ -82,7 +82,7 @@ export const Header: React.FC = () => {
             className="flex items-center gap-3 shrink-0 group select-none"
             aria-label="Core & Fit Ana Sayfa"
           >
-            <div className="w-8 h-8 rounded-full bg-slate-900 dark:bg-white text-white dark:text-black flex items-center justify-center font-bold text-xs tracking-tighter shadow-sm group-hover:scale-105 transition-transform">
+            <div className="w-8 h-8 rounded-full bg-emerald-500/10 dark:bg-white/10 text-emerald-700 dark:text-white border border-emerald-500/20 dark:border-white/15 flex items-center justify-center font-bold text-xs tracking-tighter shadow-xs group-hover:scale-105 transition-transform">
               CF
             </div>
             <div className="flex flex-col">
@@ -110,10 +110,10 @@ export const Header: React.FC = () => {
                   key={link.href}
                   href={link.href}
                   className={cn(
-                    "px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 select-none",
+                    "px-3.5 py-1.5 rounded-full text-xs transition-all duration-200 select-none",
                     isActive
-                      ? "bg-slate-900 dark:bg-white text-white dark:text-black font-semibold shadow-xs"
-                      : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
+                      ? "bg-white dark:bg-white/[0.18] text-slate-900 dark:text-white font-semibold shadow-[0_2px_8px_rgba(0,0,0,0.08)] border border-black/[0.06] dark:border-white/10 scale-[1.02]"
+                      : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.06] font-medium"
                   )}
                 >
                   {link.label}
@@ -144,7 +144,7 @@ export const Header: React.FC = () => {
             ) : (
               <Link
                 href="/portal/giris"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 liquid-glass-pill text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white rounded-full text-xs font-medium transition-all"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 liquid-glass-pill text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white rounded-full text-xs font-medium transition-all"
               >
                 <User className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                 <span>Giriş Yap</span>
@@ -154,7 +154,7 @@ export const Header: React.FC = () => {
             {/* Apple Liquid Glass Primary CTA */}
             <Link
               href="/on-gorusme"
-              className="inline-flex items-center justify-center gap-2 text-xs font-semibold px-4.5 py-2 rounded-full liquid-glass-btn-primary select-none"
+              className="inline-flex items-center justify-center gap-2 text-xs font-semibold px-4.5 py-2 rounded-full liquid-glass-btn-emerald text-white select-none shadow-[0_4px_16px_rgba(16,185,129,0.25)] hover:shadow-[0_6px_22px_rgba(16,185,129,0.35)]"
             >
               <span>Ön Görüşme</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -199,10 +199,10 @@ export const Header: React.FC = () => {
                   key={link.href}
                   href={link.href}
                   className={cn(
-                    "flex items-center justify-between py-3 px-3.5 text-sm font-semibold rounded-xl transition-all",
+                    "flex items-center justify-between py-3 px-3.5 text-sm rounded-xl transition-all",
                     isActive
-                      ? "bg-slate-900 dark:bg-white text-white dark:text-black shadow-xs"
-                      : "text-slate-700 dark:text-slate-200 hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
+                      ? "bg-white dark:bg-white/[0.18] text-slate-900 dark:text-white font-bold shadow-xs border border-black/[0.06] dark:border-white/10"
+                      : "text-slate-700 dark:text-slate-200 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] font-medium"
                   )}
                 >
                   <span>{link.label}</span>
@@ -253,7 +253,7 @@ export const Header: React.FC = () => {
 
             <Link
               href="/on-gorusme"
-              className="w-full flex items-center justify-center py-3.5 rounded-full liquid-glass-btn-primary font-semibold text-xs text-center"
+              className="w-full flex items-center justify-center py-3.5 rounded-full liquid-glass-btn-emerald text-white font-semibold text-xs text-center shadow-md"
             >
               Ön Görüşme Randevusu Al
             </Link>

@@ -47,7 +47,7 @@ export const GoalSelector: React.FC = () => {
                   className={cn(
                     "px-5 py-2.5 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 active:scale-[0.97]",
                     isSelected
-                      ? "bg-slate-900 dark:bg-white text-white dark:text-black shadow-md scale-[1.02]"
+                      ? "bg-white dark:bg-white/[0.18] text-slate-900 dark:text-white shadow-[0_2px_8px_rgba(0,0,0,0.08)] border border-black/[0.06] dark:border-white/10 scale-[1.02]"
                       : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                   )}
                 >

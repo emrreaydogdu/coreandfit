@@ -72,7 +72,7 @@ export const FaqAccordion: React.FC<FaqAccordionProps> = ({
                       className={cn(
                         "w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-transform duration-300 liquid-glass-pill",
                         isOpen
-                          ? "bg-slate-900 dark:bg-white text-white dark:text-black rotate-180"
+                          ? "bg-emerald-500/15 text-emerald-700 dark:bg-white dark:text-black rotate-180"
                           : "text-slate-500 dark:text-slate-400"
                       )}
                     >
