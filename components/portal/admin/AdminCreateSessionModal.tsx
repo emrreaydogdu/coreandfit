@@ -23,6 +23,8 @@ interface AdminCreateSessionModalProps {
   isOpen: boolean;
   onClose: () => void;
   defaultCoachName?: string;
+  initialDate?: string;
+  initialTimeSlot?: string;
 }
 
 const STATIONS = [
@@ -44,6 +46,8 @@ export const AdminCreateSessionModal: React.FC<AdminCreateSessionModalProps> = (
   isOpen,
   onClose,
   defaultCoachName,
+  initialDate,
+  initialTimeSlot,
 }) => {
   const {
     user,
@@ -123,6 +127,13 @@ export const AdminCreateSessionModal: React.FC<AdminCreateSessionModalProps> = (
   const [deductCredit, setDeductCredit] = useState<boolean>(true);
 
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      if (initialDate) setSelectedDate(initialDate);
+      if (initialTimeSlot) setSelectedTimeSlot(initialTimeSlot);
+    }
+  }, [isOpen, initialDate, initialTimeSlot]);
 
   // Find active slots for selected coach on selected day
   const activeCoachSlots = useMemo(() => {

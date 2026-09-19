@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { buildBookingWhatsAppUrl } from "@/lib/whatsapp";
-import { ArrowRight, ArrowLeft, Calendar, Clock, CheckCircle2, MessageSquare, ShieldCheck } from "lucide-react";
+import { ArrowRight, ArrowLeft, Calendar, Clock, CheckCircle2, MessageSquare, ShieldCheck, LayoutGrid, List } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
@@ -54,6 +54,7 @@ export const BookingWizard: React.FC = () => {
     kvkkConsent: false,
   });
 
+  const [calendarTableMode, setCalendarTableMode] = useState<boolean>(true);
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -204,39 +205,135 @@ export const BookingWizard: React.FC = () => {
         </div>
       )}
 
-      {/* Step 2: Date Selection */}
+      {/* Step 2: Date & Time Selection (with Calendar Table mode) */}
       {step === 2 && (
         <div>
-          <h3 className="text-xl sm:text-2xl font-bold text-white uppercase font-display mb-2">
-            Tarih Seçin
-          </h3>
-          <p className="text-xs text-[#A5A7AD] mb-6">
-            Önümüzdeki 10 gün içerisinden size en uygun günü belirleyin.
-          </p>
+          <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+            <h3 className="text-xl sm:text-2xl font-bold text-white uppercase font-display">
+              Tarih & Saat Seçin
+            </h3>
 
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
-            {dates.map((d) => (
+            {/* View mode toggle */}
+            <div className="flex items-center p-1 bg-[#191B20] border border-[#23272F]">
               <button
-                key={d.id}
                 type="button"
-                onClick={() => setFormData({ ...formData, date: d.fullDate })}
+                onClick={() => setCalendarTableMode(true)}
                 className={cn(
-                  "p-3 text-center border transition-all flex flex-col items-center justify-center gap-1",
-                  formData.date === d.fullDate
-                    ? "bg-[#E8FF36] text-[#08090B] border-[#E8FF36] font-bold"
-                    : "bg-[#131519] text-white border-[#23272F] hover:border-[#343A46]"
+                  "px-3 py-1.5 text-xs font-mono uppercase tracking-wider transition-colors flex items-center gap-1.5",
+                  calendarTableMode ? "bg-[#E8FF36] text-[#08090B] font-bold" : "text-[#72757C] hover:text-white"
                 )}
               >
-                <span className="text-[11px] font-mono uppercase tracking-wider opacity-75">
-                  {d.dayName}
-                </span>
-                <span className="text-sm font-bold uppercase">{d.dayNum}</span>
+                <LayoutGrid className="w-3 h-3" />
+                <span>Takvim Tablosu</span>
               </button>
-            ))}
+              <button
+                type="button"
+                onClick={() => setCalendarTableMode(false)}
+                className={cn(
+                  "px-3 py-1.5 text-xs font-mono uppercase tracking-wider transition-colors flex items-center gap-1.5",
+                  !calendarTableMode ? "bg-[#E8FF36] text-[#08090B] font-bold" : "text-[#72757C] hover:text-white"
+                )}
+              >
+                <List className="w-3 h-3" />
+                <span>Gün Kartları</span>
+              </button>
+            </div>
           </div>
-          <p className="text-[11px] text-[#72757C] mt-4 font-mono">
-            Seçili Gün: <strong className="text-white">{formData.date}</strong>
+
+          <p className="text-xs text-[#A5A7AD] mb-6">
+            {calendarTableMode
+              ? "Aşağıdaki haftalık takvim tablosundan dilediğiniz gün ve saat slotuna doğrudan tıklayarak seçin."
+              : "Önümüzdeki 10 gün içerisinden size en uygun günü belirleyin."}
           </p>
+
+          {calendarTableMode ? (
+            /* CALENDAR TABLE MODE */
+            <div className="space-y-4">
+              <div className="overflow-x-auto border border-[#23272F] bg-[#131519]">
+                <table className="w-full border-collapse min-w-[560px] text-left text-xs font-mono">
+                  <thead>
+                    <tr className="border-b border-[#23272F] bg-[#0D0F12]">
+                      <th className="p-3 text-[10px] text-[#72757C] uppercase tracking-wider w-20 sticky left-0 z-10 bg-[#0D0F12] border-r border-[#23272F]">
+                        SAAT
+                      </th>
+                      {dates.slice(0, 5).map((d) => (
+                        <th key={d.id} className="p-2.5 text-center border-r border-[#23272F] last:border-r-0">
+                          <span className="text-[10px] text-[#A5A7AD] uppercase block">{d.dayName}</span>
+                          <span className="text-xs font-bold text-white">{d.dayNum}</span>
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#1D2128]">
+                    {["09:00", "11:00", "14:00", "16:00", "18:00", "19:30"].map((timeSlot) => (
+                      <tr key={timeSlot} className="hover:bg-[#191C22] transition-colors">
+                        <td className="p-2.5 font-bold text-white sticky left-0 z-10 bg-[#131519] border-r border-[#23272F] whitespace-nowrap">
+                          {timeSlot}
+                        </td>
+                        {dates.slice(0, 5).map((d) => {
+                          const isSelected = formData.date === d.fullDate && formData.timeSlot === timeSlot;
+                          return (
+                            <td key={`${d.id}-${timeSlot}`} className="p-1.5 border-r border-[#23272F] last:border-r-0 text-center">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setFormData({
+                                    ...formData,
+                                    date: d.fullDate,
+                                    timeSlot: timeSlot,
+                                  });
+                                  setStep(4); // Advance directly to contact info!
+                                }}
+                                className={cn(
+                                  "w-full py-2 px-1 text-[11px] font-mono tracking-wider transition-all border block",
+                                  isSelected
+                                    ? "bg-[#E8FF36] text-black border-[#E8FF36] font-bold shadow-[0_0_10px_rgba(232,255,54,0.3)]"
+                                    : "bg-[#191B20] text-[#A5A7AD] border-[#2A2E38] hover:border-[#E8FF36] hover:text-white"
+                                )}
+                                title={`${d.dayName} ${d.dayNum} saat ${timeSlot} için seç`}
+                              >
+                                Seç
+                              </button>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="text-[11px] text-[#72757C] font-mono">
+                * Kutucuğa tıkladığınızda gün ve saat seçilerek doğrudan iletişim adımına geçilir.
+              </p>
+            </div>
+          ) : (
+            /* CLASSIC CARDS MODE */
+            <div>
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+                {dates.map((d) => (
+                  <button
+                    key={d.id}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, date: d.fullDate })}
+                    className={cn(
+                      "p-3 text-center border transition-all flex flex-col items-center justify-center gap-1",
+                      formData.date === d.fullDate
+                        ? "bg-[#E8FF36] text-[#08090B] border-[#E8FF36] font-bold"
+                        : "bg-[#131519] text-white border-[#23272F] hover:border-[#343A46]"
+                    )}
+                  >
+                    <span className="text-[11px] font-mono uppercase tracking-wider opacity-75">
+                      {d.dayName}
+                    </span>
+                    <span className="text-sm font-bold uppercase">{d.dayNum}</span>
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] text-[#72757C] mt-4 font-mono">
+                Seçili Gün: <strong className="text-white">{formData.date}</strong>
+              </p>
+            </div>
+          )}
         </div>
       )}
 
