@@ -56,9 +56,9 @@ export const AdminFloatingNav: React.FC<AdminFloatingNavProps> = ({
   return (
     <nav
       aria-label="Admin Liquid Glass Dock"
-      className={`pointer-events-auto select-none ${className}`}
+      className={`pointer-events-auto select-none max-w-[calc(100vw-1rem)] overflow-x-auto no-scrollbar ${className}`}
     >
-      <div className="relative flex items-center gap-1 sm:gap-1.5 p-1.5 bg-white/85 hover:bg-white/95 backdrop-blur-2xl border border-white/70 rounded-[28px] shadow-[0_16px_45px_rgba(0,0,0,0.1),0_4px_16px_rgba(0,0,0,0.05),inset_0_1px_2px_rgba(255,255,255,0.95)] transition-all duration-300">
+      <div className="relative flex items-center gap-0.5 sm:gap-1.5 p-1 sm:p-1.5 bg-white/90 hover:bg-white/95 backdrop-blur-2xl border border-white/80 rounded-[24px] sm:rounded-[28px] shadow-[0_12px_40px_rgba(0,0,0,0.12),0_4px_16px_rgba(0,0,0,0.05)] transition-all duration-300">
         {ADMIN_TABS.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -68,7 +68,7 @@ export const AdminFloatingNav: React.FC<AdminFloatingNavProps> = ({
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`relative flex flex-col items-center justify-center py-1.5 px-2 sm:px-3 rounded-2xl transition-all duration-200 outline-none min-w-[42px] sm:min-w-[56px] ${
+              className={`relative flex flex-col items-center justify-center py-1 sm:py-1.5 px-1.5 sm:px-3 rounded-xl sm:rounded-2xl transition-all duration-200 outline-none min-w-[37px] sm:min-w-[54px] shrink-0 ${
                 isActive ? "text-white" : "text-[#64748B] hover:text-[#0F172A]"
               }`}
               title={tab.label}

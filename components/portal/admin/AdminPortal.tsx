@@ -58,6 +58,17 @@ import { AdminCreateMemberModal } from "@/components/portal/admin/AdminCreateMem
 import { AdminDailyBriefingWidget } from "@/components/portal/admin/AdminDailyBriefingWidget";
 import { AdminInventoryTab } from "@/components/portal/admin/AdminInventoryTab";
 
+const ADMIN_TAB_LABELS: Record<AdminTab, string> = {
+  overview: "Genel Bakış",
+  turnstile: "Turnike & Hızlı QR",
+  schedule: "Seans Programı",
+  coach_slots: "Koç Randevu Saatleri",
+  cashier: "Kasa & Ödemeler",
+  members: "Üye Rehberi (CRM)",
+  inventory: "Envanter & Donanım",
+  settings: "İşletme Ayarları",
+};
+
 export const AdminPortal: React.FC = () => {
   const {
     user,
@@ -217,23 +228,81 @@ export const AdminPortal: React.FC = () => {
     switch (adminTab) {
       case "overview":
         return (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
+            {/* Top KPI Metric Cards - Clean 2x2 on Mobile, 4 columns on Desktop */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+              <div className="bg-white/90 backdrop-blur-xl border border-black/[0.05] rounded-2xl sm:rounded-[28px] p-3.5 sm:p-5 shadow-[0_2px_12px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.04)] transition-all">
+                <div className="flex items-center justify-between text-xs text-[#64748B] mb-1.5 sm:mb-2 font-medium">
+                  <span className="tracking-tight text-[10px] sm:text-[11px] font-bold uppercase truncate">GÜNLÜK TURNİKE</span>
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl sm:rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shadow-2xs shrink-0">
+                    <UserCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  </div>
+                </div>
+                <div className="flex items-baseline gap-1.5 sm:gap-2">
+                  <span className="text-xl sm:text-2xl font-black text-[#0F172A] tracking-tight">{checkInLogs.length + 34}</span>
+                  <span className="text-[10px] sm:text-xs font-semibold text-emerald-600">↑ %14</span>
+                </div>
+                <span className="text-[10px] sm:text-[11px] text-[#94A3B8] block mt-0.5 sm:mt-1 truncate">Tamamlanan seans</span>
+              </div>
+
+              <div className="bg-white/90 backdrop-blur-xl border border-black/[0.05] rounded-2xl sm:rounded-[28px] p-3.5 sm:p-5 shadow-[0_2px_12px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.04)] transition-all">
+                <div className="flex items-center justify-between text-xs text-[#64748B] mb-1.5 sm:mb-2 font-medium">
+                  <span className="tracking-tight text-[10px] sm:text-[11px] font-bold uppercase truncate">DOLULUK ORANI</span>
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl sm:rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shadow-2xs shrink-0">
+                    <Activity className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  </div>
+                </div>
+                <div className="flex items-baseline gap-1.5 sm:gap-2">
+                  <span className="text-xl sm:text-2xl font-black text-[#0F172A] tracking-tight">%70</span>
+                  <span className="text-[10px] sm:text-xs text-[#64748B] truncate">14/20</span>
+                </div>
+                <span className="text-[10px] sm:text-[11px] text-[#94A3B8] block mt-0.5 sm:mt-1 truncate">Anlık kapasite</span>
+              </div>
+
+              <div className="bg-white/90 backdrop-blur-xl border border-black/[0.05] rounded-2xl sm:rounded-[28px] p-3.5 sm:p-5 shadow-[0_2px_12px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.04)] transition-all">
+                <div className="flex items-center justify-between text-xs text-[#64748B] mb-1.5 sm:mb-2 font-medium">
+                  <span className="tracking-tight text-[10px] sm:text-[11px] font-bold uppercase truncate">AYLIK CİRO</span>
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl sm:rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center shadow-2xs shrink-0">
+                    <DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  </div>
+                </div>
+                <div className="flex items-baseline gap-1.5 sm:gap-2">
+                  <span className="text-xl sm:text-2xl font-black text-[#0F172A] tracking-tight">₺428.000</span>
+                  <span className="text-[10px] sm:text-xs font-semibold text-emerald-600">%107</span>
+                </div>
+                <span className="text-[10px] sm:text-[11px] text-[#94A3B8] block mt-0.5 sm:mt-1 truncate">Eylül 2026</span>
+              </div>
+
+              <div className="bg-white/90 backdrop-blur-xl border border-black/[0.05] rounded-2xl sm:rounded-[28px] p-3.5 sm:p-5 shadow-[0_2px_12px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.04)] transition-all">
+                <div className="flex items-center justify-between text-xs text-[#64748B] mb-1.5 sm:mb-2 font-medium">
+                  <span className="tracking-tight text-[10px] sm:text-[11px] font-bold uppercase truncate">KASA TAHSİLATI</span>
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl sm:rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shadow-2xs shrink-0">
+                    <Banknote className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  </div>
+                </div>
+                <div className="flex items-baseline gap-1.5 sm:gap-2">
+                  <span className="text-xl sm:text-2xl font-black text-amber-600 tracking-tight">{pendingOrdersCount} Sipariş</span>
+                </div>
+                <span className="text-[10px] sm:text-[11px] text-[#94A3B8] block mt-0.5 sm:mt-1 truncate">Kasada / Havale</span>
+              </div>
+            </div>
+
             {/* Solo Coach & Studio Model Executive Banner - Apple Liquid Glass */}
-            <div className="bg-white/90 backdrop-blur-2xl border border-black/[0.06] rounded-[32px] p-6 sm:p-7 shadow-[0_4px_24px_rgba(0,0,0,0.03)] relative overflow-hidden">
+            <div className="bg-white/90 backdrop-blur-2xl border border-black/[0.06] rounded-2xl sm:rounded-[32px] p-4 sm:p-7 shadow-[0_4px_24px_rgba(0,0,0,0.03)] relative overflow-hidden">
               <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
-              <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                <div className="space-y-2">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-full text-[11px] font-bold uppercase tracking-wider">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-4 sm:gap-6">
+                <div className="space-y-1.5 sm:space-y-2">
+                  <div className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-0.5 sm:py-1 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-wider">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
                     <span>TEK YETKİLİ BAŞ ANTRENÖR YÖNETİMİNDE (1:1)</span>
                   </div>
-                  <h3 className="text-xl sm:text-2xl font-bold font-display uppercase tracking-tight text-[#0F172A]">
+                  <h3 className="text-lg sm:text-2xl font-bold font-display uppercase tracking-tight text-[#0F172A]">
                     İlker Yüksel — Birebir Stüdyo İşletim Merkezi
                   </h3>
                   <p className="text-xs text-[#64748B] max-w-2xl leading-relaxed">
                     Core & Fit Nişantaşı Studio, kurucu baş antrenör İlker Yüksel tarafından bizzat işletilmekte ve yönetilmektedir. Stüdyomuzda asistan veya stajyer antrenör çalıştırılmaz; her üye doğrudan 10+ yıl deneyimli kurucumuzla 1:1 biyomekanik ve kuvvet çalışır.
                   </p>
-                  <div className="flex flex-wrap items-center gap-2 pt-1 text-[10px] font-semibold text-[#334155]">
+                  <div className="hidden sm:flex flex-wrap items-center gap-2 pt-1 text-[10px] font-semibold text-[#334155]">
                     <span className="px-2.5 py-1 bg-slate-100 rounded-lg border border-black/[0.04]">
                       🏅 NSCA-CSCS Sertifikalı
                     </span>
@@ -249,16 +318,16 @@ export const AdminPortal: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-3 shrink-0">
-                  <div className="p-3.5 bg-[#F8FAFC] border border-black/[0.04] rounded-2xl">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] block">GÜNLÜK SEANS</span>
-                    <span className="text-lg font-black text-[#0F172A]">{bookedSessions.length} / 8 Planlı</span>
-                    <span className="text-[10px] text-emerald-600 block mt-0.5 font-semibold">1:1 Özel Kapasite</span>
+                <div className="grid grid-cols-2 gap-2.5 sm:gap-3 shrink-0">
+                  <div className="p-3 sm:p-3.5 bg-[#F8FAFC] border border-black/[0.04] rounded-xl sm:rounded-2xl">
+                    <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#64748B] block">GÜNLÜK SEANS</span>
+                    <span className="text-base sm:text-lg font-black text-[#0F172A]">{bookedSessions.length} / 8 Planlı</span>
+                    <span className="text-[9px] sm:text-[10px] text-emerald-600 block mt-0.5 font-semibold">1:1 Özel Kapasite</span>
                   </div>
-                  <div className="p-3.5 bg-[#F8FAFC] border border-black/[0.04] rounded-2xl">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] block">MOLA ARALIĞI</span>
-                    <span className="text-lg font-black text-[#0F172A]">15 Dakika</span>
-                    <span className="text-[10px] text-slate-500 block mt-0.5">Hijyen & Hazırlık</span>
+                  <div className="p-3 sm:p-3.5 bg-[#F8FAFC] border border-black/[0.04] rounded-xl sm:rounded-2xl">
+                    <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#64748B] block">MOLA ARALIĞI</span>
+                    <span className="text-base sm:text-lg font-black text-[#0F172A]">15 Dakika</span>
+                    <span className="text-[9px] sm:text-[10px] text-slate-500 block mt-0.5">Hijyen & Hazırlık</span>
                   </div>
                 </div>
               </div>
@@ -1100,68 +1169,9 @@ export const AdminPortal: React.FC = () => {
           </div>
         ) : (
           /* Wide Full-Width Responsive Dashboard */
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-            {/* Top KPI Metric Cards - Apple Glass Aesthetic */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-white/85 backdrop-blur-xl border border-black/[0.05] rounded-[28px] p-5 shadow-[0_2px_12px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.04)] transition-all">
-                <div className="flex items-center justify-between text-xs text-[#64748B] mb-2 font-medium">
-                  <span className="tracking-tight text-[11px] font-bold uppercase">GÜNLÜK TURNİKE GİRİŞİ</span>
-                  <div className="w-8 h-8 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shadow-2xs">
-                    <UserCheck className="w-4 h-4" />
-                  </div>
-                </div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-black text-[#0F172A] tracking-tight">{checkInLogs.length + 34}</span>
-                  <span className="text-xs font-semibold text-emerald-600">↑ %14 artış</span>
-                </div>
-                <span className="text-[11px] text-[#94A3B8] block mt-1">Bugün tamamlanan seanslar</span>
-              </div>
-
-              <div className="bg-white/85 backdrop-blur-xl border border-black/[0.05] rounded-[28px] p-5 shadow-[0_2px_12px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.04)] transition-all">
-                <div className="flex items-center justify-between text-xs text-[#64748B] mb-2 font-medium">
-                  <span className="tracking-tight text-[11px] font-bold uppercase">STÜDYO DOLULUK ORANI</span>
-                  <div className="w-8 h-8 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shadow-2xs">
-                    <Activity className="w-4 h-4" />
-                  </div>
-                </div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-black text-[#0F172A] tracking-tight">%70</span>
-                  <span className="text-xs text-[#64748B]">14 / 20 İstasyon</span>
-                </div>
-                <span className="text-[11px] text-[#94A3B8] block mt-1">Nişantaşı anlık kapasite</span>
-              </div>
-
-              <div className="bg-white/85 backdrop-blur-xl border border-black/[0.05] rounded-[28px] p-5 shadow-[0_2px_12px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.04)] transition-all">
-                <div className="flex items-center justify-between text-xs text-[#64748B] mb-2 font-medium">
-                  <span className="tracking-tight text-[11px] font-bold uppercase">AYLIK TOPLAM CİRO</span>
-                  <div className="w-8 h-8 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center shadow-2xs">
-                    <DollarSign className="w-4 h-4" />
-                  </div>
-                </div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-black text-[#0F172A] tracking-tight">₺428.000</span>
-                  <span className="text-xs font-semibold text-emerald-600">Hedef: %107</span>
-                </div>
-                <span className="text-[11px] text-[#94A3B8] block mt-1">Eylül 2026 gerçekleşen ciro</span>
-              </div>
-
-              <div className="bg-white/85 backdrop-blur-xl border border-black/[0.05] rounded-[28px] p-5 shadow-[0_2px_12px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.04)] transition-all">
-                <div className="flex items-center justify-between text-xs text-[#64748B] mb-2 font-medium">
-                  <span className="tracking-tight text-[11px] font-bold uppercase">BEKLEYEN KASA TAHSİLATI</span>
-                  <div className="w-8 h-8 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shadow-2xs">
-                    <Banknote className="w-4 h-4" />
-                  </div>
-                </div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-black text-amber-600 tracking-tight">{pendingOrdersCount} Sipariş</span>
-                  <span className="text-xs font-semibold text-[#64748B]">Kasada / Havale</span>
-                </div>
-                <span className="text-[11px] text-[#94A3B8] block mt-1">Onay bekleyen ödemeler</span>
-              </div>
-            </div>
-
+          <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 space-y-4 sm:space-y-6 pb-28 lg:pb-12">
             {/* Apple macOS / iOS Segmented Tab Navigation Bar */}
-            <div className="p-1.5 bg-black/[0.03] backdrop-blur-2xl border border-black/[0.05] rounded-[26px] flex items-center gap-1.5 overflow-x-auto shadow-inner">
+            <div className="p-1 sm:p-1.5 bg-black/[0.03] backdrop-blur-2xl border border-black/[0.05] rounded-2xl sm:rounded-[26px] flex items-center gap-1 sm:gap-1.5 overflow-x-auto no-scrollbar shadow-inner">
               {[
                 { id: "overview", label: "Genel Bakış", icon: TrendingUp },
                 { id: "turnstile", label: "Turnike & Hızlı QR", icon: QrCode },
@@ -1178,17 +1188,17 @@ export const AdminPortal: React.FC = () => {
                   <button
                     key={tab.id}
                     onClick={() => setAdminTab(tab.id as any)}
-                    className={`relative inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-semibold whitespace-nowrap transition-all duration-200 outline-none ${
+                    className={`relative inline-flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl sm:rounded-2xl text-[11px] sm:text-xs font-semibold whitespace-nowrap transition-all duration-200 outline-none shrink-0 ${
                       isActive
                         ? "bg-white text-[#0F172A] shadow-[0_2px_10px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] font-bold"
                         : "text-[#64748B] hover:text-[#0F172A] hover:bg-white/50"
                     }`}
                   >
-                    <Icon className={`w-4 h-4 ${isActive ? "text-[#0F172A]" : "text-[#64748B]"}`} />
+                    <Icon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isActive ? "text-[#0F172A]" : "text-[#64748B]"}`} />
                     <span>{tab.label}</span>
                     {tab.badge !== undefined && tab.badge > 0 && (
                       <span
-                        className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                        className={`px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold ${
                           isActive ? "bg-emerald-500 text-white" : "bg-emerald-100 text-emerald-800"
                         }`}
                       >
@@ -1200,6 +1210,25 @@ export const AdminPortal: React.FC = () => {
               })}
             </div>
 
+            {/* Mobile Active Tab Header (When not on overview) */}
+            {adminTab !== "overview" && (
+              <div className="flex items-center justify-between py-1 px-1 sm:hidden">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <span className="text-xs font-bold text-[#0F172A]">
+                    {ADMIN_TAB_LABELS[adminTab] || "Yönetim Alanı"}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAdminTab("overview")}
+                  className="text-[11px] font-semibold text-emerald-700 hover:text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200/60 transition-colors"
+                >
+                  ← Genel Bakış
+                </button>
+              </div>
+            )}
+
             {/* Render Tab Body */}
             <div>{renderTabContent()}</div>
           </div>
@@ -1207,7 +1236,7 @@ export const AdminPortal: React.FC = () => {
       </main>
 
       {/* Floating Apple Glass Dock on Mobile Screens */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 lg:hidden">
+      <div className="fixed bottom-3 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 lg:hidden">
         <AdminFloatingNav
           activeTab={adminTab}
           setActiveTab={setAdminTab}
