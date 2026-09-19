@@ -10,6 +10,7 @@ import {
   QrCode,
   Clock,
   Settings,
+  Boxes,
 } from "lucide-react";
 
 export type AdminTab = 
@@ -19,6 +20,7 @@ export type AdminTab =
   | "turnstile" 
   | "cashier" 
   | "members" 
+  | "inventory"
   | "settings";
 
 interface AdminFloatingNavProps {
@@ -41,6 +43,7 @@ const ADMIN_TABS: AdminTabItem[] = [
   { id: "coach_slots", label: "Saatler", icon: Clock },
   { id: "cashier", label: "Kasa", icon: CreditCard },
   { id: "members", label: "Üyeler", icon: Users },
+  { id: "inventory", label: "Envanter", icon: Boxes },
   { id: "settings", label: "Ayarlar", icon: Settings },
 ];
 

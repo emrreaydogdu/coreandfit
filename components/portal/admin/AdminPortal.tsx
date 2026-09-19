@@ -34,15 +34,28 @@ import {
   Camera,
   Settings,
   CalendarPlus,
+  MessageSquare,
+  RotateCcw,
+  UserPlus,
+  Download,
+  Boxes,
+  Percent,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useMember } from "@/context/MemberContext";
-import { PaymentMethod } from "@/types/portal";
+import { PaymentMethod, StudioMemberCRM, BookedSession } from "@/types/portal";
 import { AdminQrScannerModal } from "@/components/portal/admin/AdminQrScannerModal";
 import { AdminFloatingNav, AdminTab } from "@/components/portal/admin/AdminFloatingNav";
 import { AdminCreateSessionModal } from "@/components/portal/admin/AdminCreateSessionModal";
 import { AdminStudioSettingsTab } from "@/components/portal/admin/AdminStudioSettingsTab";
 import { AdminCoachSlotsTab } from "@/components/portal/admin/AdminCoachSlotsTab";
+import { AdminQuickSaleModal } from "@/components/portal/admin/AdminQuickSaleModal";
+import { AdminWhatsAppModal } from "@/components/portal/admin/AdminWhatsAppModal";
+import { AdminSessionActionModal } from "@/components/portal/admin/AdminSessionActionModal";
+import { AdminMemberDetailModal } from "@/components/portal/admin/AdminMemberDetailModal";
+import { AdminCreateMemberModal } from "@/components/portal/admin/AdminCreateMemberModal";
+import { AdminDailyBriefingWidget } from "@/components/portal/admin/AdminDailyBriefingWidget";
+import { AdminInventoryTab } from "@/components/portal/admin/AdminInventoryTab";
 
 export const AdminPortal: React.FC = () => {
   const {
@@ -56,6 +69,7 @@ export const AdminPortal: React.FC = () => {
     adminCheckInMember,
     adminAddSessions,
     completeBookedSession,
+    crmMembers,
   } = useMember();
 
   // Role switch & Display Mode
@@ -64,6 +78,74 @@ export const AdminPortal: React.FC = () => {
   const [viewMode, setViewMode] = useState<"responsive" | "app_frame">("responsive");
   const [isScannerOpen, setIsScannerOpen] = useState<boolean>(false);
   const [isCreateSessionOpen, setIsCreateSessionOpen] = useState<boolean>(false);
+
+  // New Operational Modals
+  const [isQuickSaleOpen, setIsQuickSaleOpen] = useState<boolean>(false);
+  const [isCreateMemberOpen, setIsCreateMemberOpen] = useState<boolean>(false);
+  const [selectedCrmMember, setSelectedCrmMember] = useState<StudioMemberCRM | null>(null);
+  const [activeSessionForAction, setActiveSessionForAction] = useState<BookedSession | null>(null);
+
+  // WhatsApp template modal state
+  const [whatsAppData, setWhatsAppData] = useState<{
+    isOpen: boolean;
+    name: string;
+    phone: string;
+    sessionInfo?: { date: string; timeSlot: string; focusArea?: string };
+  }>({
+    isOpen: false,
+    name: "",
+    phone: "",
+  });
+
+  const handleOpenWhatsApp = (
+    name: string,
+    phone: string,
+    sessionInfo?: { date: string; timeSlot: string; focusArea?: string }
+  ) => {
+    setWhatsAppData({
+      isOpen: true,
+      name,
+      phone,
+      sessionInfo,
+    });
+  };
+
+  // CSV Export for Cashier
+  const handleExportOrdersCSV = () => {
+    const headers = [
+      "Siparis No",
+      "Paket Adi",
+      "Seans Sayisi",
+      "Tutar (TL)",
+      "Odeme Yontemi",
+      "Durum",
+      "Tarih",
+      "Makbuz Kodu",
+    ];
+    const rows = orders.map((o) => [
+      o.orderNumber,
+      `"${o.packageName}"`,
+      o.sessionCount,
+      o.amount,
+      o.paymentMethod,
+      o.paymentStatus,
+      `"${o.createdAt}"`,
+      o.receiptCode,
+    ]);
+    const csvContent =
+      "data:text/csv;charset=utf-8,\uFEFF" +
+      [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute(
+      "download",
+      `CoreAndFit_Kasa_Raporu_${new Date().toISOString().slice(0, 10)}.csv`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   // Filter states
   const [coachFilter, setCoachFilter] = useState<string>("all");
@@ -112,58 +194,11 @@ export const AdminPortal: React.FC = () => {
     setSessionCompleteMetric("");
   };
 
-  // Mock members list for CRM
-  const studioMembers = [
-    {
-      id: "mem-1",
-      name: user?.fullName || "Ege Mert",
-      memberNo: user?.memberNo || "CF-89210",
-      tier: user?.membershipTier || "VIP 1:1 Personal Training",
-      remaining: remainingSessions,
-      total: totalSessions,
-      status: "Aktif",
-      phone: user?.phone || "+90 532 555 0124",
-      coach: "İlker Yüksel",
-    },
-    {
-      id: "mem-2",
-      name: "Burak Demir",
-      memberNo: "CF-77102",
-      tier: "Performance Athlete",
-      remaining: 4,
-      total: 12,
-      status: "Aktif",
-      phone: "+90 533 421 8899",
-      coach: "İlker Yüksel",
-    },
-    {
-      id: "mem-3",
-      name: "Deniz Aydın",
-      memberNo: "CF-64019",
-      tier: "VIP 1:1 Personal Training",
-      remaining: 18,
-      total: 24,
-      status: "Aktif",
-      phone: "+90 530 112 3344",
-      coach: "İlker Yüksel",
-    },
-    {
-      id: "mem-4",
-      name: "Zeynep Kaya",
-      memberNo: "CF-51920",
-      tier: "Studio Member",
-      remaining: 1,
-      total: 8,
-      status: "Yenileme Bekliyor",
-      phone: "+90 542 998 7766",
-      coach: "İlker Yüksel",
-    },
-  ];
-
-  const filteredMembers = studioMembers.filter(
+  const filteredMembers = crmMembers.filter(
     (m) =>
       m.name.toLowerCase().includes(memberSearch.toLowerCase()) ||
-      m.memberNo.toLowerCase().includes(memberSearch.toLowerCase())
+      m.memberNo.toLowerCase().includes(memberSearch.toLowerCase()) ||
+      m.phone.includes(memberSearch)
   );
 
   const pendingOrdersCount = orders.filter((o) => o.paymentStatus !== "completed").length;
@@ -219,6 +254,9 @@ export const AdminPortal: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* Daily Operational Briefing & Checklist Widget */}
+            <AdminDailyBriefingWidget />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Today's Schedule Snapshot (Ultra Detailed Cards) */}
@@ -363,18 +401,43 @@ export const AdminPortal: React.FC = () => {
                               <Check className="w-3 h-3 text-emerald-600" />
                               Nabız Bandı Hazır
                             </span>
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-[#0F172A] rounded-md">
-                              Asistansız Bizzat Kurucu Seansı
-                            </span>
                           </div>
 
-                          <button
-                            onClick={() => setActiveSessionToComplete(sess)}
-                            className="px-4 py-2 bg-[#0F172A] hover:bg-black text-white rounded-xl text-xs font-bold uppercase tracking-wider self-end sm:self-center transition-colors shadow-2xs active:scale-98 flex items-center gap-1.5"
-                          >
-                            <Check className="w-3.5 h-3.5 text-emerald-400 stroke-[3]" />
-                            <span>Seansı Tamamla</span>
-                          </button>
+                          <div className="flex items-center gap-1.5 self-end sm:self-center flex-wrap">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleOpenWhatsApp(memberName, "+90 532 555 0124", {
+                                  date: sess.date,
+                                  timeSlot: sess.timeSlot,
+                                  focusArea,
+                                })
+                              }
+                              className="px-2.5 py-1.5 bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#128C7E] rounded-xl text-xs font-bold transition-colors flex items-center gap-1"
+                              title="WhatsApp Hatırlatması Gönder"
+                            >
+                              <MessageSquare className="w-3.5 h-3.5 fill-current" />
+                              <span>WhatsApp</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setActiveSessionForAction(sess)}
+                              className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-[#0F172A] rounded-xl text-xs font-semibold transition-colors flex items-center gap-1"
+                              title="Seansı Ertele veya İptal Et"
+                            >
+                              <RotateCcw className="w-3 h-3 text-[#64748B]" />
+                              <span>Ertele / İptal</span>
+                            </button>
+
+                            <button
+                              onClick={() => setActiveSessionToComplete(sess)}
+                              className="px-3.5 py-1.5 bg-[#0F172A] hover:bg-black text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-colors shadow-2xs active:scale-98 flex items-center gap-1"
+                            >
+                              <Check className="w-3.5 h-3.5 text-emerald-400 stroke-[3]" />
+                              <span>Tamamla</span>
+                            </button>
+                          </div>
                         </div>
                       </div>
                     );
@@ -626,13 +689,39 @@ export const AdminPortal: React.FC = () => {
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-2 self-end sm:self-center">
+                      <div className="flex items-center gap-2 self-end sm:self-center flex-wrap">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleOpenWhatsApp(memberName, "+90 532 555 0124", {
+                              date: sess.date,
+                              timeSlot: sess.timeSlot,
+                              focusArea,
+                            })
+                          }
+                          className="px-3 py-2 bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#128C7E] rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5"
+                          title="WhatsApp Randevu Hatırlatması Gönder"
+                        >
+                          <MessageSquare className="w-3.5 h-3.5 fill-current" />
+                          <span>WhatsApp</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setActiveSessionForAction(sess)}
+                          className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-[#0F172A] rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5"
+                          title="Seansı Ertele veya İptal Et"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5 text-[#64748B]" />
+                          <span>Ertele / İptal</span>
+                        </button>
+
                         <button
                           onClick={() => setActiveSessionToComplete(sess)}
-                          className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-sm active:scale-98 flex items-center gap-1.5"
+                          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-sm active:scale-98 flex items-center gap-1.5"
                         >
                           <Check className="w-3.5 h-3.5 stroke-[3]" />
-                          <span>✓ Seansı Tamamla & Not Gir</span>
+                          <span>✓ Seansı Tamamla</span>
                         </button>
                       </div>
                     </div>
@@ -796,30 +885,97 @@ export const AdminPortal: React.FC = () => {
           </div>
         );
 
-      case "cashier":
+      case "cashier": {
+        const posTotal = orders
+          .filter((o) => o.paymentMethod === "pos_register" && o.paymentStatus === "completed")
+          .reduce((acc, c) => acc + c.amount, 0);
+        const cashTotal = orders
+          .filter((o) => o.paymentMethod === "cash_register" && o.paymentStatus === "completed")
+          .reduce((acc, c) => acc + c.amount, 0);
+        const transferTotal = orders
+          .filter((o) => o.paymentMethod === "bank_transfer" && o.paymentStatus === "completed")
+          .reduce((acc, c) => acc + c.amount, 0);
+
         return (
           <div className="bg-white border border-black/[0.06] rounded-3xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-black/[0.05] pb-4">
+            {/* Cashier Header */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-black/[0.05] pb-5">
               <div>
-                <h3 className="font-bold text-base uppercase text-[#0F172A]">
-                  Stüdyo Kasası & Ödeme Onayları ({orders.length})
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-emerald-50 text-emerald-800 rounded-full text-[10px] font-bold uppercase tracking-wider mb-1">
+                  <CreditCard className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Stüdyo Kasası & Mali Akış</span>
+                </div>
+                <h3 className="font-bold text-base sm:text-lg uppercase text-[#0F172A] font-display">
+                  Kasa Tahsilatları & Sipariş Onayları ({orders.length})
                 </h3>
                 <p className="text-xs text-[#64748B] mt-0.5">
-                  Kasada nakit, POS veya banka havalesi ile oluşturulan siparişleri onaylayın.
+                  Kasada nakit, POS veya banka havalesi ile oluşturulan siparişleri onaylayın, yeni satış yapın veya döküm alın.
                 </p>
               </div>
 
-              {/* Order filter */}
-              <div className="flex items-center gap-2">
+              {/* Cashier Actions */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setIsQuickSaleOpen(true)}
+                  className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-sm active:scale-98"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>+ Hızlı Satış Yap</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleExportOrdersCSV}
+                  className="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-[#0F172A] rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                  title="Tüm kasa siparişlerini CSV dosyası olarak bilgisayara indir"
+                >
+                  <Download className="w-3.5 h-3.5 text-[#64748B]" />
+                  <span>Excel / CSV</span>
+                </button>
+
                 <select
                   value={orderFilter}
                   onChange={(e) => setOrderFilter(e.target.value)}
-                  className="p-2 border border-black/[0.08] rounded-xl text-xs font-medium bg-[#F8FAFC] text-[#0F172A]"
+                  className="p-2.5 border border-black/[0.08] rounded-xl text-xs font-medium bg-[#F8FAFC] text-[#0F172A]"
                 >
-                  <option value="all">Tüm Siparişler</option>
-                  <option value="pending">Sadece Onay Bekleyenler</option>
-                  <option value="completed">Ödenenler</option>
+                  <option value="all">Tüm Siparişler ({orders.length})</option>
+                  <option value="pending">Sadece Onay Bekleyenler ({pendingOrdersCount})</option>
+                  <option value="completed">Tahsil Edilenler</option>
                 </select>
+              </div>
+            </div>
+
+            {/* Financial Breakdown Mini-Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="p-4 bg-[#F8FAFC] border border-black/[0.04] rounded-2xl">
+                <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider block">
+                  POS KREDİ KARTI
+                </span>
+                <span className="text-xl font-black text-[#0F172A] block mt-1">
+                  ₺{posTotal.toLocaleString("tr-TR")}
+                </span>
+                <span className="text-[10px] text-emerald-600 font-semibold">Doğrudan Terminal</span>
+              </div>
+
+              <div className="p-4 bg-[#F8FAFC] border border-black/[0.04] rounded-2xl">
+                <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider block">
+                  KASADA NAKİT
+                </span>
+                <span className="text-xl font-black text-[#0F172A] block mt-1">
+                  ₺{cashTotal.toLocaleString("tr-TR")}
+                </span>
+                <span className="text-[10px] text-emerald-600 font-semibold">Elden Tahsilat</span>
+              </div>
+
+              <div className="p-4 bg-[#F8FAFC] border border-black/[0.04] rounded-2xl">
+                <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider block">
+                  HAVALE & FAST
+                </span>
+                <span className="text-xl font-black text-[#0F172A] block mt-1">
+                  ₺{transferTotal.toLocaleString("tr-TR")}
+                </span>
+                <span className="text-[10px] text-emerald-600 font-semibold">Banka Hesabı</span>
               </div>
             </div>
 
@@ -884,30 +1040,46 @@ export const AdminPortal: React.FC = () => {
             </div>
           </div>
         );
+      }
 
       case "members":
         return (
           <div className="bg-white border border-black/[0.06] rounded-3xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-black/[0.05] pb-4">
               <div>
-                <h3 className="font-bold text-base uppercase text-[#0F172A]">
-                  Stüdyo Üye Rehberi & Seans Bakiye Yönetimi
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-emerald-50 text-emerald-800 rounded-full text-[10px] font-bold uppercase tracking-wider mb-1">
+                  <Users className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Stüdyo Danışan Portföyü</span>
+                </div>
+                <h3 className="font-bold text-base sm:text-lg uppercase text-[#0F172A] font-display">
+                  Stüdyo Üye Rehberi & Biyomekanik CRM ({filteredMembers.length})
                 </h3>
                 <p className="text-xs text-[#64748B] mt-0.5">
-                  Tüm kayıtlı üyelerin seans haklarını, sağlık notlarını ve durumlarını görüntüleyin.
+                  Tüm kayıtlı üyelerin seans haklarını, sağlık notlarını, sakatlık uyarılarını ve gelişim metriklerini yönetin.
                 </p>
               </div>
 
-              {/* Search */}
-              <div className="relative w-full sm:w-64">
-                <Search className="w-4 h-4 text-[#94A3B8] absolute left-3 top-3" />
-                <input
-                  type="text"
-                  placeholder="İsim veya Üye No Ara..."
-                  value={memberSearch}
-                  onChange={(e) => setMemberSearch(e.target.value)}
-                  className="w-full bg-[#F8FAFC] border border-black/[0.08] rounded-xl pl-9 pr-3 py-2 text-xs text-[#0F172A] focus:outline-none focus:border-[#10B981]"
-                />
+              {/* Actions: Add Member & Search */}
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setIsCreateMemberOpen(true)}
+                  className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-sm active:scale-98"
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                  <span>+ Yeni Üye Kaydet</span>
+                </button>
+
+                <div className="relative w-full sm:w-60">
+                  <Search className="w-4 h-4 text-[#94A3B8] absolute left-3 top-3" />
+                  <input
+                    type="text"
+                    placeholder="İsim, No veya Tel Ara..."
+                    value={memberSearch}
+                    onChange={(e) => setMemberSearch(e.target.value)}
+                    className="w-full bg-[#F8FAFC] border border-black/[0.08] rounded-xl pl-9 pr-3 py-2 text-xs text-[#0F172A] focus:outline-none focus:border-[#10B981]"
+                  />
+                </div>
               </div>
             </div>
 
@@ -915,45 +1087,78 @@ export const AdminPortal: React.FC = () => {
               {filteredMembers.map((mem) => (
                 <div
                   key={mem.id}
-                  className="p-4 bg-[#F8FAFC] border border-black/[0.04] rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4"
+                  className="p-4 bg-[#F8FAFC] hover:bg-white border border-black/[0.04] hover:border-black/[0.1] rounded-2xl flex flex-col lg:flex-row lg:items-center justify-between gap-4 transition-all shadow-2xs"
                 >
-                  <div className="flex items-center gap-3.5">
-                    <div className="w-12 h-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-bold text-sm shrink-0">
+                  <div className="flex items-start sm:items-center gap-3.5">
+                    <div className="w-12 h-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-2xs">
                       {mem.name.split(" ").map((n) => n[0]).join("")}
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2">
+                    <div className="space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
                         <h4 className="font-bold text-sm text-[#0F172A]">{mem.name}</h4>
-                        <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded-md">
+                        <span className="px-2 py-0.5 bg-emerald-50 text-emerald-800 text-[10px] font-bold rounded-md border border-emerald-200/50">
                           {mem.memberNo}
                         </span>
                         <span className="text-[10px] font-semibold text-[#64748B]">{mem.tier}</span>
                       </div>
-                      <p className="text-xs text-[#64748B] mt-0.5">
-                        İletişim: {mem.phone} • Atanan Koç: <strong className="text-[#0F172A]">{mem.coach}</strong>
+
+                      {/* Injury warning pill if present */}
+                      {mem.injuryAlert && (
+                        <div className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-red-50 text-red-800 border border-red-200 text-[10px] font-bold rounded-lg">
+                          <span>🚨 {mem.injuryAlert}</span>
+                        </div>
+                      )}
+
+                      <p className="text-xs text-[#64748B]">
+                        İletişim: <strong className="text-[#0F172A]">{mem.phone}</strong> • Antrenör: İlker Yüksel • Hedef: {mem.targetGoal || "Kuvvet & Biyomekanik"}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4 justify-between md:justify-end">
-                    <div className="text-right">
+                  <div className="flex items-center gap-4 justify-between lg:justify-end border-t lg:border-t-0 border-black/[0.04] pt-3 lg:pt-0">
+                    <div className="text-left lg:text-right">
                       <span className="text-[10px] text-[#64748B] block uppercase font-bold">KALAN SEANS</span>
                       <span className="text-base font-black text-emerald-600">{mem.remaining} / {mem.total}</span>
                     </div>
 
-                    <button
-                      onClick={() => setIsAddSessionModalOpen(true)}
-                      className="px-3.5 py-2 bg-[#0F172A] hover:bg-black text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-2xs"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>+ Seans Tanımla</span>
-                    </button>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenWhatsApp(mem.name, mem.phone)}
+                        className="px-2.5 py-2 bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#128C7E] rounded-xl text-xs font-bold transition-colors flex items-center gap-1"
+                        title="WhatsApp Mesajı Gönder"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5 fill-current" />
+                        <span className="hidden sm:inline">WhatsApp</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setSelectedCrmMember(mem)}
+                        className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-[#0F172A] rounded-xl text-xs font-semibold flex items-center gap-1 transition-colors"
+                      >
+                        <FileText className="w-3.5 h-3.5 text-[#64748B]" />
+                        <span>Sağlık Kartı</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setSelectedCrmMember(mem)}
+                        className="px-3 py-2 bg-[#0F172A] hover:bg-black text-white rounded-xl text-xs font-semibold flex items-center gap-1 transition-colors shadow-2xs"
+                      >
+                        <Plus className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>+ Seans</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
           </div>
         );
+
+      case "inventory":
+        return <AdminInventoryTab />;
 
       default:
         return null;
@@ -986,8 +1191,18 @@ export const AdminPortal: React.FC = () => {
             </div>
           </div>
 
-          {/* Header Actions: Manual Session, Auto QR Scanner, View Mode & Solo Coach Profile */}
+          {/* Header Actions: Quick Sale, Manual Session, Auto QR Scanner, View Mode & Solo Coach Profile */}
           <div className="flex items-center gap-2 sm:gap-2.5">
+            {/* Fast Desk Sale Button */}
+            <button
+              onClick={() => setIsQuickSaleOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-full shadow-xs transition-all active:scale-98"
+            >
+              <CreditCard className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">+ Hızlı Satış</span>
+              <span className="sm:hidden">+ Satış</span>
+            </button>
+
             {/* Quick Manual Session Create Button */}
             <button
               onClick={() => setIsCreateSessionOpen(true)}
@@ -1174,6 +1389,7 @@ export const AdminPortal: React.FC = () => {
                 { id: "coach_slots", label: "Koç Randevu Saatleri", icon: Clock },
                 { id: "cashier", label: "Kasa & Ödemeler", icon: CreditCard, badge: pendingOrdersCount },
                 { id: "members", label: "Üye Rehberi (CRM)", icon: Users },
+                { id: "inventory", label: "Envanter & Donanım", icon: Boxes },
                 { id: "settings", label: "İşletme Ayarları", icon: Settings },
               ].map((tab) => {
                 const Icon = tab.icon;
@@ -1370,6 +1586,40 @@ export const AdminPortal: React.FC = () => {
           </div>
         )}
       </AnimatePresence>
+
+      {/* MODAL 4: Quick POS & Desk Sale Modal */}
+      <AdminQuickSaleModal
+        isOpen={isQuickSaleOpen}
+        onClose={() => setIsQuickSaleOpen(false)}
+      />
+
+      {/* MODAL 5: WhatsApp Direct Template Messenger */}
+      <AdminWhatsAppModal
+        isOpen={whatsAppData.isOpen}
+        onClose={() => setWhatsAppData((prev) => ({ ...prev, isOpen: false }))}
+        defaultMemberName={whatsAppData.name}
+        defaultPhone={whatsAppData.phone}
+        defaultSessionInfo={whatsAppData.sessionInfo}
+      />
+
+      {/* MODAL 6: Session Reschedule / Cancel / No-Show Modal */}
+      <AdminSessionActionModal
+        session={activeSessionForAction}
+        onClose={() => setActiveSessionForAction(null)}
+      />
+
+      {/* MODAL 7: Member CRM Health & Biometrics Detail Card */}
+      <AdminMemberDetailModal
+        member={selectedCrmMember}
+        onClose={() => setSelectedCrmMember(null)}
+        onOpenWhatsApp={(name, phone) => handleOpenWhatsApp(name, phone)}
+      />
+
+      {/* MODAL 8: Create New Member Modal */}
+      <AdminCreateMemberModal
+        isOpen={isCreateMemberOpen}
+        onClose={() => setIsCreateMemberOpen(false)}
+      />
     </div>
   );
 };

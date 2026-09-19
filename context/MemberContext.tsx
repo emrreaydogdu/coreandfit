@@ -15,6 +15,10 @@ import {
   CoachScheduleProfile,
   CoachDaySchedule,
   CoachTimeSlot,
+  StudioInventoryItem,
+  StudioMaintenanceTask,
+  StudioDailyChecklistItem,
+  StudioMemberCRM,
 } from "@/types/portal";
 import {
   DEMO_USER,
@@ -24,6 +28,10 @@ import {
   PORTAL_PACKAGES,
   DEFAULT_STUDIO_SETTINGS,
   DEFAULT_COACH_SCHEDULES,
+  DEFAULT_CRM_MEMBERS,
+  DEFAULT_INVENTORY_ITEMS,
+  DEFAULT_MAINTENANCE_TASKS,
+  DEFAULT_CHECKLIST,
 } from "@/data/portal-mock";
 
 interface MemberContextType {
@@ -120,6 +128,39 @@ interface MemberContextType {
   }) => { success: boolean; message: string };
   adminAddSessions: (count: number) => void;
   completeBookedSession: (sessionId: string, coachNote: string, metric?: string) => void;
+  cancelBookedSession: (sessionId: string, refundCredit: boolean, reason?: string) => { success: boolean; message: string };
+  rescheduleBookedSession: (sessionId: string, newDate: string, newTime: string) => { success: boolean; message: string };
+  adminQuickSale: (data: {
+    memberName: string;
+    memberNo?: string;
+    packageId: string;
+    packageName: string;
+    sessionCount: number;
+    amount: number;
+    paymentMethod: PaymentMethod;
+    discountPercent?: number;
+    notes?: string;
+  }) => { success: boolean; order: OrderItem };
+
+  // CRM Üye Yönetimi
+  crmMembers: StudioMemberCRM[];
+  addNewMember: (member: Omit<StudioMemberCRM, "id" | "memberNo">) => StudioMemberCRM;
+  updateMemberSessions: (memberId: string, delta: number) => void;
+  updateMemberDetails: (memberId: string, data: Partial<StudioMemberCRM>) => void;
+
+  // Envanter & Donanım Bakımı
+  inventoryItems: StudioInventoryItem[];
+  updateInventoryQty: (itemId: string, delta: number) => void;
+  addInventoryItem: (item: Omit<StudioInventoryItem, "id" | "lastRestocked">) => void;
+  maintenanceTasks: StudioMaintenanceTask[];
+  toggleMaintenanceStatus: (taskId: string) => void;
+
+  // Günlük Stüdyo Brifingi & Checklist
+  dailyChecklist: StudioDailyChecklistItem[];
+  toggleChecklistItem: (itemId: string) => void;
+  addChecklistItem: (title: string, category: "acilis" | "hijyen" | "kapanis" | "guvenlik") => void;
+  dailyNotes: string;
+  updateDailyNotes: (notes: string) => void;
 }
 
 const MemberContext = createContext<MemberContextType | undefined>(undefined);
@@ -135,6 +176,11 @@ const STORAGE_KEYS = {
   VIEW_MODE: "cf_member_view_mode",
   STUDIO_SETTINGS: "cf_studio_settings",
   COACH_SCHEDULES: "cf_coach_schedules",
+  CRM_MEMBERS: "cf_crm_members",
+  INVENTORY: "cf_studio_inventory",
+  MAINTENANCE: "cf_studio_maintenance",
+  CHECKLIST: "cf_daily_checklist",
+  DAILY_NOTES: "cf_daily_notes",
 };
 
 export const MemberProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -151,6 +197,13 @@ export const MemberProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [orders, setOrders] = useState<OrderItem[]>(INITIAL_ORDERS);
   const [studioSettings, setStudioSettings] = useState<StudioSettings>(DEFAULT_STUDIO_SETTINGS);
   const [coachSchedules, setCoachSchedules] = useState<CoachScheduleProfile[]>(DEFAULT_COACH_SCHEDULES);
+  const [crmMembers, setCrmMembers] = useState<StudioMemberCRM[]>(DEFAULT_CRM_MEMBERS);
+  const [inventoryItems, setInventoryItems] = useState<StudioInventoryItem[]>(DEFAULT_INVENTORY_ITEMS);
+  const [maintenanceTasks, setMaintenanceTasks] = useState<StudioMaintenanceTask[]>(DEFAULT_MAINTENANCE_TASKS);
+  const [dailyChecklist, setDailyChecklist] = useState<StudioDailyChecklistItem[]>(DEFAULT_CHECKLIST);
+  const [dailyNotes, setDailyNotes] = useState<string>(
+    "• Saat 15:00 - Özel istasyon kablo makaraları gresleme kontrolü\n• Burak Bey sağ omuz impingement kontrol edilecek (overhead pressten kaçın)\n• Akşam havlu çamaşır teslimatı teslim alınacak"
+  );
 
   // LocalStorage senkronizasyonu
   useEffect(() => {
@@ -260,6 +313,49 @@ export const MemberProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setCoachSchedules(DEFAULT_COACH_SCHEDULES);
         localStorage.setItem(STORAGE_KEYS.COACH_SCHEDULES, JSON.stringify(DEFAULT_COACH_SCHEDULES));
       }
+
+      const savedMembers = localStorage.getItem(STORAGE_KEYS.CRM_MEMBERS);
+      if (savedMembers) {
+        try {
+          const parsed = JSON.parse(savedMembers);
+          if (Array.isArray(parsed) && parsed.length > 0) setCrmMembers(parsed);
+        } catch {
+          setCrmMembers(DEFAULT_CRM_MEMBERS);
+        }
+      }
+
+      const savedInv = localStorage.getItem(STORAGE_KEYS.INVENTORY);
+      if (savedInv) {
+        try {
+          const parsed = JSON.parse(savedInv);
+          if (Array.isArray(parsed) && parsed.length > 0) setInventoryItems(parsed);
+        } catch {
+          setInventoryItems(DEFAULT_INVENTORY_ITEMS);
+        }
+      }
+
+      const savedMaint = localStorage.getItem(STORAGE_KEYS.MAINTENANCE);
+      if (savedMaint) {
+        try {
+          const parsed = JSON.parse(savedMaint);
+          if (Array.isArray(parsed) && parsed.length > 0) setMaintenanceTasks(parsed);
+        } catch {
+          setMaintenanceTasks(DEFAULT_MAINTENANCE_TASKS);
+        }
+      }
+
+      const savedChecklist = localStorage.getItem(STORAGE_KEYS.CHECKLIST);
+      if (savedChecklist) {
+        try {
+          const parsed = JSON.parse(savedChecklist);
+          if (Array.isArray(parsed) && parsed.length > 0) setDailyChecklist(parsed);
+        } catch {
+          setDailyChecklist(DEFAULT_CHECKLIST);
+        }
+      }
+
+      const savedNotes = localStorage.getItem(STORAGE_KEYS.DAILY_NOTES);
+      if (savedNotes) setDailyNotes(savedNotes);
 
       const savedViewMode = localStorage.getItem(STORAGE_KEYS.VIEW_MODE);
       if (savedViewMode === "app_frame" || savedViewMode === "responsive") {
@@ -594,6 +690,236 @@ export const MemberProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     });
   };
 
+  // Seans İptal & Erteleme (Reschedule)
+  const cancelBookedSession = (sessionId: string, refundCredit: boolean, reason?: string) => {
+    const sess = bookedSessions.find((s) => s.id === sessionId);
+    if (!sess) return { success: false, message: "Seans bulunamadı." };
+
+    const updatedBooked = bookedSessions.map((s) =>
+      s.id === sessionId
+        ? {
+            ...s,
+            status: "cancelled" as const,
+            notes: reason ? `${s.notes ? s.notes + " • " : ""}[İPTAL: ${reason}]` : s.notes,
+          }
+        : s
+    );
+    setBookedSessions(updatedBooked);
+    saveToStorage(STORAGE_KEYS.BOOKED, updatedBooked);
+
+    let refundMsg = "";
+    if (refundCredit) {
+      const nextRemaining = remainingSessions + 1;
+      setRemainingSessions(nextRemaining);
+      saveToStorage(STORAGE_KEYS.REMAINING, nextRemaining.toString());
+      refundMsg = " (1 seans kredisi iade edildi)";
+    }
+
+    return {
+      success: true,
+      message: `Seans başarıyla iptal edildi${refundMsg}.`,
+    };
+  };
+
+  const rescheduleBookedSession = (sessionId: string, newDate: string, newTime: string) => {
+    const sess = bookedSessions.find((s) => s.id === sessionId);
+    if (!sess) return { success: false, message: "Seans bulunamadı." };
+
+    const updatedBooked = bookedSessions.map((s) =>
+      s.id === sessionId ? { ...s, date: newDate, timeSlot: newTime, status: "confirmed" as const } : s
+    );
+    setBookedSessions(updatedBooked);
+    saveToStorage(STORAGE_KEYS.BOOKED, updatedBooked);
+
+    return {
+      success: true,
+      message: `Seans ${newDate} saat ${newTime} olarak yeniden planlandı.`,
+    };
+  };
+
+  // Hızlı Kasa Satış & Tahsilat
+  const adminQuickSale = (data: {
+    memberName: string;
+    memberNo?: string;
+    packageId: string;
+    packageName: string;
+    sessionCount: number;
+    amount: number;
+    paymentMethod: PaymentMethod;
+    discountPercent?: number;
+    notes?: string;
+  }) => {
+    const randomOrderNum = Math.floor(1000 + Math.random() * 9000);
+    const now = new Date();
+    const trMonths = [
+      "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
+      "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"
+    ];
+    const formattedDate = `${now.getDate()} ${trMonths[now.getMonth()]} ${now.getFullYear()} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+
+    const newOrder: OrderItem = {
+      id: `ord-adm-${Date.now()}`,
+      orderNumber: `CF-KASA-${now.getFullYear()}-${randomOrderNum}`,
+      packageId: data.packageId,
+      packageName: data.packageName,
+      sessionCount: data.sessionCount,
+      amount: data.amount,
+      formattedAmount: `₺${data.amount.toLocaleString("tr-TR")}`,
+      paymentMethod: data.paymentMethod,
+      paymentStatus: "completed",
+      createdAt: formattedDate,
+      receiptCode: `REC-${randomOrderNum}-KASA`,
+      paidAt: formattedDate,
+    };
+
+    const nextOrders = [newOrder, ...orders];
+    setOrders(nextOrders);
+    saveToStorage(STORAGE_KEYS.ORDERS, nextOrders);
+
+    // Üye seans bakiyesini güncelle
+    const member = crmMembers.find((m) => m.name === data.memberName || m.memberNo === data.memberNo);
+    if (member) {
+      updateMemberSessions(member.id, data.sessionCount);
+    } else {
+      adminAddSessions(data.sessionCount);
+    }
+
+    return {
+      success: true,
+      order: newOrder,
+    };
+  };
+
+  // CRM Members
+  const addNewMember = (memberData: Omit<StudioMemberCRM, "id" | "memberNo">) => {
+    const randomNum = Math.floor(10000 + Math.random() * 89999);
+    const newMember: StudioMemberCRM = {
+      ...memberData,
+      id: `mem-${Date.now()}`,
+      memberNo: `CF-${randomNum}`,
+      status: "Aktif",
+      coach: "İlker Yüksel",
+    };
+    const updated = [newMember, ...crmMembers];
+    setCrmMembers(updated);
+    saveToStorage(STORAGE_KEYS.CRM_MEMBERS, updated);
+    return newMember;
+  };
+
+  const updateMemberSessions = (memberId: string, delta: number) => {
+    const updated = crmMembers.map((m) => {
+      if (m.id === memberId) {
+        const nextRem = Math.max(0, m.remaining + delta);
+        const nextTot = delta > 0 ? m.total + delta : m.total;
+        return { ...m, remaining: nextRem, total: nextTot };
+      }
+      return m;
+    });
+    setCrmMembers(updated);
+    saveToStorage(STORAGE_KEYS.CRM_MEMBERS, updated);
+
+    // If matching active demo user
+    const targetMember = crmMembers.find((m) => m.id === memberId);
+    if (targetMember && (targetMember.id === "mem-1" || targetMember.memberNo === user?.memberNo)) {
+      const nextRemaining = Math.max(0, remainingSessions + delta);
+      const nextTotal = delta > 0 ? totalSessions + delta : totalSessions;
+      setRemainingSessions(nextRemaining);
+      setTotalSessions(nextTotal);
+      saveToStorage(STORAGE_KEYS.REMAINING, nextRemaining.toString());
+      saveToStorage(STORAGE_KEYS.TOTAL, nextTotal.toString());
+    }
+  };
+
+  const updateMemberDetails = (memberId: string, data: Partial<StudioMemberCRM>) => {
+    const updated = crmMembers.map((m) => (m.id === memberId ? { ...m, ...data } : m));
+    setCrmMembers(updated);
+    saveToStorage(STORAGE_KEYS.CRM_MEMBERS, updated);
+  };
+
+  // Envanter & Donanım Bakımı
+  const updateInventoryQty = (itemId: string, delta: number) => {
+    const updated = inventoryItems.map((item) => {
+      if (item.id === itemId) {
+        const nextQty = Math.max(0, item.quantity + delta);
+        const now = new Date();
+        const trMonths = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+        const todayStr = `${now.getDate()} ${trMonths[now.getMonth()]} ${now.getFullYear()}`;
+        return {
+          ...item,
+          quantity: nextQty,
+          lastRestocked: delta > 0 ? todayStr : item.lastRestocked,
+        };
+      }
+      return item;
+    });
+    setInventoryItems(updated);
+    saveToStorage(STORAGE_KEYS.INVENTORY, updated);
+  };
+
+  const addInventoryItem = (item: Omit<StudioInventoryItem, "id" | "lastRestocked">) => {
+    const now = new Date();
+    const trMonths = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+    const newItem: StudioInventoryItem = {
+      ...item,
+      id: `inv-${Date.now()}`,
+      lastRestocked: `${now.getDate()} ${trMonths[now.getMonth()]} ${now.getFullYear()}`,
+    };
+    const updated = [newItem, ...inventoryItems];
+    setInventoryItems(updated);
+    saveToStorage(STORAGE_KEYS.INVENTORY, updated);
+  };
+
+  const toggleMaintenanceStatus = (taskId: string) => {
+    const now = new Date();
+    const trMonths = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+    const todayStr = `${now.getDate()} ${trMonths[now.getMonth()]} ${now.getFullYear()}`;
+    const updated = maintenanceTasks.map((t) => {
+      if (t.id === taskId) {
+        const nextStatus = t.status === "perfect" ? "attention" : "perfect";
+        return {
+          ...t,
+          status: nextStatus as any,
+          lastChecked: todayStr,
+        };
+      }
+      return t;
+    });
+    setMaintenanceTasks(updated);
+    saveToStorage(STORAGE_KEYS.MAINTENANCE, updated);
+  };
+
+  // Checklist & Notes
+  const toggleChecklistItem = (itemId: string) => {
+    const now = new Date();
+    const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+    const updated = dailyChecklist.map((c) => {
+      if (c.id === itemId) {
+        const nextComp = !c.completed;
+        return { ...c, completed: nextComp, time: nextComp ? timeStr : undefined };
+      }
+      return c;
+    });
+    setDailyChecklist(updated);
+    saveToStorage(STORAGE_KEYS.CHECKLIST, updated);
+  };
+
+  const addChecklistItem = (title: string, category: "acilis" | "hijyen" | "kapanis" | "guvenlik") => {
+    const newItem: StudioDailyChecklistItem = {
+      id: `chk-${Date.now()}`,
+      title,
+      category,
+      completed: false,
+    };
+    const updated = [...dailyChecklist, newItem];
+    setDailyChecklist(updated);
+    saveToStorage(STORAGE_KEYS.CHECKLIST, updated);
+  };
+
+  const updateDailyNotes = (notes: string) => {
+    setDailyNotes(notes);
+    saveToStorage(STORAGE_KEYS.DAILY_NOTES, notes);
+  };
+
   // İşletme Ayarları Yönetimi
   const updateStudioSettings = (newSettings: Partial<StudioSettings>) => {
     setStudioSettings((prev) => {
@@ -841,6 +1167,23 @@ export const MemberProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         adminCheckInMember,
         adminAddSessions,
         completeBookedSession,
+        cancelBookedSession,
+        rescheduleBookedSession,
+        adminQuickSale,
+        crmMembers,
+        addNewMember,
+        updateMemberSessions,
+        updateMemberDetails,
+        inventoryItems,
+        updateInventoryQty,
+        addInventoryItem,
+        maintenanceTasks,
+        toggleMaintenanceStatus,
+        dailyChecklist,
+        toggleChecklistItem,
+        addChecklistItem,
+        dailyNotes,
+        updateDailyNotes,
       }}
     >
       {children}

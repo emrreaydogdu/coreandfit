@@ -155,3 +155,54 @@ export interface CoachScheduleProfile {
   sessionDurationMin: number; // e.g. 60
   weeklySchedule: CoachDaySchedule[];
 }
+
+export interface StudioInventoryItem {
+  id: string;
+  name: string;
+  category: "sarf" | "icecek" | "hijyen" | "ekipman";
+  quantity: number;
+  unit: string;
+  minThreshold: number;
+  lastRestocked: string;
+}
+
+export interface StudioMaintenanceTask {
+  id: string;
+  equipmentName: string;
+  category: string;
+  status: "perfect" | "attention" | "maintenance_needed";
+  lastChecked: string;
+  nextDueDate: string;
+  notes: string;
+  assignedTo: string;
+}
+
+export interface StudioDailyChecklistItem {
+  id: string;
+  title: string;
+  category: "acilis" | "hijyen" | "kapanis" | "guvenlik";
+  completed: boolean;
+  time?: string;
+}
+
+export interface StudioMemberCRM {
+  id: string;
+  name: string;
+  memberNo: string;
+  tier: string;
+  remaining: number;
+  total: number;
+  status: "Aktif" | "Yenileme Bekliyor" | "Pasif";
+  phone: string;
+  email: string;
+  coach: string;
+  injuryAlert?: string;
+  healthNotes?: string;
+  targetGoal?: string;
+  weight?: string;
+  bodyFat?: string;
+  deadliftPr?: string;
+  squatPr?: string;
+  benchPr?: string;
+  joinDate?: string;
+}
