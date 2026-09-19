@@ -104,7 +104,7 @@ export const DesignThemeSwitcher: React.FC<DesignThemeSwitcherProps> = ({
   return (
     <div
       className={cn(
-        "fixed top-2.5 sm:top-3 left-1/2 -translate-x-1/2 z-[80] flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 rounded-full liquid-glass-panel text-xs select-none transition-all duration-300 shadow-lg",
+        "theme-switcher-floating fixed top-2.5 sm:top-3 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 rounded-full liquid-glass-panel text-xs select-none transition-all duration-300 shadow-lg",
         className
       )}
     >

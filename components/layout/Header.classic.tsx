@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { BUSINESS_CONFIG } from "@/config/business";
 import { buildQuickChatWhatsAppUrl } from "@/lib/whatsapp";
 import { Menu, X, MessageSquare, Phone, ChevronRight, User } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, lockBodyScroll, unlockBodyScroll } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { DesignThemeSwitcher } from "@/components/ui/DesignThemeSwitcher";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -51,21 +51,12 @@ export const Header: React.FC = () => {
 
   useEffect(() => {
     if (mobileMenuOpen) {
-      document.body.style.overflow = "hidden";
-      document.body.setAttribute("data-mobile-menu", "open");
-      document.body.classList.add("mobile-menu-open");
-      window.dispatchEvent(new CustomEvent("mobile-menu-toggle", { detail: true }));
+      lockBodyScroll();
     } else {
-      document.body.style.overflow = "unset";
-      document.body.removeAttribute("data-mobile-menu");
-      document.body.classList.remove("mobile-menu-open");
-      window.dispatchEvent(new CustomEvent("mobile-menu-toggle", { detail: false }));
+      unlockBodyScroll();
     }
     return () => {
-      document.body.style.overflow = "unset";
-      document.body.removeAttribute("data-mobile-menu");
-      document.body.classList.remove("mobile-menu-open");
-      window.dispatchEvent(new CustomEvent("mobile-menu-toggle", { detail: false }));
+      unlockBodyScroll();
     };
   }, [mobileMenuOpen]);
 
@@ -73,7 +64,8 @@ export const Header: React.FC = () => {
     <>
       <header
         className={cn(
-          "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
+          "fixed top-0 left-0 right-0 transition-all duration-300",
+          mobileMenuOpen ? "z-[80]" : "z-50",
           isScrolled
             ? "bg-white/95 dark:bg-[#08090B]/90 backdrop-blur-md border-b border-[#E2E4E9] dark:border-[#23272F]/80 py-3.5 shadow-sm dark:shadow-2xl"
             : "bg-transparent dark:bg-gradient-to-b dark:from-[#08090B]/90 dark:via-[#08090B]/60 dark:to-transparent py-5"
@@ -214,7 +206,14 @@ export const Header: React.FC = () => {
 
       {/* Mobile Drawer Overlay */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-[70] bg-[#08090B] flex flex-col pt-24 pb-8 px-6 overflow-y-auto xl:hidden animate-in fade-in duration-200">
+        <div
+          className="fixed inset-0 z-[70] bg-[#08090B] flex flex-col pt-24 pb-8 px-6 overflow-y-auto xl:hidden animate-in fade-in duration-200"
+          style={{
+            overscrollBehavior: "contain",
+            WebkitOverflowScrolling: "touch",
+            touchAction: "pan-y",
+          }}
+        >
           <div className="flex flex-col gap-1 border-b border-[#23272F] pb-6 mb-6">
             <span className="text-[11px] font-mono text-[#72757C] uppercase tracking-widest mb-2">
               MENÜ & SİSTEM

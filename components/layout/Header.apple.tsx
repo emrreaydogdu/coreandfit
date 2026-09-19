@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { BUSINESS_CONFIG } from "@/config/business";
 import { buildQuickChatWhatsAppUrl } from "@/lib/whatsapp";
 import { Menu, X, MessageSquare, Phone, ChevronRight, User, ArrowRight } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, lockBodyScroll, unlockBodyScroll } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { DesignThemeSwitcher } from "@/components/ui/DesignThemeSwitcher";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -48,21 +48,12 @@ export const Header: React.FC = () => {
 
   useEffect(() => {
     if (mobileMenuOpen) {
-      document.body.style.overflow = "hidden";
-      document.body.setAttribute("data-mobile-menu", "open");
-      document.body.classList.add("mobile-menu-open");
-      window.dispatchEvent(new CustomEvent("mobile-menu-toggle", { detail: true }));
+      lockBodyScroll();
     } else {
-      document.body.style.overflow = "unset";
-      document.body.removeAttribute("data-mobile-menu");
-      document.body.classList.remove("mobile-menu-open");
-      window.dispatchEvent(new CustomEvent("mobile-menu-toggle", { detail: false }));
+      unlockBodyScroll();
     }
     return () => {
-      document.body.style.overflow = "unset";
-      document.body.removeAttribute("data-mobile-menu");
-      document.body.classList.remove("mobile-menu-open");
-      window.dispatchEvent(new CustomEvent("mobile-menu-toggle", { detail: false }));
+      unlockBodyScroll();
     };
   }, [mobileMenuOpen]);
 
@@ -71,8 +62,11 @@ export const Header: React.FC = () => {
       {/* Floating Apple VisionOS Liquid Glass Island Header */}
       <header
         className={cn(
-          "fixed top-12 sm:top-14 left-0 right-0 z-50 transition-all duration-500 ease-out px-4 sm:px-6 pointer-events-none",
-          isScrolled ? "translate-y-[-6px]" : "translate-y-0"
+          "fixed left-0 right-0 transition-all duration-500 ease-out px-4 sm:px-6 pointer-events-none",
+          mobileMenuOpen
+            ? "z-[80] top-3 sm:top-4"
+            : "z-50 top-12 sm:top-14",
+          isScrolled && !mobileMenuOpen ? "translate-y-[-6px]" : "translate-y-0"
         )}
       >
         <div className="max-w-7xl mx-auto flex items-center justify-between pointer-events-auto liquid-glass-panel rounded-full px-4 sm:px-6 py-2.5 sm:py-3 transition-all duration-300">
@@ -187,7 +181,14 @@ export const Header: React.FC = () => {
 
       {/* Mobile Drawer with Apple Liquid Glass Backdrop */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-[70] bg-black/50 backdrop-blur-3xl flex flex-col pt-32 pb-8 px-6 overflow-y-auto lg:hidden animate-in fade-in duration-200">
+        <div
+          className="fixed inset-0 z-[70] bg-black/60 dark:bg-black/80 backdrop-blur-3xl flex flex-col pt-24 sm:pt-28 pb-8 px-5 sm:px-6 overflow-y-auto lg:hidden animate-in fade-in duration-200"
+          style={{
+            overscrollBehavior: "contain",
+            WebkitOverflowScrolling: "touch",
+            touchAction: "pan-y",
+          }}
+        >
           <div className="flex flex-col gap-1 liquid-glass-panel rounded-3xl p-5 mb-4 shadow-xl">
             <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest px-2 mb-1">
               Sayfalar

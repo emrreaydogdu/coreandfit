@@ -550,6 +550,28 @@ html:has(body.mobile-menu-open) aside[aria-label="Hızlı İşlemler"] {
   pointer-events: none !important;
 }
 
+/* Lock background website when mobile menu / drawer is open */
+html.mobile-menu-open,
+body.mobile-menu-open,
+body[data-mobile-menu="open"],
+body[data-scroll-locked="true"],
+html:has(body.mobile-menu-open) {
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+  touch-action: none !important;
+}
+
+/* Hide top floating theme switcher when mobile menu is open */
+body.mobile-menu-open .theme-switcher-floating,
+body[data-mobile-menu="open"] .theme-switcher-floating,
+body[data-scroll-locked="true"] .theme-switcher-floating,
+html:has(body.mobile-menu-open) .theme-switcher-floating {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+}
+
 /* --- Inputs & Interactive Controls in Light Mode --- */
 html.light input,
 html.light textarea,
