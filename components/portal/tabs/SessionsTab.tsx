@@ -47,6 +47,7 @@ export const SessionsTab: React.FC = () => {
     bookSession,
     cancelSession,
     setActiveTab,
+    checkSlotAvailability,
   } = useMember();
 
   const [bookingWizardOpen, setBookingWizardOpen] = useState(false);
@@ -394,30 +395,70 @@ export const SessionsTab: React.FC = () => {
                                 İptal Et
                               </button>
                             </div>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (remainingSessions <= 0) {
-                                  if (confirm("Seans krediniz kalmamıştır. Yeni paket yüklemek ister misiniz?")) {
-                                    setActiveTab("store");
+                          ) : (() => {
+                            const availStatus = checkSlotAvailability(day.dateStr, slotTime);
+                            if (!availStatus.isAvailable) {
+                              if (availStatus.reason === "booked") {
+                                return (
+                                  <div className="h-full rounded-xl p-2 bg-rose-50/80 border border-rose-200/80 flex flex-col justify-center items-center text-center">
+                                    <div className="flex items-center gap-1">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                                      <span className="text-[10px] font-bold text-rose-700 uppercase tracking-wide">DOLU</span>
+                                    </div>
+                                    <span className="text-[9px] text-slate-500 mt-0.5 font-medium">Rezerve Edildi</span>
+                                  </div>
+                                );
+                              }
+                              if (availStatus.reason === "blocked") {
+                                return (
+                                  <div className="h-full rounded-xl p-2 bg-slate-100 border border-slate-200 flex flex-col justify-center items-center text-center">
+                                    <div className="flex items-center gap-1">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                                      <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">DOLU</span>
+                                    </div>
+                                    <span className="text-[9px] text-slate-400 mt-0.5 font-medium">Randevuya Kapalı</span>
+                                  </div>
+                                );
+                              }
+                              if (availStatus.reason === "day_off") {
+                                return (
+                                  <div className="h-full rounded-xl p-2 bg-slate-50/70 border border-slate-100 flex flex-col justify-center items-center text-center">
+                                    <span className="text-[9px] font-medium text-slate-400 italic">İzinli Gün</span>
+                                  </div>
+                                );
+                              }
+                              return (
+                                <div className="h-full rounded-xl p-2 bg-slate-50 border border-slate-100 flex flex-col justify-center items-center text-center">
+                                  <span className="text-[9px] font-medium text-slate-400">Mola Saati</span>
+                                </div>
+                              );
+                            }
+
+                            return (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (remainingSessions <= 0) {
+                                    if (confirm("Seans krediniz kalmamıştır. Yeni paket yüklemek ister misiniz?")) {
+                                      setActiveTab("store");
+                                    }
+                                  } else {
+                                    setSelectedDate(day.dateStr);
+                                    setSelectedTime(slotTime);
+                                    setStep(1);
+                                    setBookingWizardOpen(true);
                                   }
-                                } else {
-                                  setSelectedDate(day.dateStr);
-                                  setSelectedTime(slotTime);
-                                  setStep(1);
-                                  setBookingWizardOpen(true);
-                                }
-                              }}
-                              className="w-full h-full rounded-xl border border-transparent hover:border-emerald-300 hover:bg-emerald-50/40 p-2 flex flex-col items-center justify-center gap-1 text-[#94A3B8] hover:text-emerald-700 transition-all group/cell"
-                              title={`${day.dayName} ${slotTime} için randevu al`}
-                            >
-                              <Plus className="w-3.5 h-3.5 opacity-0 group-hover/cell:opacity-100 group-hover/cell:scale-110 transition-all text-emerald-600" />
-                              <span className="text-[9px] font-semibold opacity-0 group-hover/cell:opacity-100 transition-opacity">
-                                Randevu Al
-                              </span>
-                            </button>
-                          )}
+                                }}
+                                className="w-full h-full rounded-xl border border-transparent hover:border-emerald-300 hover:bg-emerald-50/40 p-2 flex flex-col items-center justify-center gap-1 text-[#94A3B8] hover:text-emerald-700 transition-all group/cell"
+                                title={`${day.dayName} ${slotTime} için randevu al`}
+                              >
+                                <Plus className="w-3.5 h-3.5 opacity-0 group-hover/cell:opacity-100 group-hover/cell:scale-110 transition-all text-emerald-600" />
+                                <span className="text-[9px] font-semibold opacity-0 group-hover/cell:opacity-100 transition-opacity">
+                                  Randevu Al
+                                </span>
+                              </button>
+                            );
+                          })()}
                         </td>
                       );
                     })}
@@ -722,21 +763,44 @@ export const SessionsTab: React.FC = () => {
                   </div>
 
                   <div className="grid grid-cols-2 gap-2.5">
-                    {TIME_SLOTS.map((slot, i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        onClick={() => setSelectedTime(slot)}
-                        className={`p-3.5 rounded-2xl border font-sans text-xs text-center transition-all ${
-                          selectedTime === slot
-                            ? "border-[#0F172A] bg-[#0F172A] text-white font-bold shadow-md"
-                            : "border-black/[0.06] bg-[#F8FAFC] text-[#0F172A] hover:border-black/[0.15]"
-                        }`}
-                      >
-                        <Clock className="w-3.5 h-3.5 inline mr-1.5" />
-                        {slot}
-                      </button>
-                    ))}
+                    {TIME_SLOTS.map((slot, i) => {
+                      const slotAvail = checkSlotAvailability(selectedDate, slot);
+                      const isAvail = slotAvail.isAvailable;
+
+                      if (!isAvail) {
+                        return (
+                          <button
+                            key={i}
+                            type="button"
+                            disabled
+                            className="p-3.5 rounded-2xl border font-sans text-xs text-center transition-all border-rose-200/80 bg-rose-50/60 text-rose-500 cursor-not-allowed opacity-75 flex items-center justify-center gap-1.5"
+                            title={`${slot} saatinde randevu doludur`}
+                          >
+                            <Clock className="w-3.5 h-3.5 inline text-rose-400 shrink-0" />
+                            <span className="line-through">{slot}</span>
+                            <span className="text-[9px] font-bold px-1.5 py-0.2 bg-rose-500/20 text-rose-700 rounded uppercase">
+                              DOLU
+                            </span>
+                          </button>
+                        );
+                      }
+
+                      return (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => setSelectedTime(slot)}
+                          className={`p-3.5 rounded-2xl border font-sans text-xs text-center transition-all ${
+                            selectedTime === slot
+                              ? "border-[#0F172A] bg-[#0F172A] text-white font-bold shadow-md"
+                              : "border-black/[0.06] bg-[#F8FAFC] text-[#0F172A] hover:border-black/[0.15]"
+                          }`}
+                        >
+                          <Clock className="w-3.5 h-3.5 inline mr-1.5" />
+                          {slot}
+                        </button>
+                      );
+                    })}
                   </div>
 
                   <div className="pt-4 flex justify-between">

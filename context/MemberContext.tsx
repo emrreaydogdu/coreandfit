@@ -161,6 +161,15 @@ interface MemberContextType {
   addChecklistItem: (title: string, category: "acilis" | "hijyen" | "kapanis" | "guvenlik") => void;
   dailyNotes: string;
   updateDailyNotes: (notes: string) => void;
+
+  // Tarih Bazlı Müsaitlik & Doluluk (Date-Integrated Slots)
+  coachBlockedDateSlots: Record<string, string[]>;
+  toggleCoachSlotForDate: (date: string, timeSlot: string) => void;
+  checkSlotAvailability: (date: string, timeSlot: string) => {
+    isAvailable: boolean;
+    reason?: "booked" | "blocked" | "day_off" | "break";
+    session?: BookedSession;
+  };
 }
 
 const MemberContext = createContext<MemberContextType | undefined>(undefined);
@@ -181,6 +190,7 @@ const STORAGE_KEYS = {
   MAINTENANCE: "cf_studio_maintenance",
   CHECKLIST: "cf_daily_checklist",
   DAILY_NOTES: "cf_daily_notes",
+  BLOCKED_DATE_SLOTS: "cf_coach_blocked_date_slots",
 };
 
 export const MemberProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -204,6 +214,7 @@ export const MemberProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [dailyNotes, setDailyNotes] = useState<string>(
     "• Saat 15:00 - Özel istasyon kablo makaraları gresleme kontrolü\n• Burak Bey sağ omuz impingement kontrol edilecek (overhead pressten kaçın)\n• Akşam havlu çamaşır teslimatı teslim alınacak"
   );
+  const [coachBlockedDateSlots, setCoachBlockedDateSlots] = useState<Record<string, string[]>>({});
 
   // LocalStorage senkronizasyonu
   useEffect(() => {
@@ -357,6 +368,14 @@ export const MemberProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const savedNotes = localStorage.getItem(STORAGE_KEYS.DAILY_NOTES);
       if (savedNotes) setDailyNotes(savedNotes);
 
+      const savedBlocked = localStorage.getItem(STORAGE_KEYS.BLOCKED_DATE_SLOTS);
+      if (savedBlocked) {
+        try {
+          const parsed = JSON.parse(savedBlocked);
+          if (parsed && typeof parsed === "object") setCoachBlockedDateSlots(parsed);
+        } catch {}
+      }
+
       const savedViewMode = localStorage.getItem(STORAGE_KEYS.VIEW_MODE);
       if (savedViewMode === "app_frame" || savedViewMode === "responsive") {
         setViewMode(savedViewMode);
@@ -424,6 +443,127 @@ export const MemberProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     saveToStorage(STORAGE_KEYS.USER, newUser);
   };
 
+  // Tarih ve Saat Normalize Yardımcıları
+  const normalizeDateStr = (rawDate: string): string => {
+    if (!rawDate) return "";
+    const trimmed = rawDate.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+
+    const trMonths: Record<string, string> = {
+      ocak: "01", oca: "01",
+      subat: "02", şubat: "02", şub: "02",
+      mart: "03", mar: "03",
+      nisan: "04", nis: "04",
+      mayis: "05", mayıs: "05", may: "05",
+      haziran: "06", haz: "06",
+      temmuz: "07", tem: "07",
+      agustos: "08", ağustos: "08", ağu: "08",
+      eylul: "09", eylül: "09", eyl: "09",
+      ekim: "10", eki: "10",
+      kasim: "11", kasım: "11", kas: "11",
+      aralik: "12", aralık: "12", ara: "12",
+    };
+
+    const parts = trimmed.toLowerCase().split(/\s+/);
+    if (parts.length >= 2) {
+      const day = parts[0].padStart(2, "0");
+      const monthKey = parts[1].replace(/[^a-zçşğüöı]/gi, "");
+      const month = trMonths[monthKey];
+      const year = parts[2] ? parts[2].replace(/\D/g, "") : "2026";
+      if (day && month) {
+        return `${year || "2026"}-${month}-${day}`;
+      }
+    }
+    return trimmed;
+  };
+
+  const isTimeSlotOverlap = (timeA: string, timeB: string): boolean => {
+    if (!timeA || !timeB) return false;
+    const normA = timeA.trim();
+    const normB = timeB.trim();
+    if (normA === normB) return true;
+
+    const startA = normA.split(/[-–\s]/)[0].trim();
+    const startB = normB.split(/[-–\s]/)[0].trim();
+    if (startA === startB) return true;
+
+    const hourA = startA.split(":")[0];
+    const hourB = startB.split(":")[0];
+    if (hourA && hourB && hourA === hourB) return true;
+
+    return false;
+  };
+
+  // Tarih ve Saat Bazlı Müsaitlik & Doluluk Kontrolü
+  const checkSlotAvailability = (date: string, timeSlot: string) => {
+    const normalizedTargetDate = normalizeDateStr(date);
+
+    // 1. Randevulu seans kontrolü (Örn: 21 Eylül saat 09:00'da Deniz Aydın veya başka danışan seansı varsa)
+    const booked = bookedSessions.find((sess) => {
+      if (sess.status === "cancelled") return false;
+      const sessNormDate = normalizeDateStr(sess.date);
+      const isDateEqual =
+        sessNormDate === normalizedTargetDate ||
+        sess.date === date ||
+        (date && sess.date && (sess.date.includes(date) || date.includes(sess.date)));
+      if (!isDateEqual) return false;
+
+      return isTimeSlotOverlap(sess.timeSlot, timeSlot);
+    });
+
+    if (booked) {
+      return { isAvailable: false, reason: "booked" as const, session: booked };
+    }
+
+    // 2. Koç tarafından o spesifik tarihe özel kapatılmış/blokelenmiş slot kontrolü
+    const blockedSlotsForDate = coachBlockedDateSlots[normalizedTargetDate] || coachBlockedDateSlots[date] || [];
+    const isBlocked = blockedSlotsForDate.some((bSlot) => isTimeSlotOverlap(bSlot, timeSlot));
+    if (isBlocked) {
+      return { isAvailable: false, reason: "blocked" as const };
+    }
+
+    // 3. Haftalık genel takvimdeki izinli gün veya mola kontrolü
+    if (normalizedTargetDate && normalizedTargetDate.includes("-")) {
+      const dObj = new Date(normalizedTargetDate);
+      if (!isNaN(dObj.getTime())) {
+        const dayIdx = dObj.getDay();
+        const dayKeys: ("paz" | "pzt" | "sal" | "car" | "per" | "cum" | "cts")[] = [
+          "paz", "pzt", "sal", "car", "per", "cum", "cts",
+        ];
+        const dayKey = dayKeys[dayIdx];
+        const currentCoach = coachSchedules.find((c) => c.coachId === "coach-1") || coachSchedules[0];
+        const daySched = currentCoach?.weeklySchedule.find((d) => d.dayKey === dayKey);
+
+        if (daySched && daySched.isWorkingDay === false) {
+          return { isAvailable: false, reason: "day_off" as const };
+        }
+
+        const slotInSched = daySched?.slots.find((s) => isTimeSlotOverlap(s.time, timeSlot));
+        if (slotInSched && slotInSched.isAvailable === false) {
+          return { isAvailable: false, reason: "break" as const };
+        }
+      }
+    }
+
+    return { isAvailable: true };
+  };
+
+  // Koçun spesifik bir tarihteki slotunu Aç/Kapat (Dolu/Müsait yap)
+  const toggleCoachSlotForDate = (date: string, timeSlot: string) => {
+    const normalizedDate = normalizeDateStr(date);
+    setCoachBlockedDateSlots((prev) => {
+      const currentList = prev[normalizedDate] || [];
+      const alreadyBlocked = currentList.some((s) => isTimeSlotOverlap(s, timeSlot));
+      const nextList = alreadyBlocked
+        ? currentList.filter((s) => !isTimeSlotOverlap(s, timeSlot))
+        : [...currentList, timeSlot];
+
+      const updated = { ...prev, [normalizedDate]: nextList };
+      saveToStorage(STORAGE_KEYS.BLOCKED_DATE_SLOTS, updated);
+      return updated;
+    });
+  };
+
   // Yeni Seans Ayırtma
   const bookSession = (data: {
     coachId: string;
@@ -440,6 +580,22 @@ export const MemberProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return {
         success: false,
         message: "Kayıtlı seans krediniz kalmamıştır. Lütfen 'Paket Al' sekmesinden yeni seans yükleyiniz.",
+      };
+    }
+
+    const slotStatus = checkSlotAvailability(data.date, data.timeSlot);
+    if (!slotStatus.isAvailable) {
+      const reasonText =
+        slotStatus.reason === "booked"
+          ? "Antrenörümüzün bu tarih ve saatte başka bir randevusu bulunmaktadır (Dolu)."
+          : slotStatus.reason === "blocked"
+          ? "Bu saat antrenör tarafından randevuya kapatılmıştır (Dolu)."
+          : slotStatus.reason === "day_off"
+          ? "Bu gün antrenörümüzün izinli günüdür."
+          : "Bu saat stüdyo mola / hijyen aralığıdır.";
+      return {
+        success: false,
+        message: `${data.date} saat ${data.timeSlot} için randevu oluşturulamaz: ${reasonText}`,
       };
     }
 
@@ -1184,6 +1340,9 @@ export const MemberProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         addChecklistItem,
         dailyNotes,
         updateDailyNotes,
+        coachBlockedDateSlots,
+        toggleCoachSlotForDate,
+        checkSlotAvailability,
       }}
     >
       {children}

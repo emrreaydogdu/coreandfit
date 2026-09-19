@@ -5,6 +5,7 @@ import { buildBookingWhatsAppUrl } from "@/lib/whatsapp";
 import { ArrowRight, ArrowLeft, Calendar, Clock, CheckCircle2, MessageSquare, ShieldCheck, LayoutGrid, List } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { useMember } from "@/context/MemberContext";
 
 const BOOKING_TYPES = [
   {
@@ -32,6 +33,7 @@ const TIME_SLOTS = [
 ];
 
 export const BookingWizard: React.FC = () => {
+  const { checkSlotAvailability } = useMember();
   const [step, setStep] = useState(1);
 
   // Generate the next 10 days for booking
@@ -60,6 +62,13 @@ export const BookingWizard: React.FC = () => {
 
   const handleNext = () => {
     const errs: Record<string, string> = {};
+    if (step === 3) {
+      const status = checkSlotAvailability(formData.date, formData.timeSlot);
+      if (!status.isAvailable) {
+        errs.timeSlot = "Seçilen saat doludur. Lütfen müsait bir saat seçiniz.";
+      }
+    }
+
     if (step === 4) {
       if (!formData.name.trim()) errs.name = "Ad ve soyad zorunludur.";
       if (!formData.phone.trim()) errs.phone = "Telefon numarası zorunludur.";
@@ -265,13 +274,34 @@ export const BookingWizard: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#1D2128]">
-                    {["09:00", "11:00", "14:00", "16:00", "18:00", "19:30"].map((timeSlot) => (
+                    {["08:00", "09:00", "09:30", "11:00", "14:00", "16:00", "18:00", "19:30"].map((timeSlot) => (
                       <tr key={timeSlot} className="hover:bg-[#191C22] transition-colors">
                         <td className="p-2.5 font-bold text-white sticky left-0 z-10 bg-[#131519] border-r border-[#23272F] whitespace-nowrap">
                           {timeSlot}
                         </td>
                         {dates.slice(0, 5).map((d) => {
+                          const slotStatus = checkSlotAvailability(d.id, timeSlot);
+                          const isAvail = slotStatus.isAvailable;
                           const isSelected = formData.date === d.fullDate && formData.timeSlot === timeSlot;
+
+                          if (!isAvail) {
+                            return (
+                              <td key={`${d.id}-${timeSlot}`} className="p-1.5 border-r border-[#23272F] last:border-r-0 text-center">
+                                <button
+                                  type="button"
+                                  disabled
+                                  className="w-full py-2 px-1 text-[10px] font-mono tracking-wider border block bg-[#1C0E12] border-rose-900/40 text-rose-400/80 cursor-not-allowed select-none"
+                                  title={`${d.dayName} ${d.dayNum} saat ${timeSlot} DOLU (Müsait değil)`}
+                                >
+                                  <span className="flex items-center justify-center gap-1">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                                    DOLU
+                                  </span>
+                                </button>
+                              </td>
+                            );
+                          }
+
                           return (
                             <td key={`${d.id}-${timeSlot}`} className="p-1.5 border-r border-[#23272F] last:border-r-0 text-center">
                               <button
@@ -303,7 +333,7 @@ export const BookingWizard: React.FC = () => {
                 </table>
               </div>
               <p className="text-[11px] text-[#72757C] font-mono">
-                * Kutucuğa tıkladığınızda gün ve saat seçilerek doğrudan iletişim adımına geçilir.
+                * Kırmızı renkli kutucuklar DOLU / Rezerve seanslardır. Müsait yeşil slotlara tıklayarak doğrudan rezervasyon yapabilirsiniz.
               </p>
             </div>
           ) : (
@@ -348,21 +378,43 @@ export const BookingWizard: React.FC = () => {
           </p>
 
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
-            {TIME_SLOTS.map((slot) => (
-              <button
-                key={slot}
-                type="button"
-                onClick={() => setFormData({ ...formData, timeSlot: slot })}
-                className={cn(
-                  "py-3 px-2 text-center border text-xs font-mono tracking-wider transition-all",
-                  formData.timeSlot === slot
-                    ? "bg-[#E8FF36] text-[#08090B] border-[#E8FF36] font-bold"
-                    : "bg-[#131519] text-white border-[#23272F] hover:border-[#343A46]"
-                )}
-              >
-                {slot}
-              </button>
-            ))}
+            {TIME_SLOTS.map((slot) => {
+              const slotStatus = checkSlotAvailability(formData.date, slot);
+              const isAvail = slotStatus.isAvailable;
+
+              if (!isAvail) {
+                return (
+                  <button
+                    key={slot}
+                    type="button"
+                    disabled
+                    className="py-3 px-2 text-center border text-xs font-mono tracking-wider transition-all bg-[#1C0E12] text-rose-400/70 border-rose-900/40 cursor-not-allowed opacity-70 flex items-center justify-center gap-1.5"
+                    title={`${slot} saatinde randevu doludur`}
+                  >
+                    <span className="line-through">{slot}</span>
+                    <span className="text-[9px] font-bold px-1.5 py-0.2 bg-rose-500/20 text-rose-300 rounded">
+                      DOLU
+                    </span>
+                  </button>
+                );
+              }
+
+              return (
+                <button
+                  key={slot}
+                  type="button"
+                  onClick={() => setFormData({ ...formData, timeSlot: slot })}
+                  className={cn(
+                    "py-3 px-2 text-center border text-xs font-mono tracking-wider transition-all",
+                    formData.timeSlot === slot
+                      ? "bg-[#E8FF36] text-[#08090B] border-[#E8FF36] font-bold"
+                      : "bg-[#131519] text-white border-[#23272F] hover:border-[#343A46]"
+                  )}
+                >
+                  {slot}
+                </button>
+              );
+            })}
           </div>
           <p className="text-[11px] text-[#72757C] mt-4 font-mono">
             Seçili Saat: <strong className="text-white">{formData.timeSlot}</strong>

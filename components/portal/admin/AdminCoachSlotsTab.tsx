@@ -22,6 +22,9 @@ import {
   Coffee,
   Sun,
   Moon,
+  ChevronLeft,
+  ChevronRight,
+  Calendar,
 } from "lucide-react";
 import { useMember } from "@/context/MemberContext";
 import { COACHES_DATA } from "@/data/coaches";
@@ -44,11 +47,15 @@ export const AdminCoachSlotsTab: React.FC = () => {
     addCoachSlot,
     removeCoachSlot,
     copyCoachScheduleToWeekdays,
+    checkSlotAvailability,
+    toggleCoachSlotForDate,
+    coachBlockedDateSlots,
   } = useMember();
 
   const [selectedCoachId, setSelectedCoachId] = useState<string>("coach-1");
   const [selectedDayKey, setSelectedDayKey] = useState<"pzt" | "sal" | "car" | "per" | "cum" | "cts" | "paz">("pzt");
   const [viewMode, setViewMode] = useState<"matrix" | "day_detail">("matrix");
+  const [weekOffset, setWeekOffset] = useState<number>(0);
 
   // New slot modal / inline
   const [isAddingSlot, setIsAddingSlot] = useState(false);
@@ -62,10 +69,78 @@ export const AdminCoachSlotsTab: React.FC = () => {
   const currentDaySchedule = currentCoachProfile?.weeklySchedule.find((d) => d.dayKey === selectedDayKey);
   const currentCoachMeta = COACHES_DATA.find((c) => c.id === selectedCoachId) || COACHES_DATA[0];
 
+  // Compute 7 days of the selected week (Monday -> Sunday)
+  const weekDays = useMemo(() => {
+    const today = new Date();
+    const dayOfWeek = today.getDay(); // 0 is Sun, 1 is Mon...
+    const diffToMonday = (dayOfWeek + 6) % 7;
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - diffToMonday + weekOffset * 7);
+
+    const dayKeys: ("pzt" | "sal" | "car" | "per" | "cum" | "cts" | "paz")[] = [
+      "pzt", "sal", "car", "per", "cum", "cts", "paz"
+    ];
+    const dayNames = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
+    const shortNames = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cts", "Paz"];
+    const monthNames = [
+      "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
+      "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"
+    ];
+    const monthShorts = ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"];
+
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+      const current = new Date(monday);
+      current.setDate(monday.getDate() + i);
+      const year = current.getFullYear();
+      const month = current.getMonth();
+      const dayNum = current.getDate();
+      const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(dayNum).padStart(2, "0")}`;
+
+      days.push({
+        key: dayKeys[i],
+        name: dayNames[i],
+        short: shortNames[i],
+        dateStr,
+        dayNumber: dayNum,
+        monthShort: monthShorts[month],
+        monthName: monthNames[month],
+        year,
+        displayDate: `${dayNum} ${monthShorts[month]}`,
+        fullText: `${dayNum} ${monthNames[month]} ${year} ${dayNames[i]}`,
+        isToday: dateStr === todayStr,
+      });
+    }
+    return days;
+  }, [weekOffset]);
+
+  const weekTitle = useMemo(() => {
+    if (weekDays.length < 7) return "";
+    const first = weekDays[0];
+    const last = weekDays[6];
+    if (first.monthName === last.monthName) {
+      return `${first.dayNumber} - ${last.dayNumber} ${first.monthName} ${first.year}`;
+    }
+    return `${first.dayNumber} ${first.monthShort} - ${last.dayNumber} ${last.monthShort} ${last.year}`;
+  }, [weekDays]);
+
   const handleToggleSlot = (dayKey: "pzt" | "sal" | "car" | "per" | "cum" | "cts" | "paz", slotId: string) => {
     toggleCoachSlotAvailability(selectedCoachId, dayKey, slotId);
     setToastMessage("Slot randevu durumu güncellendi.");
     setTimeout(() => setToastMessage(null), 2000);
+  };
+
+  const handleToggleDateSlot = (dateStr: string, timeSlot: string, dayText: string) => {
+    toggleCoachSlotForDate(dateStr, timeSlot);
+    const prevStatus = checkSlotAvailability(dateStr, timeSlot);
+    if (prevStatus.isAvailable) {
+      setToastMessage(`${dayText} saat ${timeSlot} DOLU / BLOKELİ yapıldı. Müşteriler randevu alırken bu saati DOLU görecek.`);
+    } else {
+      setToastMessage(`${dayText} saat ${timeSlot} tekrar randevuya açıldı.`);
+    }
+    setTimeout(() => setToastMessage(null), 3500);
   };
 
   const handleToggleDayWorking = (dayKey: "pzt" | "sal" | "car" | "per" | "cum" | "cts" | "paz", working: boolean) => {
@@ -223,32 +298,85 @@ export const AdminCoachSlotsTab: React.FC = () => {
       {/* ========================================================================= */}
       {viewMode === "matrix" && (
         <div className="bg-white border border-black/[0.06] rounded-3xl p-5 sm:p-7 shadow-[0_2px_12px_rgba(0,0,0,0.03)] space-y-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-black/[0.05] pb-4">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-black/[0.05] pb-4">
             <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-blue-50 text-blue-800 border border-blue-200/60 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                  <span>TARİH ENTEGRELİ CANLI TAKVİM</span>
+                </span>
+                <span className="text-xs font-semibold text-slate-500">• {weekTitle}</span>
+              </div>
               <h4 className="font-bold text-base text-[#0F172A] uppercase font-display">
                 7 Günlük Müsaitlik Matrisi & Takvim Tablosu
               </h4>
               <p className="text-xs text-[#64748B] mt-0.5">
-                Slot kutucuklarına tıklayarak seansları doğrudan randevuya açın veya molaya / blokeliye alın.
+                Danışan rezervasyonları (Örn: Deniz Aydın) ve koç blokajları tarihe bağlı olarak canlı yansır. Slotlara tıklayarak o tarihi müşterilere kapatabilir veya açabilirsiniz.
               </p>
             </div>
 
-            {/* Quick Helper Callouts */}
-            <div className="flex items-center gap-2 text-xs font-semibold">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-800 rounded-xl border border-emerald-200/60">
-                <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                <span>Yeşil = Açık</span>
-              </span>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-700 rounded-xl">
-                <span className="w-2 h-2 rounded-full bg-slate-400" />
-                <span>Gri = Mola / Kapalı</span>
-              </span>
+            {/* Week Navigation Controls */}
+            <div className="flex items-center gap-2 self-start lg:self-auto flex-wrap">
+              <div className="flex items-center bg-[#F1F5F9] rounded-2xl p-1 border border-black/[0.04]">
+                <button
+                  type="button"
+                  onClick={() => setWeekOffset((prev) => prev - 1)}
+                  className="p-1.5 hover:bg-white text-[#0F172A] rounded-xl transition-all active:scale-95"
+                  title="Önceki Hafta"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+
+                <div className="px-3 text-xs font-bold text-[#0F172A] flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>{weekTitle}</span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setWeekOffset((prev) => prev + 1)}
+                  className="p-1.5 hover:bg-white text-[#0F172A] rounded-xl transition-all active:scale-95"
+                  title="Sonraki Hafta"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+
+              {weekOffset !== 0 && (
+                <button
+                  type="button"
+                  onClick={() => setWeekOffset(0)}
+                  className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200/60 rounded-xl text-xs font-bold transition-colors shadow-2xs"
+                >
+                  Bugüne Dön
+                </button>
+              )}
             </div>
+          </div>
+
+          {/* Quick Helper Callouts / Status Legend */}
+          <div className="flex items-center gap-2 sm:gap-3 text-xs font-semibold flex-wrap">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-900 rounded-xl border border-emerald-200/60 text-[11px]">
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              <span>Yeşil = Müsait (Açık)</span>
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 text-blue-900 rounded-xl border border-blue-200/60 text-[11px]">
+              <span className="w-2 h-2 rounded-full bg-blue-600" />
+              <span>Mavi = DOLU (Rezerve Seans)</span>
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-rose-50 text-rose-900 rounded-xl border border-rose-200/60 text-[11px]">
+              <span className="w-2 h-2 rounded-full bg-rose-500" />
+              <span>Kırmızı = DOLU (Koç Bloke)</span>
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 text-slate-700 rounded-xl text-[11px]">
+              <span className="w-2 h-2 rounded-full bg-slate-400" />
+              <span>Gri = Mola / İzinli Gün</span>
+            </span>
           </div>
 
           {/* Table Matrix Container */}
           <div className="overflow-x-auto rounded-2xl border border-black/[0.08] shadow-2xs">
-            <table className="w-full border-collapse min-w-[880px] text-left">
+            <table className="w-full border-collapse min-w-[920px] text-left">
               <thead>
                 <tr className="bg-slate-900 text-white border-b border-slate-800">
                   <th className="p-3.5 text-[11px] font-extrabold uppercase tracking-wider text-slate-400 w-28 sticky left-0 z-20 bg-slate-900 border-r border-slate-800">
@@ -258,23 +386,39 @@ export const AdminCoachSlotsTab: React.FC = () => {
                     </div>
                   </th>
 
-                  {DAYS_META.map((dayMeta) => {
-                    const daySchedule = currentCoachProfile?.weeklySchedule.find((d) => d.dayKey === dayMeta.key);
+                  {weekDays.map((day) => {
+                    const daySchedule = currentCoachProfile?.weeklySchedule.find((d) => d.dayKey === day.key);
                     const isWorking = daySchedule?.isWorkingDay ?? true;
 
                     return (
                       <th
-                        key={dayMeta.key}
-                        className="p-3.5 text-center border-r border-slate-800 last:border-r-0"
+                        key={day.dateStr}
+                        className={`p-3 text-center border-r border-slate-800 last:border-r-0 ${
+                          day.isToday ? "bg-slate-800/90" : ""
+                        }`}
                       >
                         <div className="flex flex-col items-center">
-                          <span className="text-xs font-extrabold uppercase tracking-wider text-white">
-                            {dayMeta.name}
+                          <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-300">
+                            {day.name}
                           </span>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span
+                              className={`text-sm font-black font-display ${
+                                day.isToday ? "text-emerald-400" : "text-white"
+                              }`}
+                            >
+                              {day.displayDate}
+                            </span>
+                            {day.isToday && (
+                              <span className="px-1.5 py-0.2 bg-emerald-500 text-slate-950 font-black text-[9px] rounded-full uppercase tracking-wider">
+                                BUGÜN
+                              </span>
+                            )}
+                          </div>
                           <button
                             type="button"
-                            onClick={() => handleToggleDayWorking(dayMeta.key, !isWorking)}
-                            className={`mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full transition-all flex items-center gap-1 ${
+                            onClick={() => handleToggleDayWorking(day.key, !isWorking)}
+                            className={`mt-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full transition-all flex items-center gap-1 ${
                               isWorking
                                 ? "bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 hover:bg-emerald-500/30"
                                 : "bg-rose-500/20 text-rose-300 border border-rose-400/30 hover:bg-rose-500/30"
@@ -298,15 +442,15 @@ export const AdminCoachSlotsTab: React.FC = () => {
                       <span className="text-xs font-extrabold tracking-tight">{timeStr}</span>
                     </td>
 
-                    {DAYS_META.map((dayMeta) => {
-                      const daySchedule = currentCoachProfile?.weeklySchedule.find((d) => d.dayKey === dayMeta.key);
+                    {weekDays.map((day) => {
+                      const daySchedule = currentCoachProfile?.weeklySchedule.find((d) => d.dayKey === day.key);
                       const isWorking = daySchedule?.isWorkingDay ?? true;
                       const slot = daySchedule?.slots.find((s) => s.time === timeStr);
 
                       if (!isWorking) {
                         return (
                           <td
-                            key={`${dayMeta.key}-${timeStr}`}
+                            key={`${day.dateStr}-${timeStr}`}
                             className="p-2 border-r border-black/[0.04] last:border-r-0 text-center bg-slate-50/70"
                           >
                             <span className="text-[10px] text-slate-400 font-semibold italic">İzinli Gün</span>
@@ -314,49 +458,107 @@ export const AdminCoachSlotsTab: React.FC = () => {
                         );
                       }
 
-                      if (!slot) {
+                      // Check date-integrated slot availability
+                      const slotStatus = checkSlotAvailability(day.dateStr, timeStr);
+
+                      // 1. Randevulu seans (Örn: Deniz Aydın, 21 Eylül Pazartesi 09:30)
+                      if (!slotStatus.isAvailable && slotStatus.reason === "booked") {
+                        const bookedSess = slotStatus.session;
                         return (
                           <td
-                            key={`${dayMeta.key}-${timeStr}`}
-                            className="p-2 border-r border-black/[0.04] last:border-r-0 text-center"
+                            key={`${day.dateStr}-${timeStr}`}
+                            className="p-1.5 border-r border-black/[0.04] last:border-r-0 align-middle"
                           >
-                            <span className="text-[10px] text-slate-300">-</span>
+                            <div className="w-full p-2.5 rounded-xl bg-blue-50 border border-blue-300 text-blue-950 flex flex-col justify-between gap-1 shadow-2xs">
+                              <div className="flex items-center justify-between gap-1">
+                                <span className="inline-flex items-center gap-1 text-[10px] font-black text-blue-700 uppercase tracking-tight">
+                                  <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
+                                  DOLU
+                                </span>
+                                <span className="text-[9px] px-1.5 py-0.2 bg-blue-100 text-blue-800 font-bold rounded">
+                                  1:1 Seans
+                                </span>
+                              </div>
+                              <div className="text-[11px] font-bold text-slate-900 truncate" title={bookedSess?.memberName}>
+                                {bookedSess?.memberName || "Danışan Randevusu"}
+                              </div>
+                              <div className="text-[9px] text-blue-700/90 truncate font-medium">
+                                {bookedSess?.focusArea?.split("&")[0] || "Özel Seans"}
+                              </div>
+                            </div>
                           </td>
                         );
                       }
 
-                      const isAvail = slot.isAvailable;
+                      // 2. Koç tarafından o spesifik tarihe özel kapatılmış slot
+                      if (!slotStatus.isAvailable && slotStatus.reason === "blocked") {
+                        return (
+                          <td
+                            key={`${day.dateStr}-${timeStr}`}
+                            className="p-1.5 border-r border-black/[0.04] last:border-r-0 align-middle"
+                          >
+                            <button
+                              type="button"
+                              onClick={() => handleToggleDateSlot(day.dateStr, timeStr, day.fullText)}
+                              className="w-full p-2 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-300 text-rose-950 flex flex-col items-center justify-center gap-1 transition-all group/btn shadow-2xs"
+                              title="Bu slot bu tarihte DOLU / BLOKELİ. Tıklayarak randevuya açabilirsiniz."
+                            >
+                              <div className="flex items-center gap-1 text-[10px] font-black text-rose-700 uppercase">
+                                <span className="w-2 h-2 rounded-full bg-rose-500" />
+                                ⛔ DOLU / BLOKE
+                              </div>
+                              <span className="text-[9px] font-semibold text-rose-600 group-hover/btn:underline">
+                                Tıkla: Müsait Yap
+                              </span>
+                            </button>
+                          </td>
+                        );
+                      }
 
+                      // 3. Genel haftalık mola
+                      if (!slotStatus.isAvailable && slotStatus.reason === "break") {
+                        return (
+                          <td
+                            key={`${day.dateStr}-${timeStr}`}
+                            className="p-1.5 border-r border-black/[0.04] last:border-r-0 align-middle"
+                          >
+                            <button
+                              type="button"
+                              onClick={() => slot && handleToggleSlot(day.key, slot.id)}
+                              className="w-full p-2 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 flex flex-col items-center justify-center gap-0.5 transition-all"
+                              title="Genel haftalık mola saati. Tıklayarak genel plana açabilirsiniz."
+                            >
+                              <div className="flex items-center gap-1 text-[10px] font-bold text-slate-600">
+                                <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                                Mola / Kapalı
+                              </div>
+                              <span className="text-[9px] text-slate-500 truncate max-w-[80px]">
+                                {slot?.label || "Haftalık Mola"}
+                              </span>
+                            </button>
+                          </td>
+                        );
+                      }
+
+                      // 4. Müsait Slot (Açık) -> Tıklanınca o tarihte DOLU yapılır
                       return (
                         <td
-                          key={`${dayMeta.key}-${timeStr}`}
-                          className="p-2 border-r border-black/[0.04] last:border-r-0 text-center align-middle"
+                          key={`${day.dateStr}-${timeStr}`}
+                          className="p-1.5 border-r border-black/[0.04] last:border-r-0 align-middle"
                         >
                           <button
                             type="button"
-                            onClick={() => handleToggleSlot(dayMeta.key, slot.id)}
-                            className={`w-full py-2 px-2.5 rounded-xl text-xs font-bold transition-all flex flex-col items-center justify-center gap-0.5 select-none active:scale-95 ${
-                              isAvail
-                                ? "bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-300/80 shadow-2xs"
-                                : "bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200"
-                            }`}
-                            title={`Tıkla ve durumu değiştir: ${isAvail ? "Mola yap" : "Aç"}`}
+                            onClick={() => handleToggleDateSlot(day.dateStr, timeStr, day.fullText)}
+                            className="w-full p-2 rounded-xl bg-emerald-50 hover:bg-emerald-100/90 border border-emerald-300 text-emerald-950 flex flex-col items-center justify-center gap-1 transition-all group/btn shadow-2xs active:scale-95"
+                            title="Slot randevuya MÜSAİT. Tıklayarak bu tarihi müşterilere DOLU / BLOKELİ yapabilirsiniz."
                           >
-                            <div className="flex items-center gap-1.5">
-                              <span
-                                className={`w-2 h-2 rounded-full ${
-                                  isAvail ? "bg-emerald-500 animate-pulse" : "bg-slate-400"
-                                }`}
-                              />
-                              <span className="text-[11px] font-black">
-                                {isAvail ? "Müsait" : "Mola"}
-                              </span>
+                            <div className="flex items-center gap-1 text-[10px] font-black text-emerald-800">
+                              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                              ✓ Müsait (Açık)
                             </div>
-                            {slot.label && (
-                              <span className="text-[9px] font-semibold text-slate-500 truncate max-w-[90px]">
-                                {slot.label}
-                              </span>
-                            )}
+                            <span className="text-[9px] font-semibold text-emerald-700 group-hover/btn:text-rose-700 group-hover/btn:underline">
+                              Tıkla: Dolu Yap
+                            </span>
                           </button>
                         </td>
                       );
