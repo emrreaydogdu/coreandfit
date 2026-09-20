@@ -106,9 +106,62 @@ export interface OrderItem {
 export type PortalTab = 
   | "dashboard" 
   | "sessions" 
-  | "store" 
+  | "workout"
   | "history" 
+  | "store" 
   | "profile";
+
+export interface BodyMeasurementRecord {
+  id: string;
+  date: string; // YYYY-MM-DD
+  weightKg: number;
+  bodyFatPercent: number;
+  muscleMassKg: number;
+  waistCm?: number;
+  chestCm?: number;
+  armCm?: number;
+  thighCm?: number;
+  note?: string;
+  coachConfirmed: boolean;
+}
+
+export interface WorkoutExercise {
+  id: string;
+  name: string;
+  category: "warmup" | "strength" | "core" | "cooldown";
+  targetMuscles: string;
+  sets: number;
+  reps: string;
+  restSeconds: number;
+  targetRpe?: string;
+  targetWeight?: string;
+  formTips: string[];
+  commonMistakes: string[];
+  isCompleted?: boolean;
+}
+
+export interface WorkoutRoutine {
+  id: string;
+  title: string;
+  subtitle: string;
+  coachName: string;
+  coachTitle: string;
+  phase: string;
+  durationMinutes: number;
+  intensity: "Orta" | "Yüksek" | "Maksimal";
+  exercises: WorkoutExercise[];
+  coachNotes: string;
+}
+
+export interface UserBadge {
+  id: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  iconType: "flame" | "trophy" | "shield" | "zap" | "star" | "heart";
+  unlockedAt?: string;
+  isUnlocked: boolean;
+}
 
 export interface StudioBankAccount {
   id: string;

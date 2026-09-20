@@ -4,8 +4,9 @@ import React from "react";
 import { motion } from "motion/react";
 import {
   Home,
-  CheckCircle2,
+  Dumbbell,
   Calendar,
+  TrendingUp,
   Target,
   User,
 } from "lucide-react";
@@ -25,8 +26,9 @@ interface TabItem {
 
 const TABS: TabItem[] = [
   { id: "dashboard", label: "Özet", icon: Home },
-  { id: "sessions", label: "Seanslar", icon: CheckCircle2 },
-  { id: "history", label: "Girişler", icon: Calendar },
+  { id: "workout", label: "Program", icon: Dumbbell },
+  { id: "sessions", label: "Seanslar", icon: Calendar },
+  { id: "history", label: "Gelişim", icon: TrendingUp },
   { id: "store", label: "Paketler", icon: Target },
   { id: "profile", label: "Hesabım", icon: User },
 ];
@@ -42,7 +44,7 @@ export const FloatingGlassNav: React.FC<FloatingGlassNavProps> = ({
       className={`pointer-events-auto select-none ${className}`}
     >
       {/* Outer Floating Liquid White Glass Capsule */}
-      <div className="relative flex items-center gap-1 sm:gap-1.5 p-1.5 bg-white/80 hover:bg-white/90 backdrop-blur-2xl border border-white/70 rounded-[28px] shadow-[0_16px_45px_rgba(0,0,0,0.1),0_4px_16px_rgba(0,0,0,0.05),inset_0_1px_2px_rgba(255,255,255,0.95)] transition-all duration-300">
+      <div className="relative flex items-center gap-0.5 sm:gap-1.5 p-1 sm:p-1.5 bg-white/85 hover:bg-white/95 backdrop-blur-2xl border border-white/80 rounded-[28px] shadow-[0_16px_45px_rgba(0,0,0,0.12),0_4px_16px_rgba(0,0,0,0.06),inset_0_1px_2px_rgba(255,255,255,0.95)] transition-all duration-300">
         {TABS.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -52,7 +54,7 @@ export const FloatingGlassNav: React.FC<FloatingGlassNavProps> = ({
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`relative flex flex-col items-center justify-center py-1.5 px-3 sm:px-4 rounded-2xl transition-all duration-200 outline-none min-w-[56px] sm:min-w-[64px] ${
+              className={`relative flex flex-col items-center justify-center py-1.5 px-2 sm:px-3.5 rounded-2xl transition-all duration-200 outline-none min-w-[46px] sm:min-w-[58px] ${
                 isActive ? "text-white" : "text-[#64748B] hover:text-[#0F172A]"
               }`}
               title={tab.label}

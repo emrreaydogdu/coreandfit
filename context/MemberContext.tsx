@@ -19,6 +19,9 @@ import {
   StudioMaintenanceTask,
   StudioDailyChecklistItem,
   StudioMemberCRM,
+  BodyMeasurementRecord,
+  WorkoutRoutine,
+  UserBadge,
 } from "@/types/portal";
 import {
   DEMO_USER,
@@ -32,6 +35,9 @@ import {
   DEFAULT_INVENTORY_ITEMS,
   DEFAULT_MAINTENANCE_TASKS,
   DEFAULT_CHECKLIST,
+  INITIAL_BODY_MEASUREMENTS,
+  INITIAL_WORKOUT_ROUTINE,
+  INITIAL_USER_BADGES,
 } from "@/data/portal-mock";
 
 interface MemberContextType {
@@ -170,6 +176,27 @@ interface MemberContextType {
     reason?: "booked" | "blocked" | "day_off" | "break";
     session?: BookedSession;
   };
+
+  // Vücut Ölçümleri & InBody
+  bodyMeasurements: BodyMeasurementRecord[];
+  addBodyMeasurement: (m: Omit<BodyMeasurementRecord, "id" | "coachConfirmed">) => void;
+
+  // Antrenman Programı & Form
+  activeWorkout: WorkoutRoutine;
+  completedExerciseIds: string[];
+  toggleExerciseCompleted: (exerciseId: string) => void;
+  resetWorkoutProgress: () => void;
+
+  // Günlük Su & Alışkanlık & Rozetler
+  waterIntakeMl: number;
+  addWater: (amountMl: number) => void;
+  resetWater: () => void;
+  userBadges: UserBadge[];
+  streakWeeks: number;
+
+  // Hızlı Turnike QR Modal
+  isQuickQrOpen: boolean;
+  setIsQuickQrOpen: (open: boolean) => void;
 }
 
 const MemberContext = createContext<MemberContextType | undefined>(undefined);
@@ -191,6 +218,11 @@ const STORAGE_KEYS = {
   CHECKLIST: "cf_daily_checklist",
   DAILY_NOTES: "cf_daily_notes",
   BLOCKED_DATE_SLOTS: "cf_coach_blocked_date_slots",
+  BODY_MEASUREMENTS: "cf_body_measurements",
+  WORKOUT_ROUTINE: "cf_workout_routine",
+  COMPLETED_EXERCISES: "cf_completed_exercises",
+  WATER_INTAKE: "cf_water_intake",
+  USER_BADGES: "cf_user_badges",
 };
 
 export const MemberProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -215,6 +247,15 @@ export const MemberProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     "• Saat 15:00 - Özel istasyon kablo makaraları gresleme kontrolü\n• Burak Bey sağ omuz impingement kontrol edilecek (overhead pressten kaçın)\n• Akşam havlu çamaşır teslimatı teslim alınacak"
   );
   const [coachBlockedDateSlots, setCoachBlockedDateSlots] = useState<Record<string, string[]>>({});
+
+  // Fitness & Mobil Uygulama Takip State'leri
+  const [bodyMeasurements, setBodyMeasurements] = useState<BodyMeasurementRecord[]>(INITIAL_BODY_MEASUREMENTS);
+  const [activeWorkout, setActiveWorkout] = useState<WorkoutRoutine>(INITIAL_WORKOUT_ROUTINE);
+  const [completedExerciseIds, setCompletedExerciseIds] = useState<string[]>(["ex-1", "ex-2"]);
+  const [waterIntakeMl, setWaterIntakeMl] = useState<number>(1250);
+  const [userBadges, setUserBadges] = useState<UserBadge[]>(INITIAL_USER_BADGES);
+  const [streakWeeks, setStreakWeeks] = useState<number>(3);
+  const [isQuickQrOpen, setIsQuickQrOpen] = useState<boolean>(false);
 
   // LocalStorage senkronizasyonu
   useEffect(() => {
@@ -382,6 +423,28 @@ export const MemberProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           const parsed = JSON.parse(savedBlocked);
           if (parsed && typeof parsed === "object") setCoachBlockedDateSlots(parsed);
         } catch {}
+      }
+
+      const savedMeasurements = localStorage.getItem(STORAGE_KEYS.BODY_MEASUREMENTS);
+      if (savedMeasurements) {
+        try {
+          const parsed = JSON.parse(savedMeasurements);
+          if (Array.isArray(parsed) && parsed.length > 0) setBodyMeasurements(parsed);
+        } catch {}
+      }
+
+      const savedExercises = localStorage.getItem(STORAGE_KEYS.COMPLETED_EXERCISES);
+      if (savedExercises) {
+        try {
+          const parsed = JSON.parse(savedExercises);
+          if (Array.isArray(parsed)) setCompletedExerciseIds(parsed);
+        } catch {}
+      }
+
+      const savedWater = localStorage.getItem(STORAGE_KEYS.WATER_INTAKE);
+      if (savedWater) {
+        const parsed = parseInt(savedWater, 10);
+        if (!isNaN(parsed)) setWaterIntakeMl(parsed);
       }
 
       const savedViewMode = localStorage.getItem(STORAGE_KEYS.VIEW_MODE);
@@ -1334,6 +1397,45 @@ export const MemberProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     };
   };
 
+  // Fitness Takip & Alışkanlık Fonksiyonları
+  const addBodyMeasurement = (m: Omit<BodyMeasurementRecord, "id" | "coachConfirmed">) => {
+    const newRecord: BodyMeasurementRecord = {
+      ...m,
+      id: `meas-${Date.now()}`,
+      coachConfirmed: true,
+    };
+    const next = [newRecord, ...bodyMeasurements];
+    setBodyMeasurements(next);
+    saveToStorage(STORAGE_KEYS.BODY_MEASUREMENTS, next);
+  };
+
+  const toggleExerciseCompleted = (exerciseId: string) => {
+    setCompletedExerciseIds((prev) => {
+      const exists = prev.includes(exerciseId);
+      const next = exists ? prev.filter((id) => id !== exerciseId) : [...prev, exerciseId];
+      saveToStorage(STORAGE_KEYS.COMPLETED_EXERCISES, next);
+      return next;
+    });
+  };
+
+  const resetWorkoutProgress = () => {
+    setCompletedExerciseIds([]);
+    saveToStorage(STORAGE_KEYS.COMPLETED_EXERCISES, []);
+  };
+
+  const addWater = (amountMl: number) => {
+    setWaterIntakeMl((prev) => {
+      const next = Math.min(4000, Math.max(0, prev + amountMl));
+      saveToStorage(STORAGE_KEYS.WATER_INTAKE, next.toString());
+      return next;
+    });
+  };
+
+  const resetWater = () => {
+    setWaterIntakeMl(0);
+    saveToStorage(STORAGE_KEYS.WATER_INTAKE, "0");
+  };
+
   return (
     <MemberContext.Provider
       value={{
@@ -1398,6 +1500,19 @@ export const MemberProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         coachBlockedDateSlots,
         toggleCoachSlotForDate,
         checkSlotAvailability,
+        bodyMeasurements,
+        addBodyMeasurement,
+        activeWorkout,
+        completedExerciseIds,
+        toggleExerciseCompleted,
+        resetWorkoutProgress,
+        waterIntakeMl,
+        addWater,
+        resetWater,
+        userBadges,
+        streakWeeks,
+        isQuickQrOpen,
+        setIsQuickQrOpen,
       }}
     >
       {children}

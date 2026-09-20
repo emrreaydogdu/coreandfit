@@ -62,6 +62,12 @@ export const metadata: Metadata = {
       },
     ],
   },
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Core & Fit OS",
+  },
   twitter: {
     card: "summary_large_image",
     title: BUSINESS_CONFIG.meta.defaultTitle,

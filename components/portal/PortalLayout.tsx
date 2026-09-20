@@ -15,15 +15,20 @@ import {
   ArrowLeft,
   ChevronRight,
   ShieldCheck,
+  Dumbbell,
+  QrCode,
+  Sparkles,
 } from "lucide-react";
 import { useMember } from "@/context/MemberContext";
 import { PortalTab } from "@/types/portal";
 import { DashboardTab } from "@/components/portal/tabs/DashboardTab";
 import { SessionsTab } from "@/components/portal/tabs/SessionsTab";
+import { WorkoutTab } from "@/components/portal/tabs/WorkoutTab";
 import { StoreTab } from "@/components/portal/tabs/StoreTab";
 import { HistoryTab } from "@/components/portal/tabs/HistoryTab";
 import { ProfileTab } from "@/components/portal/tabs/ProfileTab";
 import { FloatingGlassNav } from "@/components/portal/FloatingGlassNav";
+import { QuickQrModal } from "@/components/portal/QuickQrModal";
 
 export const PortalLayout: React.FC = () => {
   const {
@@ -33,15 +38,19 @@ export const PortalLayout: React.FC = () => {
     viewMode,
     toggleViewMode,
     remainingSessions,
+    bookedSessions,
+    isQuickQrOpen,
+    setIsQuickQrOpen,
   } = useMember();
 
   if (!user) return null;
 
   const NAV_ITEMS: { id: PortalTab; label: string; icon: React.ElementType }[] = [
     { id: "dashboard", label: "Özet", icon: Home },
+    { id: "workout", label: "Antrenman", icon: Dumbbell },
     { id: "sessions", label: "Seanslarım", icon: Calendar },
+    { id: "history", label: "Gelişim & Tanita", icon: BarChart3 },
     { id: "store", label: "Paket Al", icon: Zap },
-    { id: "history", label: "Girişlerim", icon: BarChart3 },
     { id: "profile", label: "Hesabım", icon: User },
   ];
 
@@ -49,6 +58,8 @@ export const PortalLayout: React.FC = () => {
     switch (activeTab) {
       case "dashboard":
         return <DashboardTab />;
+      case "workout":
+        return <WorkoutTab />;
       case "sessions":
         return <SessionsTab />;
       case "store":
@@ -89,10 +100,36 @@ export const PortalLayout: React.FC = () => {
               <span className="text-[#64748B]">Nişantaşı Stüdyo:</span>
               <span className="text-[#0F172A] font-bold">%35 Sakin</span>
             </div>
+
+            {/* Next Upcoming Session dynamic pill */}
+            {bookedSessions.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setActiveTab("sessions")}
+                className="hidden xl:flex items-center gap-2 px-3 py-1 bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200/60 rounded-full text-[11px] font-semibold text-emerald-900 transition-colors"
+                title="Gelecek Seansı Gör"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                <span>
+                  Sonraki: {bookedSessions[0].date} {bookedSessions[0].timeSlot.split(" - ")[0]}
+                </span>
+              </button>
+            )}
           </div>
 
-          {/* Controls: View Mode, Web Link, Avatar */}
+          {/* Controls: Turnike QR, View Mode, Web Link, Avatar */}
           <div className="flex items-center gap-2 sm:gap-2.5">
+            {/* Quick Turnike QR Button */}
+            <button
+              type="button"
+              onClick={() => setIsQuickQrOpen(true)}
+              className="flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 bg-[#0F172A] hover:bg-slate-800 text-white rounded-full text-xs font-bold transition-all shadow-sm active:scale-95 group"
+              title="Stüdyo Giriş Turnike QR Geçiş Kartı"
+            >
+              <QrCode className="w-3.5 h-3.5 text-emerald-400 group-hover:rotate-12 transition-transform" />
+              <span className="hidden sm:inline">Turnike QR</span>
+              <span className="sm:hidden text-[11px]">QR</span>
+            </button>
 
             {/* View Mode Switcher (Desktop Only) */}
             <button
@@ -224,6 +261,18 @@ export const PortalLayout: React.FC = () => {
                           <span>{item.label}</span>
                         </div>
 
+                        {item.id === "workout" && (
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              isActive
+                                ? "bg-white/20 text-white"
+                                : "bg-emerald-50 text-emerald-700"
+                            }`}
+                          >
+                            Aktif
+                          </span>
+                        )}
+
                         {item.id === "sessions" && (
                           <span
                             className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
@@ -284,6 +333,12 @@ export const PortalLayout: React.FC = () => {
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 lg:hidden">
         <FloatingGlassNav activeTab={activeTab} setActiveTab={setActiveTab} />
       </div>
+
+      {/* Dynamic Floating Quick Turnike Pass Modal */}
+      <QuickQrModal
+        isOpen={isQuickQrOpen}
+        onClose={() => setIsQuickQrOpen(false)}
+      />
     </div>
   );
 };

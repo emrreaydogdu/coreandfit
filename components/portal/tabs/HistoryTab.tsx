@@ -13,6 +13,13 @@ import {
   Dumbbell,
   Star,
   Quote,
+  Scale,
+  Plus,
+  Activity,
+  Check,
+  X,
+  Sparkles,
+  FileText,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useMember } from "@/context/MemberContext";
@@ -190,11 +197,45 @@ const ActivityCalendar: React.FC<{
 };
 
 /* ------------------------------------------------------------------ */
-/*  Main HistoryTab Component                                          */
-/* ------------------------------------------------------------------ */
 export const HistoryTab: React.FC = () => {
-  const { checkInLogs, bookedSessions } = useMember();
+  const { checkInLogs, bookedSessions, bodyMeasurements, addBodyMeasurement } = useMember();
+  const [activeSubTab, setActiveSubTab] = useState<"inbody" | "checkins">("inbody");
   const [expandedLog, setExpandedLog] = useState<string | null>(null);
+
+  // Modal State for New Measurement
+  const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
+  const [newWeight, setNewWeight] = useState<string>("");
+  const [newBodyFat, setNewBodyFat] = useState<string>("");
+  const [newMuscle, setNewMuscle] = useState<string>("");
+  const [newWaist, setNewWaist] = useState<string>("");
+  const [newNote, setNewNote] = useState<string>("");
+
+  const latestMeas = bodyMeasurements[0];
+  const initialMeas = bodyMeasurements[bodyMeasurements.length - 1];
+
+  const weightDelta = latestMeas && initialMeas ? (latestMeas.weightKg - initialMeas.weightKg).toFixed(1) : "0";
+  const fatDelta = latestMeas && initialMeas ? (latestMeas.bodyFatPercent - initialMeas.bodyFatPercent).toFixed(1) : "0";
+  const muscleDelta = latestMeas && initialMeas ? (latestMeas.muscleMassKg - initialMeas.muscleMassKg).toFixed(1) : "0";
+  const waistDelta = latestMeas?.waistCm && initialMeas?.waistCm ? (latestMeas.waistCm - initialMeas.waistCm) : 0;
+
+  const handleSaveMeasurement = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newWeight) return;
+    addBodyMeasurement({
+      date: new Date().toISOString().split("T")[0],
+      weightKg: parseFloat(newWeight) || 78,
+      bodyFatPercent: parseFloat(newBodyFat) || 14.5,
+      muscleMassKg: parseFloat(newMuscle) || 37,
+      waistCm: parseFloat(newWaist) || undefined,
+      note: newNote || "Üye portalından yeni tartı & kompozisyon girişi",
+    });
+    setNewWeight("");
+    setNewBodyFat("");
+    setNewMuscle("");
+    setNewWaist("");
+    setNewNote("");
+    setIsAddModalOpen(false);
+  };
 
   const stats = [
     {
@@ -233,19 +274,380 @@ export const HistoryTab: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-6 pb-12">
-      {/* Page Header */}
-      <div>
-        <p className="text-[11px] font-semibold text-emerald-600 uppercase tracking-wider">
-          Antrenman Geçmişi
-        </p>
-        <h2 className="text-2xl sm:text-3xl font-bold text-[#0F172A] tracking-tight mt-0.5">
-          Girişlerim
-        </h2>
-        <p className="text-[13px] text-[#64748B] mt-1 leading-relaxed max-w-lg">
-          Stüdyo girişleriniz, seans detayları ve koçunuzun gelişim notları.
-        </p>
+    <div className="space-y-6 pb-20">
+      {/* Page Header & SubTab Switcher */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">
+              BİYOMETRİK TAKİP & PERFORMANS
+            </span>
+            <span className="text-[#CBD5E1]">•</span>
+            <span className="text-[11px] text-[#64748B]">Tanita MC-780 Profesyonel Analiz</span>
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0F172A] tracking-tight mt-0.5 font-display uppercase">
+            Gelişim & Kayıtlar
+          </h2>
+          <p className="text-[13px] text-[#64748B] mt-0.5 max-w-lg">
+            Vücut kompozisyonu değişimleriniz, kuvvet rekorlarınız ve stüdyo seans geçmişiniz.
+          </p>
+        </div>
+
+        {/* SubTab Toggle Bar */}
+        <div className="flex items-center p-1 bg-black/[0.04] rounded-2xl border border-black/[0.05] self-start sm:self-auto shrink-0 shadow-inner">
+          <button
+            type="button"
+            onClick={() => setActiveSubTab("inbody")}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+              activeSubTab === "inbody"
+                ? "bg-white text-[#0F172A] shadow-xs"
+                : "text-[#64748B] hover:text-[#0F172A]"
+            }`}
+          >
+            <Scale className="w-3.5 h-3.5 text-emerald-600" />
+            <span>InBody & Kompozisyon</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveSubTab("checkins")}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+              activeSubTab === "checkins"
+                ? "bg-white text-[#0F172A] shadow-xs"
+                : "text-[#64748B] hover:text-[#0F172A]"
+            }`}
+          >
+            <Clock className="w-3.5 h-3.5 text-blue-600" />
+            <span>Turnike & Seanslar</span>
+          </button>
+        </div>
       </div>
+
+      {activeSubTab === "inbody" && (
+        <div className="space-y-6">
+          {/* 4 Core Transformation Metrics Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            {/* Weight */}
+            <div className="p-4 sm:p-5 bg-white border border-black/[0.06] rounded-3xl shadow-[0_2px_12px_rgba(0,0,0,0.02)]">
+              <div className="flex items-center justify-between text-xs text-[#64748B] mb-2 font-medium">
+                <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#64748B]">
+                  VÜCUT AĞIRLIĞI
+                </span>
+                <div className="w-7 h-7 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                  <Scale className="w-3.5 h-3.5" />
+                </div>
+              </div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-xl sm:text-3xl font-black text-[#0F172A] font-display">
+                  {latestMeas?.weightKg || 78.4}
+                </span>
+                <span className="text-xs text-[#64748B] font-semibold">kg</span>
+              </div>
+              <div className="mt-1 flex items-center gap-1.5 text-[11px] font-bold text-emerald-600">
+                <span>{parseFloat(weightDelta) <= 0 ? weightDelta : `+${weightDelta}`} kg</span>
+                <span className="text-[10px] text-[#94A3B8] font-medium font-sans">(Başlangıç: {initialMeas?.weightKg} kg)</span>
+              </div>
+            </div>
+
+            {/* Body Fat % */}
+            <div className="p-4 sm:p-5 bg-white border border-black/[0.06] rounded-3xl shadow-[0_2px_12px_rgba(0,0,0,0.02)]">
+              <div className="flex items-center justify-between text-xs text-[#64748B] mb-2 font-medium">
+                <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#64748B]">
+                  YAĞ ORANI
+                </span>
+                <div className="w-7 h-7 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                  <Activity className="w-3.5 h-3.5" />
+                </div>
+              </div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-xl sm:text-3xl font-black text-[#0F172A] font-display">
+                  %{latestMeas?.bodyFatPercent || 14.8}
+                </span>
+              </div>
+              <div className="mt-1 flex items-center gap-1.5 text-[11px] font-bold text-emerald-600">
+                <span>{parseFloat(fatDelta) <= 0 ? fatDelta : `+${fatDelta}`}%</span>
+                <span className="text-[10px] text-[#94A3B8] font-medium font-sans">(Başlangıç: %{initialMeas?.bodyFatPercent})</span>
+              </div>
+            </div>
+
+            {/* Muscle Mass */}
+            <div className="p-4 sm:p-5 bg-white border border-black/[0.06] rounded-3xl shadow-[0_2px_12px_rgba(0,0,0,0.02)]">
+              <div className="flex items-center justify-between text-xs text-[#64748B] mb-2 font-medium">
+                <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#64748B]">
+                  İSKELET KASI
+                </span>
+                <div className="w-7 h-7 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+                  <Dumbbell className="w-3.5 h-3.5" />
+                </div>
+              </div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-xl sm:text-3xl font-black text-[#0F172A] font-display">
+                  {latestMeas?.muscleMassKg || 37.1}
+                </span>
+                <span className="text-xs text-[#64748B] font-semibold">kg</span>
+              </div>
+              <div className="mt-1 flex items-center gap-1.5 text-[11px] font-bold text-emerald-600">
+                <span>+{muscleDelta} kg</span>
+                <span className="text-[10px] text-[#94A3B8] font-medium font-sans">Net Hipertrofi</span>
+              </div>
+            </div>
+
+            {/* Waist */}
+            <div className="p-4 sm:p-5 bg-white border border-black/[0.06] rounded-3xl shadow-[0_2px_12px_rgba(0,0,0,0.02)]">
+              <div className="flex items-center justify-between text-xs text-[#64748B] mb-2 font-medium">
+                <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#64748B]">
+                  BEL ÇEVRESİ
+                </span>
+                <div className="w-7 h-7 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                  <Award className="w-3.5 h-3.5" />
+                </div>
+              </div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-xl sm:text-3xl font-black text-[#0F172A] font-display">
+                  {latestMeas?.waistCm || 82}
+                </span>
+                <span className="text-xs text-[#64748B] font-semibold">cm</span>
+              </div>
+              <div className="mt-1 flex items-center gap-1.5 text-[11px] font-bold text-emerald-600">
+                <span>{waistDelta <= 0 ? waistDelta : `+${waistDelta}`} cm</span>
+                <span className="text-[10px] text-[#94A3B8] font-medium font-sans">İncelme</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Personal Strength Records (PR) Board */}
+          <div className="bg-gradient-to-br from-slate-900 via-slate-950 to-black text-white rounded-3xl p-6 sm:p-7 border border-white/10 shadow-lg">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 border-b border-white/10 pb-4">
+              <div>
+                <span className="text-[10px] font-mono text-emerald-400 font-bold uppercase tracking-widest block">
+                  BİYOMEKANİK KUVVET REKORLARI (PR)
+                </span>
+                <h3 className="text-lg sm:text-xl font-bold font-display uppercase tracking-tight text-white mt-0.5">
+                  Kişisel Kaldırış Zirveleri
+                </h3>
+              </div>
+              <span className="text-xs text-slate-400">Koç İlker Yüksel Gözetiminde Onaylanmıştır</span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+              <div className="p-4 bg-white/5 rounded-2xl border border-white/10">
+                <span className="text-[10px] text-slate-400 font-semibold uppercase block">TRAP BAR DEADLIFT</span>
+                <div className="text-2xl font-black text-white font-mono mt-1">160 KG</div>
+                <span className="text-[10px] text-emerald-400 font-bold mt-0.5 block">Hedef: 180 KG</span>
+              </div>
+
+              <div className="p-4 bg-white/5 rounded-2xl border border-white/10">
+                <span className="text-[10px] text-slate-400 font-semibold uppercase block">BACK SQUAT (BOX)</span>
+                <div className="text-2xl font-black text-white font-mono mt-1">130 KG</div>
+                <span className="text-[10px] text-emerald-400 font-bold mt-0.5 block">90° Güvenli Açı</span>
+              </div>
+
+              <div className="p-4 bg-white/5 rounded-2xl border border-white/10">
+                <span className="text-[10px] text-slate-400 font-semibold uppercase block">BARBELL BENCH PRESS</span>
+                <div className="text-2xl font-black text-white font-mono mt-1">95 KG</div>
+                <span className="text-[10px] text-emerald-400 font-bold mt-0.5 block">Skapular Kilit</span>
+              </div>
+
+              <div className="p-4 bg-white/5 rounded-2xl border border-white/10">
+                <span className="text-[10px] text-slate-400 font-semibold uppercase block">WEIGHTED PULL-UP</span>
+                <div className="text-2xl font-black text-white font-mono mt-1">+15 KG</div>
+                <span className="text-[10px] text-emerald-400 font-bold mt-0.5 block">Tam Ekstansiyon</span>
+              </div>
+            </div>
+          </div>
+
+          {/* InBody Measurement Records Table */}
+          <div className="bg-white border border-black/[0.06] rounded-3xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.02)] space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-black/[0.05] pb-4">
+              <div>
+                <h3 className="text-base sm:text-lg font-bold font-display uppercase text-[#0F172A]">
+                  Tanita InBody Ölçüm Geçmişi
+                </h3>
+                <p className="text-xs text-[#64748B] mt-0.5">
+                  Her ay stüdyomuzda gerçekleştirilen profesyonel segmental vücut analizleri.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsAddModalOpen(true)}
+                className="px-4 py-2 bg-[#0F172A] hover:bg-black text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all self-start sm:self-auto shadow-2xs active:scale-95"
+              >
+                <Plus className="w-3.5 h-3.5 text-emerald-400" />
+                <span>+ Yeni Tartı / Ölçüm Ekle</span>
+              </button>
+            </div>
+
+            <div className="overflow-x-auto rounded-2xl border border-black/[0.06]">
+              <table className="w-full border-collapse min-w-[650px] text-left text-xs">
+                <thead>
+                  <tr className="bg-[#F8FAFC] text-[#64748B] font-semibold border-b border-black/[0.06]">
+                    <th className="p-3 text-[10px] uppercase tracking-wider">Tarih</th>
+                    <th className="p-3 text-[10px] uppercase tracking-wider">Kilo</th>
+                    <th className="p-3 text-[10px] uppercase tracking-wider">Yağ %</th>
+                    <th className="p-3 text-[10px] uppercase tracking-wider">Kas Kütlesi</th>
+                    <th className="p-3 text-[10px] uppercase tracking-wider">Bel Çevresi</th>
+                    <th className="p-3 text-[10px] uppercase tracking-wider">Koç Değerlendirmesi & Not</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-black/[0.04] font-sans">
+                  {bodyMeasurements.map((m) => (
+                    <tr key={m.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="p-3 font-mono font-bold text-[#0F172A] whitespace-nowrap">
+                        📅 {m.date}
+                      </td>
+                      <td className="p-3 font-mono font-bold text-[#0F172A]">
+                        {m.weightKg} kg
+                      </td>
+                      <td className="p-3 font-mono font-semibold text-blue-700">
+                        %{m.bodyFatPercent}
+                      </td>
+                      <td className="p-3 font-mono font-semibold text-purple-700">
+                        {m.muscleMassKg} kg
+                      </td>
+                      <td className="p-3 font-mono text-[#475569]">
+                        {m.waistCm ? `${m.waistCm} cm` : "-"}
+                      </td>
+                      <td className="p-3 text-xs text-[#334155] max-w-xs truncate">
+                        {m.note || "Standart kontrol"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Add New Measurement */}
+      <AnimatePresence>
+        {isAddModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-md bg-white rounded-3xl p-6 sm:p-7 shadow-2xl text-[#0F172A] space-y-4"
+            >
+              <button
+                type="button"
+                onClick={() => setIsAddModalOpen(false)}
+                className="absolute top-5 right-5 p-2 text-[#94A3B8] hover:text-[#0F172A] rounded-full bg-[#F1F5F9]"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              <div>
+                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full uppercase tracking-wider inline-block mb-1.5">
+                  YENİ BİYOMETRİK VERİ
+                </span>
+                <h3 className="text-xl font-bold font-display text-[#0F172A]">
+                  Ölçüm & Tartı Kaydet
+                </h3>
+                <p className="text-xs text-[#64748B] mt-0.5">
+                  Evdeki veya stüdyo tartısındaki güncel değerlerinizi ekleyin.
+                </p>
+              </div>
+
+              <form onSubmit={handleSaveMeasurement} className="space-y-3 text-xs font-sans">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] font-bold text-[#64748B] uppercase block mb-1">
+                      Kilo (kg) *
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      required
+                      placeholder="Örn: 78.2"
+                      value={newWeight}
+                      onChange={(e) => setNewWeight(e.target.value)}
+                      className="w-full p-2.5 bg-[#F8FAFC] border border-black/[0.08] rounded-xl text-xs font-mono font-bold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-bold text-[#64748B] uppercase block mb-1">
+                      Yağ Oranı (%)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      placeholder="Örn: 14.5"
+                      value={newBodyFat}
+                      onChange={(e) => setNewBodyFat(e.target.value)}
+                      className="w-full p-2.5 bg-[#F8FAFC] border border-black/[0.08] rounded-xl text-xs font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] font-bold text-[#64748B] uppercase block mb-1">
+                      Kas Kütlesi (kg)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      placeholder="Örn: 37.2"
+                      value={newMuscle}
+                      onChange={(e) => setNewMuscle(e.target.value)}
+                      className="w-full p-2.5 bg-[#F8FAFC] border border-black/[0.08] rounded-xl text-xs font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-bold text-[#64748B] uppercase block mb-1">
+                      Bel Çevresi (cm)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.5"
+                      placeholder="Örn: 81.5"
+                      value={newWaist}
+                      onChange={(e) => setNewWaist(e.target.value)}
+                      className="w-full p-2.5 bg-[#F8FAFC] border border-black/[0.08] rounded-xl text-xs font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-[#64748B] uppercase block mb-1">
+                    Ölçüm Notu
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Sabah aç karnına ölçüldü vb."
+                    value={newNote}
+                    onChange={(e) => setNewNote(e.target.value)}
+                    className="w-full p-2.5 bg-[#F8FAFC] border border-black/[0.08] rounded-xl text-xs"
+                  />
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsAddModalOpen(false)}
+                    className="px-4 py-2 border border-black/[0.08] text-[#64748B] rounded-xl text-xs font-semibold"
+                  >
+                    İptal
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-md active:scale-95"
+                  >
+                    Kaydet
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {activeSubTab === "checkins" && (
+        <div className="space-y-6">
 
       {/* Stats Row */}
       <div className="grid grid-cols-3 gap-3">
@@ -394,6 +796,8 @@ export const HistoryTab: React.FC = () => {
           ))}
         </div>
       </div>
+        </div>
+      )}
     </div>
   );
 };
