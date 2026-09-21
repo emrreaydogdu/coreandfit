@@ -40,6 +40,8 @@ import {
   Download,
   Boxes,
   Percent,
+  Menu,
+  MapPin,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useMember } from "@/context/MemberContext";
@@ -88,6 +90,7 @@ export const AdminPortal: React.FC = () => {
   const [selectedRole, setSelectedRole] = useState<string>("İlker Yüksel");
   const [adminTab, setAdminTab] = useState<AdminTab>("overview");
   const [viewMode, setViewMode] = useState<"responsive" | "app_frame">("responsive");
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState<boolean>(false);
   const [isScannerOpen, setIsScannerOpen] = useState<boolean>(false);
   const [isCreateSessionOpen, setIsCreateSessionOpen] = useState<boolean>(false);
   const [createSessionInitialDate, setCreateSessionInitialDate] = useState<string | undefined>(undefined);
@@ -382,106 +385,125 @@ export const AdminPortal: React.FC = () => {
                     return (
                       <div
                         key={sess.id}
-                        className="p-5 bg-[#F8FAFC] hover:bg-white border border-black/[0.05] hover:border-black/[0.12] rounded-2xl transition-all space-y-3.5 shadow-2xs"
+                        className="bg-white hover:bg-slate-50/50 border border-black/[0.08] hover:border-black/[0.14] rounded-3xl p-5 sm:p-6 transition-all duration-200 shadow-[0_2px_14px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] space-y-4 relative"
                       >
-                        {/* Session Top Bar: Time, Station, Status */}
-                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-black/[0.04] pb-2.5">
-                          <div className="flex items-center gap-2.5">
-                            <div className="px-3 py-1 bg-[#0F172A] text-white rounded-xl flex items-center gap-1.5 shadow-2xs">
-                              <Clock className="w-3 h-3 text-emerald-400" />
+                        {/* 1. Header Bar: Time, Date, Station & Live Status */}
+                        <div className="flex flex-wrap items-center justify-between gap-3 pb-3.5 border-b border-black/[0.06]">
+                          <div className="flex items-center gap-2.5 flex-wrap">
+                            {/* Time Pill */}
+                            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#0F172A] text-white rounded-xl shadow-xs">
+                              <Clock className="w-3.5 h-3.5 text-emerald-400" />
                               <span className="text-xs font-black tracking-tight">{startTime}</span>
                               {endTime && <span className="text-[10px] text-slate-300 font-medium">- {endTime}</span>}
-                              <span className="text-[9px] font-bold text-emerald-300 bg-emerald-950/80 px-1 py-0.2 rounded ml-1">
+                              <span className="text-[9px] font-bold text-emerald-300 bg-emerald-950 px-1.5 py-0.5 rounded ml-0.5">
                                 60 DK
                               </span>
                             </div>
 
-                            <span className="px-2.5 py-1 bg-blue-50 text-blue-700 text-[10px] font-bold rounded-lg uppercase">
-                              {stationName}
+                            {/* Date Badge */}
+                            <span className="text-xs font-bold text-[#0F172A] flex items-center gap-1 bg-slate-100 px-2.5 py-1 rounded-xl">
+                              <Calendar className="w-3.5 h-3.5 text-slate-500" />
+                              <span>{sess.date}</span>
+                            </span>
+
+                            {/* Station */}
+                            <span className="px-2.5 py-1 bg-slate-100 text-[#475569] text-[11px] font-medium rounded-xl flex items-center gap-1">
+                              <MapPin className="w-3 h-3 text-emerald-600" />
+                              <span>{stationName}</span>
                             </span>
                           </div>
 
+                          {/* Live Status Pill */}
+                          <span className="px-3 py-1 bg-emerald-50 text-emerald-900 border border-emerald-200/70 text-[11px] font-bold rounded-full flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                            <span>Birebir (1:1) Seans</span>
+                          </span>
+                        </div>
+
+                        {/* 2. Unified Member & Coach Briefing Card */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 p-4 bg-[#F8FAFC] border border-black/[0.04] rounded-2xl">
+                          {/* Member Side */}
+                          <div className="flex items-start gap-3">
+                            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#0F172A] to-slate-800 text-white flex items-center justify-center font-extrabold text-xs shrink-0 shadow-xs ring-2 ring-white">
+                              {memberName.split(" ").map((n) => n[0]).join("")}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">
+                                  DANIŞAN (MÜŞTERİ)
+                                </span>
+                                <span className="text-[10px] font-bold px-2 py-0.5 bg-emerald-100/80 text-emerald-800 rounded-md">
+                                  {remainingSessions} Seans Kalan
+                                </span>
+                              </div>
+                              <h4 className="font-bold text-sm text-[#0F172A] truncate mt-0.5">
+                                {memberName} <span className="text-[11px] font-mono text-[#64748B] font-normal">({memberNo})</span>
+                              </h4>
+                              <p className="text-[11px] text-[#64748B] font-medium">VIP 1:1 Personal Training</p>
+                            </div>
+                          </div>
+
+                          {/* Coach Side */}
+                          <div className="flex items-start gap-3 pt-3 md:pt-0 border-t md:border-t-0 md:border-l border-black/[0.06] md:pl-4">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src="https://images.unsplash.com/photo-1567013127542-490d757e51fc?auto=format&fit=crop&w=120&q=80"
+                              alt="İlker Yüksel"
+                              className="w-10 h-10 rounded-2xl object-cover ring-2 ring-emerald-500/30 shrink-0"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">
+                                  BAŞ ANTRENÖR
+                                </span>
+                                <span className="text-[9px] font-bold px-2 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200/60 rounded-md">
+                                  1:1 Birebir
+                                </span>
+                              </div>
+                              <h4 className="font-bold text-sm text-[#0F172A] flex items-center gap-1 truncate mt-0.5">
+                                <span>{coachName}</span>
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                              </h4>
+                              <p className="text-[11px] text-[#64748B] font-medium">Kurucu & Baş Antrenör • NSCA-CSCS</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* 3. Focus & Protocol Bar */}
+                        <div className="p-3 bg-[#F1F5F9]/70 border border-black/[0.04] rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
                           <div className="flex items-center gap-2">
-                            <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200/60 text-[10px] font-bold rounded-full flex items-center gap-1">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                              <span>Birebir (1:1) Seans</span>
+                            <div className="w-6 h-6 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
+                              <Dumbbell className="w-3.5 h-3.5" />
+                            </div>
+                            <div className="flex items-baseline gap-1.5 flex-wrap">
+                              <span className="font-bold text-[#64748B] text-[11px] uppercase tracking-wider">Odak:</span>
+                              <span className="font-bold text-[#0F172A]">{focusArea}</span>
+                            </div>
+                          </div>
+
+                          {notes && notes !== "xxx" && notes !== "undefined" && (
+                            <span className="text-[11px] text-[#475569] italic bg-white px-2.5 py-1 rounded-lg border border-black/[0.05]">
+                              &ldquo;{notes}&rdquo;
                             </span>
-                            <span className="text-[11px] font-mono text-[#64748B]">📅 {sess.date}</span>
-                          </div>
+                          )}
                         </div>
 
-                        {/* Member & Coach Card Duo */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {/* Member */}
-                          <div className="p-3 bg-white rounded-xl border border-black/[0.04] space-y-1">
-                            <div className="flex items-center justify-between text-[10px] font-bold text-[#64748B] uppercase">
-                              <span>DANIŞAN</span>
-                              <span className="text-emerald-600 font-bold">{remainingSessions} Seans Hak</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <div className="w-7 h-7 rounded-lg bg-[#0F172A] text-white flex items-center justify-center font-bold text-[11px] shrink-0">
-                                {memberName.split(" ").map((n) => n[0]).join("")}
-                              </div>
-                              <div>
-                                <h4 className="font-bold text-xs text-[#0F172A] leading-tight">
-                                  {memberName} <span className="text-[#64748B] font-mono text-[10px]">({memberNo})</span>
-                                </h4>
-                                <p className="text-[10px] text-[#64748B]">VIP 1:1 Personal Training</p>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Coach (İlker Yüksel) */}
-                          <div className="p-3 bg-slate-900 text-white rounded-xl space-y-1 shadow-2xs">
-                            <div className="flex items-center justify-between text-[10px] font-bold text-emerald-400 uppercase">
-                              <span>BAŞ ANTRENÖR</span>
-                              <span className="text-[9px] px-1.5 py-0.2 bg-emerald-500/20 text-emerald-300 rounded font-bold">1:1 Solo</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img
-                                src="https://images.unsplash.com/photo-1567013127542-490d757e51fc?auto=format&fit=crop&w=120&q=80"
-                                alt="İlker Yüksel"
-                                className="w-7 h-7 rounded-lg object-cover ring-1 ring-emerald-400/40 shrink-0"
-                              />
-                              <div>
-                                <h4 className="font-bold text-xs text-white leading-tight flex items-center gap-1">
-                                  <span>{coachName}</span>
-                                  <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
-                                </h4>
-                                <p className="text-[10px] text-slate-300">Kurucu & Baş Antrenör • NSCA-CSCS</p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Focus & Protocol */}
-                        <div className="p-3 bg-white rounded-xl border border-black/[0.04] space-y-1 text-xs">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded uppercase">
-                              🎯 ODAK
-                            </span>
-                            <span className="font-bold text-[#0F172A]">{focusArea}</span>
-                          </div>
-                          <p className="text-[11px] text-[#475569] leading-relaxed italic pl-1 border-l-2 border-emerald-500 mt-1">
-                            &ldquo;{notes}&rdquo;
-                          </p>
-                        </div>
-
-                        {/* Footer Readiness & Complete Action */}
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1">
-                          <div className="flex items-center gap-2 text-[10px] font-semibold text-[#64748B] flex-wrap">
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-800 rounded-md">
-                              <Check className="w-3 h-3 text-emerald-600" />
+                        {/* 4. Readiness Chips & Action Buttons */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+                          {/* Readiness status */}
+                          <div className="flex items-center gap-2 text-xs font-semibold text-[#64748B] flex-wrap">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-800 rounded-lg text-[11px]">
+                              <Check className="w-3.5 h-3.5 text-emerald-600" />
                               İstasyon Sterilize
                             </span>
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-800 rounded-md">
-                              <Check className="w-3 h-3 text-emerald-600" />
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-800 rounded-lg text-[11px]">
+                              <Check className="w-3.5 h-3.5 text-emerald-600" />
                               Nabız Bandı Hazır
                             </span>
                           </div>
 
-                          <div className="flex items-center gap-1.5 self-end sm:self-center flex-wrap">
+                          {/* Action Buttons */}
+                          <div className="flex items-center gap-2 self-end sm:self-center flex-wrap">
                             <button
                               type="button"
                               onClick={() =>
@@ -491,7 +513,7 @@ export const AdminPortal: React.FC = () => {
                                   focusArea,
                                 })
                               }
-                              className="px-2.5 py-1.5 bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#128C7E] rounded-xl text-xs font-bold transition-colors flex items-center gap-1"
+                              className="px-3 py-1.5 bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#128C7E] rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95"
                               title="WhatsApp Hatırlatması Gönder"
                             >
                               <MessageSquare className="w-3.5 h-3.5 fill-current" />
@@ -501,16 +523,16 @@ export const AdminPortal: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => setActiveSessionForAction(sess)}
-                              className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-[#0F172A] rounded-xl text-xs font-semibold transition-colors flex items-center gap-1"
+                              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-[#0F172A] rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 active:scale-95"
                               title="Seansı Ertele veya İptal Et"
                             >
-                              <RotateCcw className="w-3 h-3 text-[#64748B]" />
+                              <RotateCcw className="w-3.5 h-3.5 text-[#64748B]" />
                               <span>Ertele / İptal</span>
                             </button>
 
                             <button
                               onClick={() => setActiveSessionToComplete(sess)}
-                              className="px-3.5 py-1.5 bg-[#0F172A] hover:bg-black text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-colors shadow-2xs active:scale-98 flex items-center gap-1"
+                              className="px-4 py-1.5 bg-[#0F172A] hover:bg-black text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-xs active:scale-95 flex items-center gap-1.5"
                             >
                               <Check className="w-3.5 h-3.5 text-emerald-400 stroke-[3]" />
                               <span>Tamamla</span>
@@ -1111,6 +1133,17 @@ export const AdminPortal: React.FC = () => {
                 <div className="text-[10px] text-[#64748B] font-medium">Baş Antrenör</div>
               </div>
             </div>
+
+            {/* Mobile Drawer Hamburger Button */}
+            <button
+              type="button"
+              onClick={() => setIsMobileDrawerOpen(true)}
+              className="lg:hidden p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-[#0F172A] border border-black/[0.08] transition-all active:scale-95 flex items-center justify-center shrink-0 ml-1"
+              title="Yönetici Menüsünü Aç"
+              aria-label="Menüyü Aç"
+            >
+              <Menu className="w-5 h-5 text-[#0F172A]" />
+            </button>
           </div>
         </div>
       </header>
@@ -1170,8 +1203,8 @@ export const AdminPortal: React.FC = () => {
         ) : (
           /* Wide Full-Width Responsive Dashboard */
           <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 space-y-4 sm:space-y-6 pb-28 lg:pb-12">
-            {/* Apple macOS / iOS Segmented Tab Navigation Bar */}
-            <div className="p-1 sm:p-1.5 bg-black/[0.03] backdrop-blur-2xl border border-black/[0.05] rounded-2xl sm:rounded-[26px] flex items-center gap-1 sm:gap-1.5 overflow-x-auto no-scrollbar shadow-inner">
+            {/* Apple macOS / iOS Segmented Tab Navigation Bar (Web görünümde tam ekrana sığar, mobilde pürüzsüz kayar) */}
+            <div className="p-1 sm:p-1.5 bg-black/[0.03] backdrop-blur-2xl border border-black/[0.05] rounded-2xl sm:rounded-[26px] flex items-center gap-1 sm:gap-1.5 overflow-x-auto no-scrollbar shadow-inner lg:grid lg:grid-cols-8 lg:overflow-x-visible lg:gap-1.5 w-full">
               {[
                 { id: "overview", label: "Genel Bakış", icon: TrendingUp },
                 { id: "turnstile", label: "Turnike & Hızlı QR", icon: QrCode },
@@ -1188,17 +1221,17 @@ export const AdminPortal: React.FC = () => {
                   <button
                     key={tab.id}
                     onClick={() => setAdminTab(tab.id as any)}
-                    className={`relative inline-flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl sm:rounded-2xl text-[11px] sm:text-xs font-semibold whitespace-nowrap transition-all duration-200 outline-none shrink-0 ${
+                    className={`relative inline-flex items-center justify-center gap-1.5 px-3 py-2 sm:px-3 sm:py-2.5 lg:px-1.5 xl:px-2.5 rounded-xl sm:rounded-2xl text-[11px] xl:text-xs font-semibold whitespace-nowrap transition-all duration-200 outline-none shrink-0 lg:shrink lg:w-full ${
                       isActive
                         ? "bg-white text-[#0F172A] shadow-[0_2px_10px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] font-bold"
                         : "text-[#64748B] hover:text-[#0F172A] hover:bg-white/50"
                     }`}
                   >
-                    <Icon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isActive ? "text-[#0F172A]" : "text-[#64748B]"}`} />
-                    <span>{tab.label}</span>
+                    <Icon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 ${isActive ? "text-[#0F172A]" : "text-[#64748B]"}`} />
+                    <span className="truncate">{tab.label}</span>
                     {tab.badge !== undefined && tab.badge > 0 && (
                       <span
-                        className={`px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold ${
+                        className={`px-1.5 py-0.2 rounded-full text-[9px] sm:text-[10px] font-bold shrink-0 ${
                           isActive ? "bg-emerald-500 text-white" : "bg-emerald-100 text-emerald-800"
                         }`}
                       >
@@ -1442,6 +1475,172 @@ export const AdminPortal: React.FC = () => {
         initialDate={createSessionInitialDate}
         initialTimeSlot={createSessionInitialTimeSlot}
       />
+
+      {/* MOBILE SLIDING DRAWER (Sağdan Sola Açılan Yönetici Menüsü) */}
+      <AnimatePresence>
+        {isMobileDrawerOpen && (
+          <div className="fixed inset-0 z-50 lg:hidden flex justify-end">
+            {/* Backdrop Overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setIsMobileDrawerOpen(false)}
+              className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs"
+            />
+
+            {/* Sliding Drawer Sheet (Right to Left) */}
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 300 }}
+              className="relative w-full max-w-[320px] sm:max-w-sm h-full bg-white shadow-2xl flex flex-col justify-between z-10 overflow-hidden"
+            >
+              {/* Drawer Top Header */}
+              <div className="p-4 sm:p-5 border-b border-black/[0.06] flex items-center justify-between bg-slate-50/80">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-[#0F172A] text-white flex items-center justify-center font-black text-sm tracking-tight shadow-xs">
+                    CF
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-sm text-[#0F172A] uppercase tracking-tight">
+                      CORE & FIT OS
+                    </h4>
+                    <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-wider">
+                      Yönetici Menüsü
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsMobileDrawerOpen(false)}
+                  className="p-2 rounded-xl bg-white border border-black/[0.08] text-[#64748B] hover:text-[#0F172A] transition-colors active:scale-95 shadow-2xs"
+                  aria-label="Menüyü Kapat"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Drawer Scrollable Content */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                {/* Coach Profile Card */}
+                <div className="p-3.5 bg-[#F8FAFC] border border-black/[0.05] rounded-2xl flex items-center gap-3">
+                  <img
+                    src="https://images.unsplash.com/photo-1567013127542-490d757e51fc?auto=format&fit=crop&w=120&q=80"
+                    alt="İlker Yüksel"
+                    className="w-10 h-10 rounded-full object-cover ring-2 ring-emerald-500/30 shrink-0"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1">
+                      <span className="font-bold text-xs text-[#0F172A] truncate">İlker Yüksel</span>
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                    </div>
+                    <p className="text-[10px] text-[#64748B]">Kurucu & Baş Antrenör</p>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="text-[9px] font-semibold text-emerald-700">Nişantaşı Studio Aktif</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quick Action Shortcuts */}
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => {
+                      setIsScannerOpen(true);
+                      setIsMobileDrawerOpen(false);
+                    }}
+                    className="p-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200/80 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors active:scale-95"
+                  >
+                    <QrCode className="w-4 h-4 text-emerald-600" />
+                    <span>Turnike QR</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsCreateSessionOpen(true);
+                      setIsMobileDrawerOpen(false);
+                    }}
+                    className="p-2.5 bg-[#0F172A] hover:bg-black text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors active:scale-95"
+                  >
+                    <Plus className="w-4 h-4 text-emerald-400" />
+                    <span>Yeni Seans</span>
+                  </button>
+                </div>
+
+                {/* Navigation Items (All 8 Admin Tabs) */}
+                <div className="space-y-1 pt-1">
+                  <span className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-wider px-2 block mb-1.5">
+                    YÖNETİM ALANLARI
+                  </span>
+                  {[
+                    { id: "overview", label: "Genel Bakış", icon: TrendingUp },
+                    { id: "turnstile", label: "Turnike & Hızlı QR", icon: QrCode },
+                    { id: "schedule", label: "Seans Programı", icon: Calendar, badge: bookedSessions.length },
+                    { id: "coach_slots", label: "Koç Randevu Saatleri", icon: Clock },
+                    { id: "cashier", label: "Kasa & Ödemeler", icon: CreditCard, badge: pendingOrdersCount },
+                    { id: "members", label: "Üye Rehberi (CRM)", icon: Users },
+                    { id: "inventory", label: "Envanter & Donanım", icon: Boxes },
+                    { id: "settings", label: "İşletme Ayarları", icon: Settings },
+                  ].map((tab) => {
+                    const Icon = tab.icon;
+                    const isActive = adminTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => {
+                          setAdminTab(tab.id as any);
+                          setIsMobileDrawerOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-semibold transition-all ${
+                          isActive
+                            ? "bg-[#0F172A] text-white shadow-xs font-bold"
+                            : "text-[#475569] hover:bg-slate-100 hover:text-[#0F172A]"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Icon className={`w-4 h-4 ${isActive ? "text-emerald-400" : "text-[#64748B]"}`} />
+                          <span>{tab.label}</span>
+                        </div>
+                        {tab.badge !== undefined && tab.badge > 0 && (
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              isActive ? "bg-emerald-500 text-white" : "bg-emerald-100 text-emerald-800"
+                            }`}
+                          >
+                            {tab.badge}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Drawer Footer */}
+              <div className="p-4 border-t border-black/[0.06] bg-slate-50/80 space-y-2">
+                <Link
+                  href="/portal"
+                  onClick={() => setIsMobileDrawerOpen(false)}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 px-3 bg-white border border-black/[0.08] hover:border-black/[0.16] rounded-xl text-xs font-bold text-[#0F172A] transition-all shadow-2xs"
+                >
+                  <User className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Müşteri Portalına Git</span>
+                </Link>
+                <Link
+                  href="/"
+                  onClick={() => setIsMobileDrawerOpen(false)}
+                  className="w-full flex items-center justify-center gap-2 py-2 px-3 text-xs font-medium text-[#64748B] hover:text-[#0F172A] transition-colors"
+                >
+                  <span>Ana Web Sitesine Dön</span>
+                </Link>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
