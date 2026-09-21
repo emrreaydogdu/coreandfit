@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -18,6 +18,8 @@ import {
   Dumbbell,
   QrCode,
   Sparkles,
+  Menu,
+  X,
 } from "lucide-react";
 import { useMember } from "@/context/MemberContext";
 import { PortalTab } from "@/types/portal";
@@ -42,6 +44,8 @@ export const PortalLayout: React.FC = () => {
     isQuickQrOpen,
     setIsQuickQrOpen,
   } = useMember();
+
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState<boolean>(false);
 
   if (!user) return null;
 
@@ -183,6 +187,17 @@ export const PortalLayout: React.FC = () => {
                 </span>
               </div>
             </div>
+
+            {/* Mobile Drawer Hamburger Button */}
+            <button
+              type="button"
+              onClick={() => setIsMobileDrawerOpen(true)}
+              className="lg:hidden p-2 rounded-xl bg-white hover:bg-slate-100 text-[#0F172A] border border-black/[0.08] transition-all active:scale-95 flex items-center justify-center shrink-0 shadow-2xs"
+              title="Menüyü Aç"
+              aria-label="Menüyü Aç"
+            >
+              <Menu className="w-5 h-5 text-[#0F172A]" />
+            </button>
           </div>
         </div>
       </header>
@@ -339,6 +354,170 @@ export const PortalLayout: React.FC = () => {
         isOpen={isQuickQrOpen}
         onClose={() => setIsQuickQrOpen(false)}
       />
+
+      {/* MOBILE SLIDING DRAWER (Sağdan Sola Açılan Müşteri Menüsü) */}
+      <AnimatePresence>
+        {isMobileDrawerOpen && (
+          <div className="fixed inset-0 z-50 lg:hidden flex justify-end">
+            {/* Dark Backdrop Overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setIsMobileDrawerOpen(false)}
+              className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs"
+            />
+
+            {/* Sliding Drawer Sheet (Right to Left) */}
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 300 }}
+              className="relative w-full max-w-[320px] sm:max-w-sm h-full bg-white shadow-2xl flex flex-col justify-between z-10 overflow-hidden"
+            >
+              {/* Drawer Top Header */}
+              <div className="p-4 sm:p-5 border-b border-black/[0.06] flex items-center justify-between bg-slate-50/80">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-[#0F172A] text-white flex items-center justify-center font-black text-sm tracking-tight shadow-xs">
+                    CF
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-sm text-[#0F172A] uppercase tracking-tight">
+                      CORE & FIT
+                    </h4>
+                    <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-wider">
+                      Üye Portalı
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsMobileDrawerOpen(false)}
+                  className="p-2 rounded-xl bg-white border border-black/[0.08] text-[#64748B] hover:text-[#0F172A] transition-colors active:scale-95 shadow-2xs"
+                  aria-label="Menüyü Kapat"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Drawer Scrollable Content */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                {/* Member Profile Card */}
+                <div className="p-3.5 bg-[#F8FAFC] border border-black/[0.05] rounded-2xl flex items-center gap-3">
+                  <img
+                    src={user.avatarUrl}
+                    alt={user.fullName}
+                    className="w-11 h-11 rounded-full object-cover ring-2 ring-emerald-500/30 shrink-0"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1">
+                      <span className="font-bold text-xs text-[#0F172A] truncate">{user.fullName}</span>
+                      <Sparkles className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                    </div>
+                    <p className="text-[10px] text-[#64748B] font-mono">{user.memberNo}</p>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <span className="px-2 py-0.5 bg-emerald-100/80 text-emerald-800 font-bold text-[10px] rounded-md">
+                        {remainingSessions} Seans Kredisi
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quick Turnike Pass Card Trigger */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsQuickQrOpen(true);
+                    setIsMobileDrawerOpen(false);
+                  }}
+                  className="w-full p-3.5 bg-gradient-to-r from-[#0F172A] to-slate-800 hover:from-black hover:to-slate-900 text-white rounded-2xl flex items-center justify-between shadow-xs transition-all active:scale-98 group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                      <QrCode className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                    </div>
+                    <div className="text-left">
+                      <span className="text-xs font-bold block leading-tight">Turnike QR Kartı</span>
+                      <span className="text-[10px] text-slate-300">Stüdyo Hızlı Giriş & Cihaz Tanıtımı</span>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform shrink-0" />
+                </button>
+
+                {/* Navigation Items (All 6 Member Portal Tabs) */}
+                <div className="space-y-1 pt-1">
+                  <span className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-wider px-2 block mb-1.5">
+                    PORTAL BÖLÜMLERİ
+                  </span>
+                  {NAV_ITEMS.map((tab) => {
+                    const Icon = tab.icon;
+                    const isActive = activeTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => {
+                          setActiveTab(tab.id);
+                          setIsMobileDrawerOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-semibold transition-all ${
+                          isActive
+                            ? "bg-[#0F172A] text-white shadow-xs font-bold"
+                            : "text-[#475569] hover:bg-slate-100 hover:text-[#0F172A]"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Icon className={`w-4 h-4 ${isActive ? "text-emerald-400" : "text-[#64748B]"}`} />
+                          <span>{tab.label}</span>
+                        </div>
+                        {tab.id === "sessions" && bookedSessions.length > 0 && (
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              isActive ? "bg-emerald-500 text-white" : "bg-emerald-100 text-emerald-800"
+                            }`}
+                          >
+                            {bookedSessions.length}
+                          </span>
+                        )}
+                        {tab.id === "workout" && (
+                          <span
+                            className={`px-1.5 py-0.2 rounded text-[9px] font-bold uppercase tracking-wider ${
+                              isActive ? "bg-emerald-400 text-black" : "bg-blue-50 text-blue-700"
+                            }`}
+                          >
+                            Aktif
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Drawer Footer */}
+              <div className="p-4 border-t border-black/[0.06] bg-slate-50/80 space-y-2">
+                <Link
+                  href="/admin"
+                  onClick={() => setIsMobileDrawerOpen(false)}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 px-3 bg-white border border-black/[0.08] hover:border-black/[0.16] rounded-xl text-xs font-bold text-[#0F172A] transition-all shadow-2xs"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Yönetici Paneline Geç</span>
+                </Link>
+                <Link
+                  href="/"
+                  onClick={() => setIsMobileDrawerOpen(false)}
+                  className="w-full flex items-center justify-center gap-2 py-2 px-3 text-xs font-medium text-[#64748B] hover:text-[#0F172A] transition-colors"
+                >
+                  <span>Ana Web Sitesine Dön</span>
+                </Link>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
