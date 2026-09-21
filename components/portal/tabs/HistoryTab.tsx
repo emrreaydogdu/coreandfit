@@ -274,7 +274,7 @@ export const HistoryTab: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-6 pb-20">
+    <div className="space-y-6 pb-28">
       {/* Page Header & SubTab Switcher */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>

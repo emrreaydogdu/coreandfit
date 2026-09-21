@@ -234,7 +234,7 @@ export const PortalLayout: React.FC = () => {
           </div>
         ) : (
           /* Full Width Clean Apple Dashboard */
-          <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-24 lg:pb-12">
+          <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-32 lg:pb-12">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
               {/* Desktop Left Navigation Sidebar */}
               <aside className="hidden lg:block lg:col-span-3">

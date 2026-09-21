@@ -18,7 +18,7 @@ export const StoreTab: React.FC = () => {
   const [selectedPkg, setSelectedPkg] = useState<PortalPackage | null>(null);
 
   return (
-    <div className="space-y-6 pb-12 text-[#0F172A]">
+    <div className="space-y-6 pb-28 text-[#0F172A]">
       {/* Header */}
       <div>
         <div className="flex items-center gap-2">

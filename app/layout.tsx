@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Archivo } from "next/font/google";
+import { Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -13,15 +13,15 @@ import { MemberProvider } from "@/context/MemberContext";
 import { BUSINESS_CONFIG } from "@/config/business";
 import { generateLocalBusinessSchema } from "@/lib/schema";
 
-const inter = Inter({
+const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-jakarta",
   display: "swap",
 });
 
-const archivo = Archivo({
+const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
-  variable: "--font-archivo",
+  variable: "--font-mono",
   display: "swap",
 });
 
@@ -86,7 +86,7 @@ export default function RootLayout({
   const jsonLd = generateLocalBusinessSchema();
 
   return (
-    <html lang="tr" suppressHydrationWarning className={`${inter.variable} ${archivo.variable}`}>
+    <html lang="tr" suppressHydrationWarning className={`${jakarta.variable} ${jetbrainsMono.variable}`}>
       <head>
         <script
           dangerouslySetInnerHTML={{

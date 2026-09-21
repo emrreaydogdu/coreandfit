@@ -164,7 +164,7 @@ export const SessionsTab: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 pb-12 text-[#0F172A]">
+    <div className="space-y-6 pb-28 text-[#0F172A]">
       {/* Toast Notification */}
       <AnimatePresence>
         {toastMessage && (

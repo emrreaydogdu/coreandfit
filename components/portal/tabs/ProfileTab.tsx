@@ -113,7 +113,7 @@ export const ProfileTab: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-6 pb-28">
       {/* Header */}
       <div>
         <div className="flex items-center gap-2">
