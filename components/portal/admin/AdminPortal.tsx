@@ -1042,61 +1042,62 @@ export const AdminPortal: React.FC = () => {
       <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-2xl border-b border-black/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.03)] transition-all">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-3.5 flex items-center justify-between gap-3">
           {/* Brand & Studio Status */}
-          <div className="flex items-center gap-2.5 sm:gap-3">
+          {/* Brand & Studio Status */}
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <div className="w-8 h-8 rounded-xl bg-[#0F172A] text-white flex items-center justify-center font-black text-xs tracking-tight shadow-2xs shrink-0">
               CF
             </div>
-            <div>
-              <div className="flex items-center gap-2">
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.7)] animate-pulse shrink-0" />
-                <h1 className="font-bold text-xs sm:text-sm tracking-tight uppercase text-[#0F172A]">
-                  CORE & FIT STUDIO OS
+                <h1 className="font-bold text-xs sm:text-sm tracking-tight uppercase text-[#0F172A] truncate">
+                  CORE & FIT OS
                 </h1>
-                <span className="hidden sm:inline-block text-[10px] px-2 py-0.5 bg-slate-100 text-[#64748B] font-semibold rounded-full border border-black/[0.05]">
-                  Yönetim Paneli
+                <span className="hidden md:inline-block text-[10px] px-2 py-0.5 bg-slate-100 text-[#64748B] font-semibold rounded-full border border-black/[0.05] shrink-0">
+                  Yönetici Paneli
                 </span>
               </div>
-              <p className="text-[10px] text-[#64748B] hidden sm:block font-medium mt-0.5">
+              <p className="text-[10px] text-[#64748B] hidden sm:block font-medium mt-0.5 truncate">
                 Nişantaşı Private Studio • İlker Yüksel
               </p>
             </div>
           </div>
 
-          {/* Header Actions: Quick Sale, Manual Session, Auto QR Scanner, View Mode & Solo Coach Profile */}
-          <div className="flex items-center gap-2 sm:gap-2.5">
-            {/* Fast Desk Sale Button */}
+          {/* Header Actions: Clean Responsive Layout */}
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+            {/* Fast Desk Sale Button (Visible on md+) */}
             <button
               onClick={() => setIsQuickSaleOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-full shadow-xs transition-all active:scale-98"
+              className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-full shadow-xs transition-all active:scale-98 shrink-0"
             >
               <CreditCard className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">+ Hızlı Satış</span>
-              <span className="sm:hidden">+ Satış</span>
+              <span>+ Hızlı Satış</span>
             </button>
 
-            {/* Quick Manual Session Create Button */}
+            {/* Quick Manual Session Create Button (Visible on sm+) */}
             <button
               onClick={() => setIsCreateSessionOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 bg-[#0F172A] hover:bg-black text-white font-bold text-xs rounded-full shadow-xs transition-all active:scale-98"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#0F172A] hover:bg-black text-white font-bold text-xs rounded-full shadow-xs transition-all active:scale-98 shrink-0"
             >
               <Plus className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="hidden sm:inline">+ Manuel Seans</span>
-              <span className="sm:hidden">+ Seans</span>
+              <span>+ Seans</span>
             </button>
 
-            {/* Quick Auto QR Scanner Button */}
+            {/* Quick Turnike QR Button (Compact on mobile) */}
             <button
               onClick={() => setIsScannerOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-950 border border-emerald-200/80 font-bold text-xs rounded-full transition-all active:scale-98 shadow-2xs"
+              className="inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-950 border border-emerald-200/80 font-bold text-xs rounded-full transition-all active:scale-98 shadow-2xs shrink-0"
+              title="Turnike QR Tarayıcı"
             >
-              <Zap className="w-3.5 h-3.5 text-emerald-600 fill-emerald-600" />
-              <span>Turnike QR</span>
+              <Zap className="w-3.5 h-3.5 text-emerald-600 fill-emerald-600 shrink-0" />
+              <span className="hidden sm:inline">Turnike QR</span>
+              <span className="sm:hidden text-[11px] font-bold">QR</span>
             </button>
 
             {/* View Mode Switcher (Desktop Only) */}
             <button
               onClick={() => setViewMode(viewMode === "app_frame" ? "responsive" : "app_frame")}
-              className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 bg-black/[0.04] hover:bg-black/[0.08] border border-black/[0.06] rounded-full text-xs font-semibold text-[#0F172A] transition-all shadow-2xs"
+              className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 bg-black/[0.04] hover:bg-black/[0.08] border border-black/[0.06] rounded-full text-xs font-semibold text-[#0F172A] transition-all shadow-2xs shrink-0"
               title={viewMode === "app_frame" ? "Geniş Ekran Görünümüne Geç" : "iPhone Görünümüne Geç"}
             >
               {viewMode === "app_frame" ? (
@@ -1112,8 +1113,8 @@ export const AdminPortal: React.FC = () => {
               )}
             </button>
 
-            {/* Solo Owner & Head Coach Profile Badge (Apple Style) */}
-            <div className="flex items-center gap-2 pl-2 sm:pl-3 border-l border-black/[0.08]">
+            {/* Solo Owner & Head Coach Profile Badge (Visible on sm+ to prevent clash on mobile) */}
+            <div className="hidden sm:flex items-center gap-2 pl-2 sm:pl-3 border-l border-black/[0.08] shrink-0">
               <div className="relative shrink-0">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -1138,7 +1139,7 @@ export const AdminPortal: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsMobileDrawerOpen(true)}
-              className="lg:hidden p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-[#0F172A] border border-black/[0.08] transition-all active:scale-95 flex items-center justify-center shrink-0 ml-1"
+              className="lg:hidden p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-[#0F172A] border border-black/[0.08] transition-all active:scale-95 flex items-center justify-center shrink-0"
               title="Yönetici Menüsünü Aç"
               aria-label="Menüyü Aç"
             >
