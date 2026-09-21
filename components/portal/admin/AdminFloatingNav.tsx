@@ -58,7 +58,7 @@ export const AdminFloatingNav: React.FC<AdminFloatingNavProps> = ({
       aria-label="Admin Liquid Glass Dock"
       className={`pointer-events-auto select-none max-w-[calc(100vw-1rem)] overflow-x-auto no-scrollbar ${className}`}
     >
-      <div className="relative flex items-center gap-0.5 sm:gap-1.5 p-1 sm:p-1.5 bg-white/90 hover:bg-white/95 backdrop-blur-2xl border border-white/80 rounded-[24px] sm:rounded-[28px] shadow-[0_12px_40px_rgba(0,0,0,0.12),0_4px_16px_rgba(0,0,0,0.05)] transition-all duration-300">
+      <div className="relative flex items-center gap-1 sm:gap-1.5 p-1.5 sm:p-2 bg-white/95 hover:bg-white backdrop-blur-2xl border border-white/90 rounded-[28px] sm:rounded-[32px] shadow-[0_16px_45px_rgba(0,0,0,0.14),0_4px_16px_rgba(0,0,0,0.06)] transition-all duration-300">
         {ADMIN_TABS.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -68,7 +68,7 @@ export const AdminFloatingNav: React.FC<AdminFloatingNavProps> = ({
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`relative flex flex-col items-center justify-center py-1 sm:py-1.5 px-1.5 sm:px-3 rounded-xl sm:rounded-2xl transition-all duration-200 outline-none min-w-[37px] sm:min-w-[54px] shrink-0 ${
+              className={`relative flex flex-col items-center justify-center py-2 sm:py-2.5 px-2.5 sm:px-3.5 rounded-2xl transition-all duration-200 outline-none min-w-[48px] sm:min-w-[58px] shrink-0 active:scale-95 ${
                 isActive ? "text-white" : "text-[#64748B] hover:text-[#0F172A]"
               }`}
               title={tab.label}
@@ -77,7 +77,7 @@ export const AdminFloatingNav: React.FC<AdminFloatingNavProps> = ({
               {isActive && (
                 <motion.div
                   layoutId="adminFloatingPillActive"
-                  className="absolute inset-0 bg-[#0F172A] rounded-2xl shadow-[0_4px_16px_rgba(15,23,42,0.22)]"
+                  className="absolute inset-0 bg-[#0F172A] rounded-2xl shadow-[0_4px_16px_rgba(15,23,42,0.25)]"
                   transition={{
                     type: "spring",
                     stiffness: 450,
@@ -86,18 +86,18 @@ export const AdminFloatingNav: React.FC<AdminFloatingNavProps> = ({
                 />
               )}
 
-              {/* Icon */}
+              {/* Icon (Scaled up for comfortable mobile readability & touch) */}
               <span className="relative z-10 flex items-center justify-center">
                 <Icon
-                  className={`w-3.5 h-3.5 sm:w-4.5 sm:h-4.5 transition-transform duration-200 ${
-                    isActive ? "scale-105 stroke-[2.3] text-white" : "stroke-[1.8] text-[#64748B]"
+                  className={`w-4.5 h-4.5 sm:w-5 sm:h-5 transition-transform duration-200 ${
+                    isActive ? "scale-110 stroke-[2.3] text-white" : "stroke-[1.9] text-[#64748B]"
                   }`}
                 />
               </span>
 
-              {/* Text Label Underneath */}
+              {/* Text Label Underneath (Enlarged font from 9px to 10.5px for clear visibility) */}
               <span
-                className={`relative z-10 text-[9px] sm:text-[10px] font-sans mt-0.5 tracking-tight transition-colors duration-200 ${
+                className={`relative z-10 text-[10.5px] sm:text-xs font-sans mt-1 tracking-tight transition-colors duration-200 ${
                   isActive ? "text-white font-bold" : "text-[#64748B] font-medium"
                 }`}
               >
