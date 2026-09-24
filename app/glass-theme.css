@@ -1,0 +1,392 @@
+/* ==========================================================================
+   CAM TEMA 2.0 — AURORA GLASS SYSTEM
+   Yalnızca cam tema (.apple.tsx) bileşenlerinde kullanılan cg-* sınıfları.
+   Renk değişkenleri html[data-design="apple"] altında tanımlı; orijinal tema etkilenmez.
+   ========================================================================== */
+
+html[data-design="apple"] {
+  --cg-bg: #EEF2F0;
+  --cg-ink: #0B1411;
+  --cg-ink-2: #3A4843;
+  --cg-ink-3: #66746F;
+  --cg-accent: #0E9F6E;
+  --cg-accent-ink: #047857;
+  --cg-accent-soft: rgba(16, 185, 129, 0.12);
+  --cg-hair: rgba(11, 20, 17, 0.08);
+  --cg-glass: rgba(255, 255, 255, 0.5);
+  --cg-glass-strong: rgba(255, 255, 255, 0.72);
+  --cg-shell: rgba(255, 255, 255, 0.3);
+  --cg-shell-ring: rgba(11, 20, 17, 0.06);
+  --cg-edge: rgba(255, 255, 255, 0.9);
+  --cg-shadow: 0 1px 1px rgba(16, 60, 45, 0.03), 0 24px 48px -24px rgba(16, 60, 45, 0.22);
+  --cg-shadow-lg: 0 2px 2px rgba(16, 60, 45, 0.03), 0 40px 80px -32px rgba(16, 60, 45, 0.3);
+  --cg-orb-1: rgba(16, 185, 129, 0.34);
+  --cg-orb-2: rgba(45, 212, 191, 0.26);
+  --cg-orb-3: rgba(190, 242, 100, 0.2);
+  --cg-grain-opacity: 0.05;
+  --cg-ease: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+html[data-design="apple"].dark {
+  --cg-bg: #050807;
+  --cg-ink: #F1F5F3;
+  --cg-ink-2: #B4C0BB;
+  --cg-ink-3: #7B8883;
+  --cg-accent: #34D399;
+  --cg-accent-ink: #6EE7B7;
+  --cg-accent-soft: rgba(52, 211, 153, 0.12);
+  --cg-hair: rgba(255, 255, 255, 0.08);
+  --cg-glass: rgba(255, 255, 255, 0.045);
+  --cg-glass-strong: rgba(255, 255, 255, 0.08);
+  --cg-shell: rgba(255, 255, 255, 0.03);
+  --cg-shell-ring: rgba(255, 255, 255, 0.08);
+  --cg-edge: rgba(255, 255, 255, 0.14);
+  --cg-shadow: 0 1px 1px rgba(0, 0, 0, 0.3), 0 24px 48px -24px rgba(0, 0, 0, 0.8);
+  --cg-shadow-lg: 0 2px 2px rgba(0, 0, 0, 0.3), 0 40px 80px -32px rgba(0, 0, 0, 0.9);
+  --cg-orb-1: rgba(16, 185, 129, 0.22);
+  --cg-orb-2: rgba(20, 184, 166, 0.14);
+  --cg-orb-3: rgba(132, 204, 22, 0.08);
+  --cg-grain-opacity: 0.07;
+}
+
+/* Zemin rengi html'de (canvas); body şeffaf kalır ki sabit aurora katmanı (z-index: -1) görünsün. */
+html[data-design="apple"],
+html[data-design="apple"].light,
+html[data-design="apple"].dark {
+  background-color: var(--cg-bg) !important;
+}
+html[data-design="apple"] body,
+html[data-design="apple"].light body,
+html[data-design="apple"].dark body {
+  background-color: transparent !important;
+  color: var(--cg-ink) !important;
+}
+
+html[data-design="apple"] ::selection {
+  background-color: rgba(16, 185, 129, 0.22);
+  color: var(--cg-ink);
+}
+
+/* Bileşen sınıfları components katmanında: Tailwind utility sınıfları her zaman üstün gelir. */
+@layer components {
+  /* --- Atmosfer: sabit mesh arka plan + film greni --- */
+  .cg-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .cg-orb {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(90px);
+    will-change: transform;
+  }
+  .cg-orb-1 {
+    width: 60vmax;
+    height: 60vmax;
+    top: -22vmax;
+    right: -14vmax;
+    background: radial-gradient(circle at 40% 40%, var(--cg-orb-1), transparent 65%);
+    animation: cg-drift-a 26s var(--cg-ease) infinite alternate;
+  }
+  .cg-orb-2 {
+    width: 52vmax;
+    height: 52vmax;
+    bottom: -20vmax;
+    left: -16vmax;
+    background: radial-gradient(circle at 50% 50%, var(--cg-orb-2), transparent 65%);
+    animation: cg-drift-b 32s var(--cg-ease) infinite alternate;
+  }
+  .cg-orb-3 {
+    width: 34vmax;
+    height: 34vmax;
+    top: 38%;
+    left: 42%;
+    background: radial-gradient(circle at 50% 50%, var(--cg-orb-3), transparent 65%);
+    animation: cg-drift-a 38s var(--cg-ease) infinite alternate-reverse;
+  }
+  .cg-grain {
+    position: absolute;
+    inset: 0;
+    opacity: var(--cg-grain-opacity);
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  @keyframes cg-drift-a {
+    from { transform: translate3d(0, 0, 0) scale(1); }
+    to { transform: translate3d(-6vmax, 5vmax, 0) scale(1.08); }
+  }
+  @keyframes cg-drift-b {
+    from { transform: translate3d(0, 0, 0) scale(1.05); }
+    to { transform: translate3d(7vmax, -4vmax, 0) scale(0.95); }
+  }
+
+  /* --- Tipografi & renk yardımcıları --- */
+  .cg-ink { color: var(--cg-ink); }
+  .cg-ink-2 { color: var(--cg-ink-2); }
+  .cg-ink-3 { color: var(--cg-ink-3); }
+  .cg-accent { color: var(--cg-accent-ink); }
+  .cg-on-media,
+  .cg-on-media * { color: #FFFFFF; }
+  .cg-on-media .cg-muted { color: rgba(255, 255, 255, 0.72); }
+  .cg-serif {
+    font-family: var(--font-serif-display), "Instrument Serif", Georgia, serif;
+    font-style: italic;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+  }
+  .cg-display {
+    letter-spacing: -0.04em;
+    text-wrap: balance;
+  }
+  .cg-pretty { text-wrap: pretty; }
+  .cg-num { font-variant-numeric: tabular-nums; }
+  .cg-hairline { border-color: var(--cg-hair); }
+  .cg-divide > :not(:last-child) { border-bottom: 1px solid var(--cg-hair); }
+  .cg-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--cg-ink-3);
+  }
+
+  /* Eyebrow: mikro etiket */
+  .cg-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.875rem;
+    border-radius: 9999px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--cg-ink-2);
+    background: var(--cg-glass);
+    border: 1px solid var(--cg-edge);
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(12px) saturate(180%);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+  }
+  .cg-chip-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    background: var(--cg-accent);
+    box-shadow: 0 0 0 3px var(--cg-accent-soft);
+    flex-shrink: 0;
+  }
+
+  /* --- Double-bezel: dış kabuk + iç çekirdek --- */
+  .cg-shell {
+    --cg-r: 2rem;
+    --cg-p: 6px;
+    padding: var(--cg-p);
+    border-radius: var(--cg-r);
+    background: var(--cg-shell);
+    box-shadow: 0 0 0 1px var(--cg-shell-ring), var(--cg-shadow);
+  }
+  .cg-shell-lg {
+    --cg-r: 2.5rem;
+    --cg-p: 8px;
+    box-shadow: 0 0 0 1px var(--cg-shell-ring), var(--cg-shadow-lg);
+  }
+  .cg-core {
+    position: relative;
+    border-radius: calc(var(--cg-r, 2rem) - var(--cg-p, 6px));
+    background: var(--cg-glass);
+    border: 1px solid var(--cg-edge);
+    box-shadow:
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.55),
+      inset 0 -1px 0 0 rgba(0, 0, 0, 0.02);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    overflow: hidden;
+  }
+  .dark .cg-core {
+    box-shadow:
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+      inset 0 -1px 0 0 rgba(0, 0, 0, 0.4);
+  }
+  /* Speküler parlama: üst kenarda ince ışık yayı */
+  .cg-core::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 45%;
+    pointer-events: none;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.4), transparent);
+    opacity: 0.55;
+    border-radius: inherit;
+    z-index: -1; /* backdrop-filter stacking context içinde: arka planın üstünde, içeriğin altında */
+  }
+  .dark .cg-core::before { opacity: 0.1; }
+  .cg-core-strong { background: var(--cg-glass-strong); }
+  .cg-core-tint {
+    background:
+      linear-gradient(160deg, rgba(16, 185, 129, 0.16), rgba(16, 185, 129, 0.02) 60%),
+      var(--cg-glass-strong);
+  }
+  .cg-core-media { background: #0B1411; }
+  .cg-core-media::before { display: none; }
+
+  /* Tek katmanlı cam (küçük bileşenler için) */
+  .cg-glass {
+    background: var(--cg-glass);
+    border: 1px solid var(--cg-edge);
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.45), var(--cg-shadow);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+  }
+  .dark .cg-glass { box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.08), var(--cg-shadow); }
+
+  /* Görsel üzerinde koyu cam */
+  .cg-glass-dark {
+    background: rgba(8, 14, 12, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.14), 0 20px 40px -20px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+  }
+
+  /* Etkileşimli kartlar */
+  .cg-lift {
+    transition: transform 0.7s var(--cg-ease), box-shadow 0.7s var(--cg-ease);
+  }
+  .cg-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 0 0 1px var(--cg-shell-ring), var(--cg-shadow-lg);
+  }
+  .cg-zoom { transition: transform 1.4s var(--cg-ease); }
+  .group:hover .cg-zoom { transform: scale(1.05); }
+
+  /* --- Butonlar: ada + buton içinde buton --- */
+  .cg-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.875rem;
+    min-height: 52px;
+    padding: 0.375rem 0.375rem 0.375rem 1.5rem;
+    border-radius: 9999px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    white-space: nowrap;
+    user-select: none;
+    transition: transform 0.5s var(--cg-ease), box-shadow 0.5s var(--cg-ease), background-color 0.5s var(--cg-ease);
+  }
+  .cg-btn:active { transform: scale(0.98); }
+  .cg-btn:focus-visible,
+  .cg-link:focus-visible,
+  .cg-focus:focus-visible {
+    outline: 2px solid var(--cg-accent);
+    outline-offset: 3px;
+  }
+  .cg-btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 9999px;
+    flex-shrink: 0;
+    transition: transform 0.5s var(--cg-ease);
+  }
+  .cg-btn:hover .cg-btn-icon { transform: translate(2px, -1px) scale(1.05); }
+
+  .cg-btn-ink {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0) 60%), #0B1411;
+    color: #F4F7F5;
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.22), 0 16px 32px -14px rgba(11, 20, 17, 0.55);
+  }
+  .cg-btn-ink .cg-btn-icon { background: rgba(255, 255, 255, 0.12); color: #F4F7F5; }
+  .dark .cg-btn-ink {
+    background: linear-gradient(180deg, #FFFFFF, #E2E9E6);
+    color: #0B1411;
+    box-shadow: inset 0 1px 0 0 #FFFFFF, 0 16px 32px -14px rgba(255, 255, 255, 0.18);
+  }
+  .dark .cg-btn-ink .cg-btn-icon { background: rgba(11, 20, 17, 0.08); color: #0B1411; }
+
+  .cg-btn-accent {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 60%), #0E9F6E;
+    color: #FFFFFF;
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.35), 0 16px 32px -14px rgba(14, 159, 110, 0.6);
+  }
+  .cg-btn-accent .cg-btn-icon { background: rgba(255, 255, 255, 0.18); color: #FFFFFF; }
+
+  .cg-btn-ghost {
+    padding: 0.375rem 1.5rem;
+    color: var(--cg-ink);
+    background: var(--cg-glass);
+    border: 1px solid var(--cg-edge);
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.45);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .cg-btn-ghost:hover { background: var(--cg-glass-strong); }
+  .cg-btn-ghost.cg-has-icon { padding-right: 0.375rem; }
+  .cg-btn-ghost .cg-btn-icon { background: var(--cg-accent-soft); color: var(--cg-accent-ink); }
+
+  .cg-btn-sm { min-height: 42px; padding-left: 1.125rem; gap: 0.625rem; font-size: 0.75rem; }
+  .cg-btn-sm .cg-btn-icon { width: 30px; height: 30px; }
+
+  .cg-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--cg-ink-2);
+    transition: color 0.4s var(--cg-ease);
+  }
+  .cg-link:hover { color: var(--cg-accent-ink); }
+  .cg-link svg { transition: transform 0.5s var(--cg-ease); }
+  .cg-link:hover svg { transform: translateX(3px); }
+
+  /* --- Hamburger morph --- */
+  .cg-burger {
+    position: relative;
+    width: 18px;
+    height: 12px;
+  }
+  .cg-burger span {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 1.5px;
+    border-radius: 2px;
+    background: currentColor;
+    transition: transform 0.6s var(--cg-ease), opacity 0.3s var(--cg-ease);
+  }
+  .cg-burger span:nth-child(1) { top: 0; }
+  .cg-burger span:nth-child(2) { top: 5.25px; }
+  .cg-burger span:nth-child(3) { top: 10.5px; }
+  .cg-burger[data-open="true"] span:nth-child(1) { transform: translateY(5.25px) rotate(45deg); }
+  .cg-burger[data-open="true"] span:nth-child(2) { opacity: 0; }
+  .cg-burger[data-open="true"] span:nth-child(3) { transform: translateY(-5.25px) rotate(-45deg); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cg-orb { animation: none; }
+    .cg-lift,
+    .cg-zoom,
+    .cg-btn,
+    .cg-btn-icon { transition: none; }
+  }
+
+  /* Mobilde cam bulanıklığını hafiflet: kaydırma performansı */
+  @media (max-width: 767px) {
+    .cg-core,
+    .cg-glass {
+      backdrop-filter: blur(12px) saturate(160%);
+      -webkit-backdrop-filter: blur(12px) saturate(160%);
+    }
+    .cg-orb { filter: blur(70px); }
+  }
+
+  .cg-label.cg-accent { color: var(--cg-accent-ink); }
+}

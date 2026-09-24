@@ -2,138 +2,118 @@
 
 import React from "react";
 import Link from "next/link";
-import { ArrowRight, Sparkles, CheckCircle2 } from "lucide-react";
-import { ScrollReveal, StaggerContainer, StaggerItem } from "@/components/ui/ScrollReveal";
+import { ArrowUpRight, CheckCircle2 } from "lucide-react";
+import { Eyebrow, Reveal, Stagger, StaggerChild } from "@/components/glass/GlassPrimitives";
 
 const STEPS = [
   {
     step: "01",
-    title: "Ön Analiz & Hedef",
-    subtitle: "Başlangıç Noktası",
+    title: "Ön analiz & hedef",
+    subtitle: "Başlangıç noktası",
     description:
       "Postür, eklem hareket açıklığı, spor geçmişi ve sağlık durumunuz ön görüşmede birebir değerlendirilir.",
-    deliverable: "Postür & Mobilite Raporu",
+    deliverable: "Postür & mobilite raporu",
   },
   {
     step: "02",
-    title: "Kişisel Program",
-    subtitle: "Bilimsel Planlama",
+    title: "Kişisel program",
+    subtitle: "Bilimsel planlama",
     description:
       "Haftalık takviminiz, iş temponuz ve öncelikli hedefinize uygun seans periyotlaması oluşturulur.",
-    deliverable: "Özelleştirilmiş Antrenman Planı",
+    deliverable: "Özelleştirilmiş antrenman planı",
   },
   {
     step: "03",
-    title: "Birebir Uygulama",
-    subtitle: "Kusursuz Seans",
+    title: "Birebir uygulama",
+    subtitle: "Kusursuz seans",
     description:
       "Her sette doğru açı, tempo ve nefes kontrolüyle kurucu koç İlker Yüksel eşliğinde çalışılır.",
-    deliverable: "Birebir Seans & Form Takibi",
+    deliverable: "Birebir seans & form takibi",
   },
   {
     step: "04",
-    title: "Gelişim & Rapor",
-    subtitle: "Ölçülebilir Sonuç",
+    title: "Gelişim & rapor",
+    subtitle: "Ölçülebilir sonuç",
     description:
       "Kaldırılan ağırlıklar ve güç artışı kişisel üye portalınıza kaydedilir; program düzenli optimize edilir.",
-    deliverable: "Aylık İlerleme & Kuvvet Kaydı",
+    deliverable: "Aylık ilerleme & kuvvet kaydı",
   },
 ];
 
 export const SystemSection: React.FC = () => {
   return (
-    <section id="sistemimiz" className="py-20 lg:py-28 bg-[#F5F5F7] dark:bg-[#0A0A0C] border-y border-black/[0.06] dark:border-white/[0.08] relative overflow-hidden">
-      {/* Environmental Ambient Light Refraction */}
-      <div className="absolute top-1/2 left-1/4 w-[600px] h-[600px] bg-emerald-500/5 rounded-full blur-[140px] pointer-events-none" />
-
+    <section id="sistemimiz" className="relative py-24 lg:py-36 scroll-mt-28">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="max-w-2xl mb-16">
-          <ScrollReveal variant="fade-up">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full liquid-glass-pill text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 mb-3">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>4 ADIMLI SİSTEM</span>
-            </div>
-          </ScrollReveal>
-          <ScrollReveal variant="fade-up" delay={0.1}>
-            <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-[1.12]">
-              Ölçülebilir bir süreç. <br />
-              <span className="text-slate-500 dark:text-slate-400">Tahmine yer yok.</span>
-            </h2>
-          </ScrollReveal>
-          <ScrollReveal variant="fade-up" delay={0.2}>
-            <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400 mt-4 leading-relaxed">
-              Salona geldiğinizde ne yapacağınızı düşünerek vakit kaybetmeyin. İlk günden hedefe ulaşana kadar her adımınız önceden planlanmıştır.
-            </p>
-          </ScrollReveal>
-        </div>
-
-        {/* 4 Apple Step Liquid Glass Cards */}
-        <StaggerContainer
-          staggerDelay={0.1}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6"
-        >
-          {STEPS.map((item, index) => (
-            <StaggerItem
-              key={item.step}
-              className="rounded-[30px] p-7 lg:p-8 liquid-glass-card hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between group"
-            >
-              <div>
-                <div className="flex items-center justify-between mb-6">
-                  <span className="text-3xl lg:text-4xl font-black tracking-tight text-emerald-700 dark:text-emerald-400 font-mono">
-                    {item.step}
-                  </span>
-                  <span className="text-[11px] font-semibold px-3 py-1 rounded-full liquid-glass-pill text-slate-500 dark:text-slate-400">
-                    ADIM {index + 1}/4
-                  </span>
-                </div>
-
-                <span className="text-xs font-semibold uppercase text-slate-400 tracking-wider block mb-1">
-                  {item.subtitle}
-                </span>
-
-                <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mb-3 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                  {item.title}
-                </h3>
-
-                <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed mb-6">
-                  {item.description}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-14 lg:gap-16">
+          {/* Sol: yapışkan başlık */}
+          <div className="lg:col-span-5">
+            <div className="lg:sticky lg:top-40">
+              <Reveal>
+                <Eyebrow>4 adımlı sistem</Eyebrow>
+              </Reveal>
+              <Reveal delay={0.1}>
+                <h2 className="cg-display cg-ink mt-7 text-4xl sm:text-5xl lg:text-[3.75rem] leading-[1.04] font-semibold">
+                  Ölçülebilir bir süreç.{" "}
+                  <span className="cg-serif cg-ink-3">Tahmine yer yok.</span>
+                </h2>
+              </Reveal>
+              <Reveal delay={0.2}>
+                <p className="cg-ink-2 cg-pretty text-base sm:text-lg leading-relaxed mt-7 max-w-md">
+                  Salona geldiğinizde ne yapacağınızı düşünerek vakit kaybetmeyin. İlk günden hedefe ulaşana kadar her adımınız önceden planlanmıştır.
                 </p>
-              </div>
+              </Reveal>
 
-              <div className="pt-4 border-t border-black/[0.06] dark:border-white/[0.08]">
-                <div className="flex items-center gap-2 text-xs font-medium text-emerald-700 dark:text-emerald-400">
-                  <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-                  <span className="text-slate-700 dark:text-slate-300 text-xs">
-                    {item.deliverable}
-                  </span>
+              <Reveal delay={0.3}>
+                <div className="cg-shell mt-10">
+                  <div className="cg-core cg-core-tint p-6 sm:p-7">
+                    <p className="cg-ink text-lg font-semibold tracking-tight">Bu süreci hedeflerinize uyarlayalım</p>
+                    <p className="cg-ink-3 text-[14px] leading-relaxed mt-1.5">
+                      Ücretsiz ön görüşmede 15 dakikalık postür ve hedef değerlendirmenizi yapalım.
+                    </p>
+                    <Link href="/on-gorusme" className="cg-btn cg-btn-accent cg-btn-sm mt-6">
+                      <span>Ön görüşme talep et</span>
+                      <span className="cg-btn-icon">
+                        <ArrowUpRight className="w-3.5 h-3.5" strokeWidth={1.75} />
+                      </span>
+                    </Link>
+                  </div>
                 </div>
-              </div>
-            </StaggerItem>
-          ))}
-        </StaggerContainer>
-
-        {/* Bottom CTA Card in Liquid Glass Panel */}
-        <ScrollReveal variant="fade-up" delay={0.2}>
-          <div className="mt-10 rounded-[30px] p-7 sm:p-9 liquid-glass-panel flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xl">
-            <div>
-              <p className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
-                Bu süreci hedeflerinize uyarlayalım
-              </p>
-              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-                Ücretsiz ön görüşmede 15 dakikalık postür ve hedef değerlendirmenizi yapalım.
-              </p>
+              </Reveal>
             </div>
-
-            <Link
-              href="/on-gorusme"
-              className="inline-flex items-center gap-2.5 min-h-[50px] px-8 rounded-full liquid-glass-btn-primary font-semibold text-xs tracking-wide shrink-0 select-none"
-            >
-              <span>Ön Görüşme Talep Et</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
           </div>
-        </ScrollReveal>
+
+          {/* Sağ: dikey zaman çizelgesi */}
+          <Stagger className="lg:col-span-7 relative flex flex-col gap-4 lg:gap-5" gap={0.12}>
+            <div
+              aria-hidden="true"
+              className="absolute left-[3.375rem] sm:left-[4.125rem] top-10 bottom-10 w-px bg-gradient-to-b from-transparent via-[var(--cg-accent)] to-transparent opacity-40"
+            />
+            {STEPS.map((item) => (
+              <StaggerChild key={item.step}>
+                <div className="cg-shell cg-lift">
+                  <div className="cg-core p-6 sm:p-8 flex gap-5 sm:gap-7">
+                    <div className="shrink-0">
+                      <span className="cg-num w-12 h-12 sm:w-14 sm:h-14 rounded-2xl cg-glass flex items-center justify-center cg-accent font-semibold text-base sm:text-lg">
+                        {item.step}
+                      </span>
+                    </div>
+                    <div className="min-w-0">
+                      <span className="cg-label">{item.subtitle}</span>
+                      <h3 className="cg-ink text-xl sm:text-2xl font-semibold tracking-tight mt-2">{item.title}</h3>
+                      <p className="cg-ink-3 cg-pretty text-[14px] sm:text-[15px] leading-relaxed mt-2.5 max-w-lg">
+                        {item.description}
+                      </p>
+                      <div className="mt-5 inline-flex items-center gap-2 rounded-full px-3 py-1.5 bg-[var(--cg-accent-soft)] text-[12px] font-medium cg-ink-2">
+                        <CheckCircle2 className="w-3.5 h-3.5 cg-accent shrink-0" strokeWidth={1.75} />
+                        {item.deliverable}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </StaggerChild>
+            ))}
+          </Stagger>
+        </div>
       </div>
     </section>
   );

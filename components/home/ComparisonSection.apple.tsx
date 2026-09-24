@@ -2,8 +2,9 @@
 
 import React from "react";
 import Link from "next/link";
-import { X, Check, Sparkles, ArrowRight } from "lucide-react";
-import { ScrollReveal } from "@/components/ui/ScrollReveal";
+import { X, Check, ArrowRight } from "lucide-react";
+import { Eyebrow, Reveal } from "@/components/glass/GlassPrimitives";
+import { cn } from "@/lib/utils";
 
 const COMPARISONS = [
   {
@@ -12,17 +13,17 @@ const COMPARISONS = [
     coreAndFit: "Postürünüze, eklem sınırlarınıza ve hedefinize göre özel kurgulanan periyotlama.",
   },
   {
-    category: "Ortam & Alan",
+    category: "Ortam & alan",
     gym: "Aynı anda onlarca kişi, alet sırası bekleme, gürültü ve dikkat dağınıklığı.",
     coreAndFit: "Randevu saatinizde yalnızca siz ve kurucu antrenör. Sıfır sıra, tam mahremiyet.",
   },
   {
-    category: "Teknik & Güvenlik",
+    category: "Teknik & güvenlik",
     gym: "Kendi başınızasınız. Hatalı form ve eklem zorlanmaları fark edilmez.",
     coreAndFit: "Her tekrarda açı, tempo ve postür düzeltmesi. Sakatlık riski sıfıra indirilir.",
   },
   {
-    category: "Takip & Veri",
+    category: "Takip & veri",
     gym: "Hangi kiloyu ne zaman kaldırdığınız unutulur; gelişim tesadüfe kalır.",
     coreAndFit: "Seans bazlı ağırlık, nabız ve hacim kaydı. Dijital üye portalında net ilerleme.",
   },
@@ -35,96 +36,89 @@ const COMPARISONS = [
 
 export const ComparisonSection: React.FC = () => {
   return (
-    <section className="py-20 lg:py-28 bg-[#FBFBFD] dark:bg-[#000000] relative overflow-hidden">
-      {/* Environmental Ambient Light */}
-      <div className="absolute top-1/3 -left-20 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[140px] pointer-events-none" />
-
+    <section className="relative py-24 lg:py-36">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="max-w-2xl mb-16">
-          <ScrollReveal variant="fade-up">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full liquid-glass-pill text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 mb-3">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>STÜDYO FARKI</span>
-            </div>
-          </ScrollReveal>
-          <ScrollReveal variant="fade-up" delay={0.1}>
-            <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-[1.12]">
-              Klasik spor salonları ile <br />
-              <span className="text-slate-500 dark:text-slate-400">farkımız.</span>
-            </h2>
-          </ScrollReveal>
-          <ScrollReveal variant="fade-up" delay={0.2}>
-            <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400 mt-4 leading-relaxed">
-              Vaktiniz ve sağlığınız değerli. Büyük salonların verimsizliğini private studio yaklaşımıyla sonlandırıyoruz.
-            </p>
-          </ScrollReveal>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end mb-16">
+          <div className="lg:col-span-7">
+            <Reveal>
+              <Eyebrow>Stüdyo farkı</Eyebrow>
+            </Reveal>
+            <Reveal delay={0.1}>
+              <h2 className="cg-display cg-ink mt-7 text-4xl sm:text-5xl lg:text-[4rem] leading-[1.04] font-semibold">
+                Klasik spor salonları ile{" "}
+                <span className="cg-serif cg-ink-3">farkımız.</span>
+              </h2>
+            </Reveal>
+          </div>
+          <div className="lg:col-span-5">
+            <Reveal delay={0.15}>
+              <p className="cg-ink-2 cg-pretty text-base sm:text-lg leading-relaxed max-w-md lg:ml-auto">
+                Vaktiniz ve sağlığınız değerli. Büyük salonların verimsizliğini private studio yaklaşımıyla sonlandırıyoruz.
+              </p>
+            </Reveal>
+          </div>
         </div>
 
-        {/* Apple Comparison Matrix in Liquid Glass Panel */}
-        <ScrollReveal variant="fade-up" delay={0.25}>
-          <div className="rounded-[34px] liquid-glass-panel shadow-2xl overflow-hidden p-2 sm:p-4">
-            {/* Table Header */}
-            <div className="grid grid-cols-1 md:grid-cols-12 rounded-2xl bg-black/[0.03] dark:bg-white/[0.04] text-xs font-semibold">
-              <div className="md:col-span-3 p-5 text-slate-400 uppercase tracking-wider">
-                Kriter
+        <Reveal delay={0.2}>
+          <div className="cg-shell cg-shell-lg">
+            <div className="cg-core p-2 sm:p-3">
+              {/* Sütun başlıkları (masaüstü) */}
+              <div className="hidden md:grid grid-cols-[minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,1.15fr)] gap-3 px-3 pt-3 pb-2">
+                <span className="cg-label px-3">Kriter</span>
+                <span className="cg-label px-3">Klasik spor salonu</span>
+                <span className="cg-label cg-accent px-3">Core & Fit private studio</span>
               </div>
-              <div className="md:col-span-4 p-5 text-slate-400 border-t md:border-t-0 md:border-l border-black/[0.06] dark:border-white/[0.08] uppercase tracking-wider">
-                Klasik Spor Salonu
-              </div>
-              <div className="md:col-span-5 p-5 text-emerald-700 dark:text-emerald-400 border-t md:border-t-0 md:border-l border-black/[0.06] dark:border-white/[0.08] flex items-center gap-2 uppercase tracking-wider font-bold bg-emerald-500/5 rounded-r-2xl">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                Core & Fit Private Studio
-              </div>
-            </div>
 
-            {/* Rows */}
-            <div className="divide-y divide-black/[0.04] dark:divide-white/[0.06]">
-              {COMPARISONS.map((row, i) => (
+              <div className="relative md:grid md:grid-cols-[minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,1.15fr)] md:gap-x-3">
+                {/* Core & Fit sütunu için sürekli cam şerit (masaüstü) */}
                 <div
-                  key={i}
-                  className="grid grid-cols-1 md:grid-cols-12 group hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors rounded-xl"
-                >
-                  {/* Criterion */}
-                  <div className="md:col-span-3 p-5 flex items-center">
-                    <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-                      {row.category}
-                    </span>
-                  </div>
+                  aria-hidden="true"
+                  className="hidden md:block absolute top-0 bottom-0 right-0 w-[calc((100%-1.5rem)*1.15/2.95)] rounded-[1.5rem] cg-core-tint border border-[var(--cg-edge)] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.4)]"
+                />
 
-                  {/* Traditional Gym */}
-                  <div className="md:col-span-4 p-5 border-t md:border-t-0 md:border-l border-black/[0.04] dark:border-white/[0.06] text-xs sm:text-sm text-slate-500 dark:text-slate-400 flex items-start gap-3">
-                    <div className="w-5 h-5 rounded-full bg-rose-500/10 text-rose-500 dark:text-rose-400 flex items-center justify-center shrink-0 mt-0.5">
-                      <X className="w-3 h-3" />
-                    </div>
-                    <span className="leading-relaxed">{row.gym}</span>
+                {COMPARISONS.map((row, i) => (
+                  <div
+                    key={row.category}
+                    className={cn(
+                      "md:contents max-md:rounded-[1.5rem] max-md:border max-md:border-[var(--cg-edge)] max-md:bg-[var(--cg-glass)] max-md:p-2",
+                      i > 0 && "max-md:mt-2"
+                    )}
+                  >
+                      <div className={cn("px-4 md:px-6 pt-5 pb-2 md:py-6 flex items-start", i > 0 && "md:border-t cg-hairline")}>
+                        <span className="cg-ink text-[15px] font-semibold tracking-tight">{row.category}</span>
+                      </div>
+                      <div className={cn("px-4 md:px-6 py-3 md:py-6 flex items-start gap-3", i > 0 && "md:border-t cg-hairline")}>
+                        <span className="w-5 h-5 mt-0.5 rounded-full flex items-center justify-center shrink-0 bg-rose-500/10 text-rose-500">
+                          <X className="w-3 h-3" strokeWidth={2} />
+                        </span>
+                        <span className="cg-ink-3 cg-pretty text-[14px] leading-relaxed">{row.gym}</span>
+                      </div>
+                      <div
+                        className={cn(
+                          "relative px-4 md:px-6 py-4 md:py-6 flex items-start gap-3 max-md:rounded-[1.1rem] max-md:bg-[var(--cg-accent-soft)]",
+                          i > 0 && "md:border-t md:border-[var(--cg-hair)]"
+                        )}
+                      >
+                        <span className="w-5 h-5 mt-0.5 rounded-full flex items-center justify-center shrink-0 bg-[var(--cg-accent)] cg-on-media">
+                          <Check className="w-3 h-3" strokeWidth={2.25} />
+                        </span>
+                        <span className="cg-ink cg-pretty text-[14px] leading-relaxed font-medium">{row.coreAndFit}</span>
+                      </div>
                   </div>
-
-                  {/* Core & Fit */}
-                  <div className="md:col-span-5 p-5 border-t md:border-t-0 md:border-l border-black/[0.04] dark:border-white/[0.06] bg-emerald-500/[0.02] text-xs sm:text-sm text-slate-800 dark:text-white flex items-start gap-3 font-medium">
-                    <div className="w-5 h-5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
-                      <Check className="w-3 h-3" />
-                    </div>
-                    <span className="leading-relaxed">{row.coreAndFit}</span>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
-        </ScrollReveal>
+        </Reveal>
 
-        {/* Callout */}
-        <ScrollReveal variant="fade-up" delay={0.35}>
-          <div className="mt-8 flex justify-center sm:justify-end">
-            <Link
-              href="/on-gorusme"
-              className="inline-flex items-center gap-2 text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:text-emerald-600 transition-colors"
-            >
-              <span>Nişantaşı stüdyomuzu ziyaret ederek farkı kendiniz hissedin</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+        <Reveal delay={0.1}>
+          <div className="mt-10 flex justify-start lg:justify-end">
+            <Link href="/on-gorusme" className="cg-link">
+              Nişantaşı stüdyomuzu ziyaret ederek farkı kendiniz hissedin
+              <ArrowRight className="w-4 h-4" strokeWidth={1.75} />
             </Link>
           </div>
-        </ScrollReveal>
+        </Reveal>
       </div>
     </section>
   );

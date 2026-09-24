@@ -1,97 +1,97 @@
 "use client";
 
 import React from "react";
-import { ScrollReveal } from "@/components/ui/ScrollReveal";
-import { Sparkles } from "lucide-react";
+import { Eyebrow, Reveal } from "@/components/glass/GlassPrimitives";
+
+const STATS = [
+  { value: "1:1", label: "Birebir seans" },
+  { value: "50", unit: "dk", label: "Bölünmeyen odak" },
+  { value: "%100", label: "Kişisel takip" },
+];
 
 export const EditorialStatement: React.FC = () => {
   return (
-    <section className="py-20 lg:py-28 bg-[#F5F5F7] dark:bg-[#0A0A0C] border-y border-black/[0.06] dark:border-white/[0.08] relative overflow-hidden">
-      {/* Environmental Ambient Light Refraction */}
-      <div className="absolute -top-32 right-1/4 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[140px] pointer-events-none" />
-
+    <section className="relative py-24 lg:py-36">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
-          {/* Editorial Headline & Statement */}
-          <div className="lg:col-span-7 flex flex-col gap-6">
-            <ScrollReveal variant="fade-up">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full liquid-glass-pill text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>NİŞANTAŞI STÜDYO ANLAYIŞI</span>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-14 lg:gap-16 items-center">
+          {/* Görsel: dikey video, çift çerçeve */}
+          <div className="lg:col-span-5 order-2 lg:order-1">
+            <Reveal>
+              <div className="cg-shell cg-shell-lg lg:-rotate-[1.5deg] transition-transform duration-1000 hover:rotate-0">
+                <div className="cg-core cg-core-media relative aspect-[4/5] group">
+                  <video
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    preload="auto"
+                    className="absolute inset-0 w-full h-full object-cover cg-zoom"
+                  >
+                    <source src="/15079453_1080_1920_30fps.mp4" type="video/mp4" />
+                  </video>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent pointer-events-none" />
+
+                  <div className="absolute bottom-4 left-4 right-4 cg-on-media">
+                    <div className="cg-glass-dark rounded-[1.25rem] p-4">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="cg-label cg-muted">Özel randevulu alan</p>
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                      </div>
+                      <p className="text-[13px] leading-relaxed mt-2">
+                        Aynı saat diliminde yalnızca tek bir üyenin ağırlandığı butik stüdyo deneyimi.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </ScrollReveal>
+            </Reveal>
+          </div>
 
-            <ScrollReveal variant="fade-up" delay={0.1}>
-              <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-[1.14]">
-                Gelişigüzel antrenman yok. <br />
-                <span className="text-slate-500 dark:text-slate-400">Her hareketin bir gerekçesi var.</span>
+          {/* Metin */}
+          <div className="lg:col-span-7 order-1 lg:order-2 lg:pl-8">
+            <Reveal>
+              <Eyebrow>Nişantaşı stüdyo anlayışı</Eyebrow>
+            </Reveal>
+
+            <Reveal delay={0.1}>
+              <h2 className="cg-display cg-ink mt-7 text-4xl sm:text-5xl lg:text-[4rem] leading-[1.04] font-semibold">
+                Gelişigüzel antrenman yok.{" "}
+                <span className="cg-serif cg-ink-3">Her hareketin bir gerekçesi var.</span>
               </h2>
-            </ScrollReveal>
+            </Reveal>
 
-            <ScrollReveal variant="fade-up" delay={0.2}>
-              <div className="space-y-4 text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed">
-                <p>
+            <Reveal delay={0.2}>
+              <div className="mt-8 space-y-4 max-w-[36rem]">
+                <p className="cg-ink-2 cg-pretty text-base sm:text-lg leading-relaxed">
                   Standart spor salonlarında makineler arasında vakit kaybetmek yerine; vücut anatominizi tanıyan, eklem sınırlarınızı bilen ve her hareketin amacını size aktaran bir sistemle çalışırsınız.
                 </p>
-                <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400 leading-relaxed">
+                <p className="cg-ink-3 cg-pretty text-sm sm:text-base leading-relaxed">
                   Kurucu antrenör İlker Yüksel, antrenman planınızı genel internet şablonlarıyla değil; postür analiziniz, eklem mobiliteniz ve günlük yaşam temponuza göre kurgular.
                 </p>
               </div>
-            </ScrollReveal>
+            </Reveal>
 
-            {/* Apple Liquid Glass Stat Capsules */}
-            <ScrollReveal variant="fade-up" delay={0.3}>
-              <div className="pt-2 grid grid-cols-3 gap-3.5 sm:gap-4">
-                <div className="p-5 sm:p-6 rounded-[26px] liquid-glass-card">
-                  <span className="block text-2xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">1:1</span>
-                  <span className="text-slate-500 dark:text-slate-400 text-xs font-medium mt-1 block">Birebir Seans</span>
-                </div>
-                <div className="p-5 sm:p-6 rounded-[26px] liquid-glass-card">
-                  <span className="block text-2xl sm:text-4xl font-extrabold text-emerald-600 dark:text-emerald-400 tracking-tight">50 dk</span>
-                  <span className="text-slate-500 dark:text-slate-400 text-xs font-medium mt-1 block">Bölünmeyen Odak</span>
-                </div>
-                <div className="p-5 sm:p-6 rounded-[26px] liquid-glass-card">
-                  <span className="block text-2xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">%100</span>
-                  <span className="text-slate-500 dark:text-slate-400 text-xs font-medium mt-1 block">Kişisel Takip</span>
+            {/* Tek parça cam enstrüman şeridi */}
+            <Reveal delay={0.3}>
+              <div className="cg-shell mt-12">
+                <div className="cg-core grid grid-cols-3">
+                  {STATS.map((stat, i) => (
+                    <div
+                      key={stat.label}
+                      className={`px-4 py-6 sm:px-7 sm:py-7 ${i > 0 ? "border-l cg-hairline" : ""}`}
+                    >
+                      <div className="flex items-end gap-1">
+                        <span className={`cg-num text-3xl sm:text-5xl font-semibold tracking-tight ${i === 1 ? "cg-accent" : "cg-ink"}`}>
+                          {stat.value}
+                        </span>
+                        {stat.unit && <span className="cg-ink-3 text-sm font-medium pb-1.5">{stat.unit}</span>}
+                      </div>
+                      <span className="cg-ink-3 text-[12px] sm:text-[13px] font-medium mt-2 block">{stat.label}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </ScrollReveal>
-          </div>
-
-          {/* Editorial Atmospheric Video in Apple Continuous Curvature Frame */}
-          <div className="lg:col-span-5 relative">
-            <ScrollReveal variant="zoom-in" delay={0.2} duration={0.8}>
-              <div className="relative aspect-[4/5] w-full rounded-[36px] overflow-hidden group bg-black shadow-2xl border border-black/[0.08] dark:border-white/[0.12]">
-                <video
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  preload="auto"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                >
-                  <source src="/15079453_1080_1920_30fps.mp4" type="video/mp4" />
-                  Tarayıcınız video etiketini desteklemiyor.
-                </video>
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
-
-                {/* Floating Liquid Glass Badge */}
-                <div className="absolute bottom-5 left-5 right-5 p-4 rounded-2xl liquid-glass-panel shadow-lg z-10">
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <p className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 tracking-wider uppercase">
-                      ÖZEL RANDEVULU ALAN
-                    </p>
-                    <span className="inline-flex items-center gap-1.5 text-[10px] font-medium text-slate-600 dark:text-slate-400">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                      CANLI ODAK
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-700 dark:text-slate-300 mt-0.5">
-                    Aynı saat diliminde yalnızca tek bir üyenin ağırlandığı butik stüdyo deneyimi.
-                  </p>
-                </div>
-              </div>
-            </ScrollReveal>
+            </Reveal>
           </div>
         </div>
       </div>

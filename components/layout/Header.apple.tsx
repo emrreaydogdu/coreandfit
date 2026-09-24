@@ -3,14 +3,18 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { motion, AnimatePresence } from "motion/react";
 import { BUSINESS_CONFIG } from "@/config/business";
 import { buildQuickChatWhatsAppUrl } from "@/lib/whatsapp";
-import { Menu, X, MessageSquare, Phone, ChevronRight, User, ArrowRight } from "lucide-react";
+import { MessageSquare, Phone, User, ArrowUpRight } from "lucide-react";
 import { cn, lockBodyScroll, unlockBodyScroll } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { DesignThemeSwitcher } from "@/components/ui/DesignThemeSwitcher";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useMember } from "@/context/MemberContext";
+import { GlassBackdrop } from "@/components/glass/GlassPrimitives";
+
+const EASE = [0.32, 0.72, 0, 1] as const;
 
 const NAV_LINKS = [
   { label: "Ana Sayfa", href: "/" },
@@ -34,7 +38,7 @@ export const Header: React.FC = () => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -59,227 +63,221 @@ export const Header: React.FC = () => {
 
   return (
     <>
-      {/* Floating Apple VisionOS Liquid Glass Island Header */}
+      <GlassBackdrop />
+
+      {/* Yüzen cam ada header */}
       <header
         className={cn(
-          "fixed left-0 right-0 transition-all duration-500 ease-out px-4 sm:px-6 pointer-events-none",
-          mobileMenuOpen
-            ? "z-[80] top-3 sm:top-4"
-            : "z-50 top-12 sm:top-14",
-          isScrolled && !mobileMenuOpen ? "translate-y-[-6px]" : "translate-y-0"
+          "fixed left-0 right-0 px-3 sm:px-6 pointer-events-none transition-[transform,top] duration-700 ease-[cubic-bezier(0.32,0.72,0,1)]",
+          mobileMenuOpen ? "z-[80] top-3 sm:top-4" : "z-50 top-12 sm:top-14",
+          isScrolled && !mobileMenuOpen ? "-translate-y-1.5" : "translate-y-0"
         )}
       >
-        <div className="max-w-7xl mx-auto flex items-center justify-between pointer-events-auto liquid-glass-panel rounded-full px-4 sm:px-6 py-2.5 sm:py-3 transition-all duration-300">
-          {/* Brand Monogram & Logo */}
-          <Link
-            href="/"
-            className="flex items-center gap-3 shrink-0 group select-none"
-            aria-label="Core & Fit Ana Sayfa"
-          >
-            <div className="w-8 h-8 rounded-full bg-emerald-500/10 dark:bg-white/10 text-emerald-700 dark:text-white border border-emerald-500/20 dark:border-white/15 flex items-center justify-center font-bold text-xs tracking-tighter shadow-xs group-hover:scale-105 transition-transform">
-              CF
-            </div>
-            <div className="flex flex-col">
-              <div className="flex items-center gap-1.5">
-                <span className="font-extrabold text-sm sm:text-base tracking-tight text-slate-900 dark:text-white">
-                  CORE & FIT
-                </span>
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              </div>
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium tracking-wide">
-                Nişantaşı Private Studio
+        <div className="max-w-7xl mx-auto pointer-events-auto cg-shell rounded-full p-1">
+          <div className="cg-core cg-core-strong rounded-full overflow-visible flex items-center justify-between gap-3 pl-2 pr-2 py-1.5">
+            {/* Marka */}
+            <Link href="/" className="flex items-center gap-2.5 shrink-0 group cg-focus rounded-full" aria-label="Core & Fit Ana Sayfa">
+              <span className="w-9 h-9 rounded-full cg-btn-ink flex items-center justify-center text-[11px] font-bold tracking-tight transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-105">
+                CF
               </span>
-            </div>
-          </Link>
+              <span className="flex flex-col leading-none pr-1">
+                <span className="cg-ink font-semibold text-[15px] tracking-tight">Core & Fit</span>
+                <span className="cg-ink-3 text-[10px] font-medium tracking-wide mt-1 hidden sm:block xl:hidden 2xl:block">Nişantaşı private studio</span>
+              </span>
+            </Link>
 
-          {/* Desktop Navigation Links */}
-          <nav
-            aria-label="Ana Menü"
-            className="hidden lg:flex items-center gap-1 xl:gap-1.5 px-3 py-1 rounded-full liquid-glass-pill"
-          >
-            {NAV_LINKS.map((link) => {
-              const isActive = pathname === link.href;
-              return (
+            {/* Masaüstü navigasyon */}
+            <nav aria-label="Ana Menü" className="hidden xl:flex items-center gap-0.5">
+              {NAV_LINKS.map((link) => {
+                const isActive = pathname === link.href;
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    aria-current={isActive ? "page" : undefined}
+                    className={cn(
+                      "cg-focus relative px-2.5 2xl:px-3 py-2 rounded-full text-[12.5px] font-medium whitespace-nowrap transition-colors duration-500",
+                      isActive ? "cg-ink" : "cg-ink-3 hover:text-[var(--cg-ink)]"
+                    )}
+                  >
+                    {isActive && (
+                      <motion.span
+                        layoutId="cg-nav-active"
+                        className="absolute inset-0 rounded-full bg-[var(--cg-accent-soft)]"
+                        transition={{ type: "spring", stiffness: 380, damping: 34 }}
+                      />
+                    )}
+                    <span className="relative">{link.label}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+
+            {/* Masaüstü sağ kontroller */}
+            <div className="hidden xl:flex items-center gap-1.5 shrink-0">
+              {/* Yüzen tema seçici üstte her zaman görünür; header kopyası yalnızca geniş ekranda */}
+              <div className="hidden 2xl:block">
+                <DesignThemeSwitcher variant="inline" />
+              </div>
+              <LanguageSwitcher />
+              <ThemeToggle />
+
+              {user ? (
                 <Link
-                  key={link.href}
-                  href={link.href}
-                  className={cn(
-                    "px-3.5 py-1.5 rounded-full text-xs transition-all duration-200 select-none",
-                    isActive
-                      ? "bg-white dark:bg-white/[0.18] text-slate-900 dark:text-white font-semibold shadow-[0_2px_8px_rgba(0,0,0,0.08)] border border-black/[0.06] dark:border-white/10 scale-[1.02]"
-                      : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.06] font-medium"
-                  )}
+                  href="/portal"
+                  className="cg-focus inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-[12px] font-semibold cg-ink hover:bg-[var(--cg-accent-soft)] transition-colors duration-500"
+                  title="Üye Paneli"
                 >
-                  {link.label}
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--cg-accent)]" />
+                  <span className="hidden 2xl:inline">{(user?.fullName || "Ege").split(" ")[0]}</span>
+                  <span className="cg-accent cg-num">({remainingSessions} Hak)</span>
                 </Link>
-              );
-            })}
-          </nav>
+              ) : (
+                <Link
+                  href="/portal/giris"
+                  className="cg-focus inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-[12px] font-medium cg-ink-2 hover:text-[var(--cg-ink)] hover:bg-[var(--cg-accent-soft)] transition-colors duration-500"
+                >
+                  <User className="w-3.5 h-3.5" strokeWidth={1.75} />
+                  <span className="whitespace-nowrap">Giriş Yap</span>
+                </Link>
+              )}
 
-          {/* Desktop Right Controls & CTA */}
-          <div className="hidden lg:flex items-center gap-2 shrink-0">
-            <DesignThemeSwitcher variant="inline" />
-            <LanguageSwitcher />
-            <ThemeToggle />
-
-            {/* Member Portal Status Pill */}
-            {user ? (
-              <Link
-                href="/portal"
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 liquid-glass-pill text-emerald-800 dark:text-emerald-300 rounded-full text-xs font-semibold hover:scale-102 active:scale-98 transition-all"
-                title="Üye Paneli"
-              >
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                <span>{(user?.fullName || "Ege").split(" ")[0]}</span>
-                <span className="text-emerald-600 dark:text-emerald-400 font-bold">
-                  ({remainingSessions} Hak)
+              <Link href="/on-gorusme" className="cg-btn cg-btn-accent cg-btn-sm">
+                <span>Ön Görüşme</span>
+                <span className="cg-btn-icon">
+                  <ArrowUpRight className="w-3.5 h-3.5" strokeWidth={1.75} />
                 </span>
               </Link>
-            ) : (
+            </div>
+
+            {/* Mobil / tablet kontroller */}
+            <div className="flex items-center gap-1 xl:hidden shrink-0">
               <Link
-                href="/portal/giris"
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 liquid-glass-pill text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white rounded-full text-xs font-medium transition-all"
+                href={user ? "/portal" : "/portal/giris"}
+                className="cg-focus w-10 h-10 rounded-full flex items-center justify-center cg-ink-2 hover:bg-[var(--cg-accent-soft)] transition-colors"
+                aria-label="Üye Paneli"
               >
-                <User className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                <span>Giriş Yap</span>
+                <User className="w-[18px] h-[18px]" strokeWidth={1.5} />
               </Link>
-            )}
-
-            {/* Apple Liquid Glass Primary CTA */}
-            <Link
-              href="/on-gorusme"
-              className="inline-flex items-center justify-center gap-2 text-xs font-semibold px-4.5 py-2 rounded-full liquid-glass-btn-emerald text-white select-none shadow-[0_4px_16px_rgba(16,185,129,0.25)] hover:shadow-[0_6px_22px_rgba(16,185,129,0.35)]"
-            >
-              <span>Ön Görüşme</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-
-          {/* Mobile Tablet Controls */}
-          <div className="flex items-center gap-1.5 lg:hidden shrink-0">
-            <Link
-              href={user ? "/portal" : "/portal/giris"}
-              className="p-2 rounded-full liquid-glass-pill text-slate-800 dark:text-slate-200"
-              aria-label="Üye Paneli"
-            >
-              <User className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            </Link>
-
-            <LanguageSwitcher variant="compact" hideScripts />
-            <ThemeToggle />
-
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-full liquid-glass-pill text-slate-800 dark:text-slate-200 focus:outline-none"
-              aria-label={mobileMenuOpen ? "Menüyü kapat" : "Menüyü aç"}
-            >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
+              <LanguageSwitcher variant="compact" hideScripts />
+              <ThemeToggle />
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="cg-focus w-10 h-10 rounded-full cg-btn-ink flex items-center justify-center"
+                aria-label={mobileMenuOpen ? "Menüyü kapat" : "Menüyü aç"}
+                aria-expanded={mobileMenuOpen}
+              >
+                <span className="cg-burger" data-open={mobileMenuOpen}>
+                  <span />
+                  <span />
+                  <span />
+                </span>
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
-      {/* Mobile Drawer with Apple Liquid Glass Backdrop */}
-      {mobileMenuOpen && (
-        <div
-          className="fixed inset-0 z-[70] bg-black/60 dark:bg-black/80 backdrop-blur-3xl flex flex-col pt-24 sm:pt-28 pb-8 px-5 sm:px-6 overflow-y-auto lg:hidden animate-in fade-in duration-200"
-          style={{
-            overscrollBehavior: "contain",
-            WebkitOverflowScrolling: "touch",
-            touchAction: "pan-y",
-          }}
-        >
-          <div className="flex flex-col gap-1 liquid-glass-panel rounded-3xl p-5 mb-4 shadow-xl">
-            <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest px-2 mb-1">
-              Sayfalar
-            </span>
-            {NAV_LINKS.map((link) => {
-              const isActive = pathname === link.href;
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={cn(
-                    "flex items-center justify-between py-3 px-3.5 text-sm rounded-xl transition-all",
-                    isActive
-                      ? "bg-white dark:bg-white/[0.18] text-slate-900 dark:text-white font-bold shadow-xs border border-black/[0.06] dark:border-white/10"
-                      : "text-slate-700 dark:text-slate-200 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] font-medium"
-                  )}
-                >
-                  <span>{link.label}</span>
-                  <ChevronRight className="w-4 h-4 opacity-50" />
-                </Link>
-              );
-            })}
-          </div>
+      {/* Mobil tam ekran cam menü */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            key="cg-mobile-menu"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5, ease: EASE }}
+            className="fixed inset-0 z-[70] xl:hidden bg-[color-mix(in_srgb,var(--cg-bg)_78%,transparent)] backdrop-blur-3xl flex flex-col pt-24 sm:pt-28 pb-8 px-5 sm:px-8 overflow-y-auto"
+            style={{ overscrollBehavior: "contain", WebkitOverflowScrolling: "touch", touchAction: "pan-y" }}
+          >
+            <nav aria-label="Mobil Menü" className="flex flex-col">
+              {NAV_LINKS.map((link, i) => {
+                const isActive = pathname === link.href;
+                return (
+                  <motion.div
+                    key={link.href}
+                    initial={{ opacity: 0, y: 40 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.7, delay: 0.06 + i * 0.045, ease: EASE }}
+                    className="border-b cg-hairline"
+                  >
+                    <Link
+                      href={link.href}
+                      aria-current={isActive ? "page" : undefined}
+                      className="cg-focus flex items-baseline justify-between gap-4 py-3.5"
+                    >
+                      <span className={cn("cg-display text-[1.75rem] sm:text-4xl font-semibold", isActive ? "cg-accent" : "cg-ink")}>
+                        {link.label}
+                      </span>
+                      <span className="cg-num cg-ink-3 text-[11px] font-semibold">0{i + 1}</span>
+                    </Link>
+                  </motion.div>
+                );
+              })}
+            </nav>
 
-          <div className="flex flex-col gap-2 mt-auto">
-            {user ? (
-              <Link
-                href="/portal"
-                className="w-full flex items-center justify-between p-4 liquid-glass-card rounded-2xl text-xs font-semibold"
-              >
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-full overflow-hidden border border-emerald-500">
-                    <img
-                      src={user?.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80"}
-                      alt={user?.fullName || "Üye"}
-                      className="w-full h-full object-cover"
-                    />
+            <motion.div
+              initial={{ opacity: 0, y: 32 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.5, ease: EASE }}
+              className="flex flex-col gap-2.5 mt-10"
+            >
+              {user ? (
+                <Link href="/portal" className="cg-shell rounded-[1.5rem]">
+                  <div className="cg-core cg-core-strong rounded-[calc(1.5rem-6px)] flex items-center justify-between p-3.5">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-[var(--cg-accent)]">
+                        <img
+                          src={user?.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80"}
+                          alt={user?.fullName || "Üye"}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div>
+                        <span className="cg-ink text-sm font-semibold block">{user?.fullName || "Ege Mert"}</span>
+                        <span className="cg-ink-3 text-[11px]">Üye portalı & seanslar</span>
+                      </div>
+                    </div>
+                    <span className="cg-accent cg-num text-xs font-semibold">{remainingSessions} Seans →</span>
                   </div>
-                  <div>
-                    <span className="font-bold block text-slate-900 dark:text-white">
-                      {user?.fullName || "Ege Mert"}
-                    </span>
-                    <span className="text-[10px] text-slate-500">Üye Portalı & Seanslar</span>
-                  </div>
-                </div>
-                <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold">
-                  {remainingSessions} Seans →
+                </Link>
+              ) : (
+                <Link href="/portal/giris" className="cg-btn cg-btn-ghost w-full">
+                  <User className="w-4 h-4" strokeWidth={1.5} />
+                  <span>Üye girişi / mobil panel</span>
+                </Link>
+              )}
+
+              <DesignThemeSwitcher variant="drawer" />
+              <LanguageSwitcher variant="drawer" hideScripts className="mb-1" />
+              <ThemeToggle variant="drawer" className="mb-1" />
+
+              <Link href="/on-gorusme" className="cg-btn cg-btn-accent justify-between w-full">
+                <span>Ön görüşme randevusu al</span>
+                <span className="cg-btn-icon">
+                  <ArrowUpRight className="w-4 h-4" strokeWidth={1.75} />
                 </span>
               </Link>
-            ) : (
-              <Link
-                href="/portal/giris"
-                className="w-full flex items-center justify-center gap-2 p-3.5 liquid-glass-card rounded-2xl text-xs font-semibold text-slate-800 dark:text-slate-200"
-              >
-                <User className="w-4 h-4 text-emerald-600" />
-                <span>Üye Girişi / Mobil Panel</span>
-              </Link>
-            )}
 
-            <DesignThemeSwitcher variant="drawer" />
-            <LanguageSwitcher variant="drawer" hideScripts className="mb-1" />
-            <ThemeToggle variant="drawer" className="mb-1" />
-
-            <Link
-              href="/on-gorusme"
-              className="w-full flex items-center justify-center py-3.5 rounded-full liquid-glass-btn-emerald text-white font-semibold text-xs text-center shadow-md"
-            >
-              Ön Görüşme Randevusu Al
-            </Link>
-
-            <div className="grid grid-cols-2 gap-2 mt-1">
-              <a
-                href={BUSINESS_CONFIG.phoneTel}
-                className="flex items-center justify-center gap-2 py-3 rounded-2xl liquid-glass-card text-xs font-semibold text-slate-800 dark:text-slate-200"
-              >
-                <Phone className="w-3.5 h-3.5 text-emerald-600" />
-                Hemen Ara
-              </a>
-              <a
-                href={buildQuickChatWhatsAppUrl()}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 py-3 rounded-2xl liquid-glass-pill text-emerald-800 dark:text-emerald-300 text-xs font-semibold"
-              >
-                <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
-                WhatsApp
-              </a>
-            </div>
-          </div>
-        </div>
-      )}
+              <div className="grid grid-cols-2 gap-2.5">
+                <a href={BUSINESS_CONFIG.phoneTel} className="cg-btn cg-btn-ghost w-full px-4">
+                  <Phone className="w-4 h-4 cg-accent" strokeWidth={1.5} />
+                  Hemen ara
+                </a>
+                <a
+                  href={buildQuickChatWhatsAppUrl()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="cg-btn cg-btn-ghost w-full px-4"
+                >
+                  <MessageSquare className="w-4 h-4 cg-accent" strokeWidth={1.5} />
+                  WhatsApp
+                </a>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 };

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
+import { Plus_Jakarta_Sans, JetBrains_Mono, Instrument_Serif } from "next/font/google";
 import "./globals.css";
+import "./glass-theme.css";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { StickyMobileBar } from "@/components/layout/StickyMobileBar";
@@ -22,6 +23,14 @@ const jakarta = Plus_Jakarta_Sans({
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
+  display: "swap",
+});
+
+const instrumentSerif = Instrument_Serif({
+  subsets: ["latin", "latin-ext"],
+  weight: "400",
+  style: ["normal", "italic"],
+  variable: "--font-serif-display",
   display: "swap",
 });
 
@@ -86,7 +95,7 @@ export default function RootLayout({
   const jsonLd = generateLocalBusinessSchema();
 
   return (
-    <html lang="tr" suppressHydrationWarning className={`${jakarta.variable} ${jetbrainsMono.variable}`}>
+    <html lang="tr" suppressHydrationWarning className={`${jakarta.variable} ${jetbrainsMono.variable} ${instrumentSerif.variable}`}>
       <head>
         <script
           dangerouslySetInnerHTML={{

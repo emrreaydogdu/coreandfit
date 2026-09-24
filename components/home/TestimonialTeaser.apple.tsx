@@ -3,109 +3,112 @@
 import React from "react";
 import Link from "next/link";
 import { STORIES_DATA } from "@/data/stories";
-import { Star, ArrowRight, Quote, Sparkles } from "lucide-react";
-import { ScrollReveal, StaggerContainer, StaggerItem } from "@/components/ui/ScrollReveal";
+import { Star, ArrowRight } from "lucide-react";
+import { Eyebrow, Reveal, Stagger, StaggerChild } from "@/components/glass/GlassPrimitives";
 
 export const TestimonialTeaser: React.FC = () => {
-  const featuredStories = STORIES_DATA.slice(0, 3);
+  const [featured, ...rest] = STORIES_DATA.slice(0, 3);
 
   return (
-    <section className="py-20 lg:py-28 bg-[#FBFBFD] dark:bg-[#000000] relative overflow-hidden">
-      {/* Environmental Ambient Glow */}
-      <div className="absolute top-1/2 right-1/4 w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-[140px] pointer-events-none" />
-
+    <section className="relative py-24 lg:py-36">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header with Google Transparent Rating */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-12 border-b border-black/[0.06] dark:border-white/[0.08]">
-          <ScrollReveal variant="fade-up">
-            <div>
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full liquid-glass-pill text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 mb-3">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>ÜYE DENEYİMLERİ</span>
-              </div>
-              <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-                Gerçek üyeler. Ölçülebilir sonuçlar.
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end">
+          <div className="lg:col-span-8">
+            <Reveal>
+              <Eyebrow>Üye deneyimleri</Eyebrow>
+            </Reveal>
+            <Reveal delay={0.1}>
+              <h2 className="cg-display cg-ink mt-7 text-4xl sm:text-5xl lg:text-[4rem] leading-[1.04] font-semibold">
+                Gerçek üyeler.{" "}
+                <span className="cg-serif cg-accent">Ölçülebilir sonuçlar.</span>
               </h2>
-            </div>
-          </ScrollReveal>
+            </Reveal>
+          </div>
 
-          {/* Apple Liquid Glass Google Score Pill */}
-          <ScrollReveal variant="fade-up" delay={0.15}>
-            <div className="rounded-2xl p-4 liquid-glass-panel shadow-md flex items-center gap-4">
-              <div className="flex flex-col">
-                <div className="flex items-center gap-1 text-amber-500">
-                  {[...Array(4)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
-                  ))}
-                  <Star className="w-4 h-4 text-amber-400 fill-amber-400/30" />
+          {/* Google puanı */}
+          <div className="lg:col-span-4 lg:justify-self-end">
+            <Reveal delay={0.15}>
+              <div className="cg-shell">
+                <div className="cg-core cg-core-strong flex items-center gap-5 px-5 py-4">
+                  <div>
+                    <span className="cg-num cg-ink text-3xl font-semibold tracking-tight">4.2</span>
+                    <span className="cg-ink-3 text-sm font-medium"> / 5</span>
+                  </div>
+                  <div className="border-l cg-hairline pl-5">
+                    <div className="flex items-center gap-0.5" aria-label="5 üzerinden 4.2 yıldız">
+                      {[...Array(4)].map((_, i) => (
+                        <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" strokeWidth={1.5} />
+                      ))}
+                      <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400/30" strokeWidth={1.5} />
+                    </div>
+                    <p className="cg-ink-3 text-[12px] mt-1.5">62 doğrulanmış Google yorumu</p>
+                  </div>
                 </div>
-                <span className="text-sm font-extrabold text-slate-900 dark:text-white mt-1">4.2 / 5</span>
               </div>
-              <div className="border-l border-black/[0.08] dark:border-white/[0.1] pl-4 text-xs">
-                <span className="text-slate-900 dark:text-white block font-semibold">Google Puanı</span>
-                <span className="text-slate-500 dark:text-slate-400 text-[11px]">62 doğrulanmış üye yorumu</span>
-              </div>
-            </div>
-          </ScrollReveal>
+            </Reveal>
+          </div>
         </div>
 
-        {/* Stories Grid */}
-        <StaggerContainer
-          staggerDelay={0.1}
-          className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12"
-        >
-          {featuredStories.map((item) => (
-            <StaggerItem key={item.id}>
-              <div className="rounded-[30px] p-7 sm:p-8 liquid-glass-card hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between h-full group shadow-md">
-                <div>
-                  <div className="w-10 h-10 rounded-2xl liquid-glass-pill text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-5">
-                    <Quote className="w-4 h-4" />
-                  </div>
-
-                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed italic mb-6">
-                    &ldquo;{item.experience}&rdquo;
-                  </p>
-
-                  <div className="p-3.5 rounded-2xl liquid-glass-pill mb-6">
-                    <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider block">
-                      KAZANIM:
-                    </span>
-                    <span className="text-xs font-bold text-slate-900 dark:text-white mt-0.5 block">
-                      {item.highlightMetric}
-                    </span>
+        <Stagger className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5 mt-16">
+          {/* Öne çıkan hikâye */}
+          {featured && (
+            <StaggerChild className="lg:col-span-7 lg:row-span-2">
+              <article className="cg-shell cg-shell-lg h-full">
+                <div className="cg-core cg-core-tint h-full p-7 sm:p-10 lg:p-12 flex flex-col">
+                  <span className="cg-serif cg-accent text-7xl leading-none h-10" aria-hidden="true">
+                    &ldquo;
+                  </span>
+                  <blockquote className="cg-ink cg-pretty text-xl sm:text-2xl lg:text-[1.75rem] leading-[1.4] font-medium tracking-tight mt-4">
+                    {featured.experience}
+                  </blockquote>
+                  <div className="mt-auto pt-10 flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+                    <div>
+                      <p className="cg-ink font-semibold">{featured.client}</p>
+                      <p className="cg-ink-3 text-[13px] mt-0.5">{featured.clientTitle}</p>
+                    </div>
+                    <div className="sm:text-right">
+                      <p className="cg-label">Kazanım · {featured.duration}</p>
+                      <p className="cg-ink text-[15px] font-semibold mt-1.5">{featured.highlightMetric}</p>
+                    </div>
                   </div>
                 </div>
+              </article>
+            </StaggerChild>
+          )}
 
-                <div className="pt-4 border-t border-black/[0.06] dark:border-white/[0.08]">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-                        {item.client}
-                      </h4>
-                      <p className="text-[11px] text-slate-400">{item.clientTitle}</p>
+          {rest.map((item) => (
+            <StaggerChild key={item.id} className="lg:col-span-5">
+              <article className="cg-shell cg-lift h-full">
+                <div className="cg-core h-full p-7 sm:p-8 flex flex-col">
+                  <blockquote className="cg-ink-2 cg-pretty text-[15px] leading-relaxed line-clamp-5">
+                    &ldquo;{item.experience}&rdquo;
+                  </blockquote>
+                  <div className="mt-auto pt-6 border-t cg-hairline flex items-end justify-between gap-4">
+                    <div className="min-w-0">
+                      <p className="cg-ink text-[14px] font-semibold">{item.client}</p>
+                      <p className="cg-ink-3 text-[12px] mt-0.5 truncate">{item.clientTitle}</p>
                     </div>
-                    <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 liquid-glass-pill px-3 py-1 rounded-full">
+                    <span className="shrink-0 rounded-full px-3 py-1 text-[11px] font-semibold bg-[var(--cg-accent-soft)] cg-accent">
                       {item.duration}
                     </span>
                   </div>
+                  <p className="cg-ink-3 text-[12px] mt-3">
+                    <span className="cg-accent font-semibold">Kazanım:</span> {item.highlightMetric}
+                  </p>
                 </div>
-              </div>
-            </StaggerItem>
+              </article>
+            </StaggerChild>
           ))}
-        </StaggerContainer>
+        </Stagger>
 
-        {/* Action to full stories page */}
-        <ScrollReveal variant="fade-up" delay={0.25}>
-          <div className="mt-12 flex justify-center">
-            <Link
-              href="/basari-hikayeleri"
-              className="inline-flex items-center gap-2.5 min-h-[50px] px-8 rounded-full liquid-glass-pill text-slate-800 dark:text-white text-xs font-semibold tracking-wide hover:bg-black/[0.04] dark:hover:bg-white/[0.08] transition-all select-none"
-            >
-              <span>Tüm Deneyimleri ve Hikayeleri Oku</span>
-              <ArrowRight className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+        <Reveal delay={0.1}>
+          <div className="mt-12">
+            <Link href="/basari-hikayeleri" className="cg-link">
+              Tüm deneyimleri ve hikâyeleri oku
+              <ArrowRight className="w-4 h-4" strokeWidth={1.75} />
             </Link>
           </div>
-        </ScrollReveal>
+        </Reveal>
       </div>
     </section>
   );
