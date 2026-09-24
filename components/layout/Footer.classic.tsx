@@ -7,8 +7,7 @@ import { BUSINESS_CONFIG } from "@/config/business";
 import { buildQuickChatWhatsAppUrl } from "@/lib/whatsapp";
 import { Phone, MessageSquare, MapPin, ArrowUpRight } from "lucide-react";
 import { InstagramIcon } from "@/components/ui/Icons";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { AppearanceMenuClassic } from "@/components/ui/AppearanceMenuClassic";
 
 export const Footer: React.FC = () => {
   const pathname = usePathname();
@@ -187,10 +186,7 @@ export const Footer: React.FC = () => {
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono text-[#72757C]">
           <div className="flex items-center gap-3">
             <p>© {new Date().getFullYear()} CORE & FIT. Tüm hakları saklıdır.</p>
-            <div className="flex items-center gap-2">
-              <LanguageSwitcher hideScripts />
-              <ThemeToggle variant="pill" />
-            </div>
+            <AppearanceMenuClassic placement="top" align="left" />
           </div>
           <div className="flex flex-wrap items-center gap-6">
             <Link href="/kvkk" className="hover:text-white transition-colors">

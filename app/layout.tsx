@@ -9,7 +9,6 @@ import { SmoothScroll } from "@/components/ui/SmoothScroll";
 import { ScrollProgress } from "@/components/ui/ScrollProgress";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { DesignModeProvider } from "@/components/providers/DesignModeProvider";
-import { DesignThemeSwitcher } from "@/components/ui/DesignThemeSwitcher";
 import { MemberProvider } from "@/context/MemberContext";
 import { BUSINESS_CONFIG } from "@/config/business";
 import { generateLocalBusinessSchema } from "@/lib/schema";
@@ -110,7 +109,6 @@ export default function RootLayout({
       <body className="bg-[#FBFBFD] dark:bg-[#000000] text-[#1D1D1F] dark:text-[#F5F5F7] antialiased flex flex-col min-h-screen selection:bg-emerald-500/20 selection:text-emerald-900 transition-colors duration-300">
         <ThemeProvider>
           <DesignModeProvider>
-            <DesignThemeSwitcher variant="floating-bar" />
             <MemberProvider>
               <ScrollProgress />
               <SmoothScroll>
