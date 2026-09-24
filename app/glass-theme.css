@@ -230,6 +230,13 @@ html[data-design="apple"] ::selection {
       linear-gradient(160deg, rgba(16, 185, 129, 0.16), rgba(16, 185, 129, 0.02) 60%),
       var(--cg-glass-strong);
   }
+  /* İç içe backdrop-filter sayfayı bulanıklaştıramaz (ör. header içindeki açılır panel): neredeyse opak zemin */
+  .cg-core-solid {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.45)), var(--cg-bg);
+  }
+  .dark .cg-core-solid {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02)), var(--cg-bg);
+  }
   .cg-core-media { background: #0B1411; }
   .cg-core-media::before { display: none; }
 

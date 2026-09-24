@@ -7,8 +7,7 @@ import { BUSINESS_CONFIG } from "@/config/business";
 import { buildQuickChatWhatsAppUrl } from "@/lib/whatsapp";
 import { Phone, MessageSquare, MapPin, ArrowUpRight, Star } from "lucide-react";
 import { InstagramIcon } from "@/components/ui/Icons";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { AppearanceMenu } from "@/components/glass/AppearanceMenu";
 
 const SERVICE_LINKS = [
   { label: "1:1 Personal Training", href: "/personal-training" },
@@ -146,10 +145,7 @@ export const Footer: React.FC = () => {
           <div className="mx-6 sm:mx-10 lg:mx-14 py-6 border-t cg-hairline flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5 text-[12px]">
             <div className="flex flex-wrap items-center gap-3">
               <p className="cg-ink-3">© {new Date().getFullYear()} Core & Fit. Tüm hakları saklıdır.</p>
-              <div className="flex items-center gap-2">
-                <LanguageSwitcher hideScripts />
-                <ThemeToggle variant="pill" />
-              </div>
+              <AppearanceMenu showLabel placement="top" align="left" />
             </div>
             <nav aria-label="Yasal" className="flex flex-wrap items-center gap-x-6 gap-y-2">
               {LEGAL_LINKS.map((l) => (

@@ -24,7 +24,7 @@ export const HeroSection: React.FC = () => {
         };
 
   return (
-    <section className="relative min-h-[100dvh] flex items-center pt-36 sm:pt-40 lg:pt-44 pb-24 lg:pb-32">
+    <section className="relative min-h-[100dvh] flex items-center pt-28 sm:pt-32 lg:pt-36 pb-24 lg:pb-32">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-14 lg:gap-10 items-center">
           {/* Sol: editoryal başlık */}

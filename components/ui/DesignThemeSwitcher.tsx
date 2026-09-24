@@ -25,6 +25,11 @@ export const DesignThemeSwitcher: React.FC<DesignThemeSwitcherProps> = ({
 
   const isApple = designMode === "apple";
 
+  // Cam temada tema seçimi header'daki "Görünüm" panelinde; yüzen çubuk yalnızca orijinal temada görünür
+  if (variant === "floating-bar" && isApple) {
+    return null;
+  }
+
   if (variant === "drawer") {
     return (
       <div className={cn("w-full p-3 rounded-2xl liquid-glass-card mb-2", className)}>

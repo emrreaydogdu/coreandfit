@@ -8,11 +8,10 @@ import { BUSINESS_CONFIG } from "@/config/business";
 import { buildQuickChatWhatsAppUrl } from "@/lib/whatsapp";
 import { MessageSquare, Phone, User, ArrowUpRight } from "lucide-react";
 import { cn, lockBodyScroll, unlockBodyScroll } from "@/lib/utils";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { DesignThemeSwitcher } from "@/components/ui/DesignThemeSwitcher";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { GoogleTranslateScripts } from "@/components/LanguageSwitcher";
 import { useMember } from "@/context/MemberContext";
 import { GlassBackdrop } from "@/components/glass/GlassPrimitives";
+import { AppearanceMenu } from "@/components/glass/AppearanceMenu";
 
 const EASE = [0.32, 0.72, 0, 1] as const;
 
@@ -64,12 +63,14 @@ export const Header: React.FC = () => {
   return (
     <>
       <GlassBackdrop />
+      <GoogleTranslateScripts />
 
       {/* Yüzen cam ada header */}
       <header
         className={cn(
-          "fixed left-0 right-0 px-3 sm:px-6 pointer-events-none transition-[transform,top] duration-700 ease-[cubic-bezier(0.32,0.72,0,1)]",
-          mobileMenuOpen ? "z-[80] top-3 sm:top-4" : "z-50 top-12 sm:top-14",
+          "fixed left-0 right-0 px-3 sm:px-6 pointer-events-none transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)]",
+          mobileMenuOpen ? "z-[80]" : "z-50",
+          "top-3 sm:top-4",
           isScrolled && !mobileMenuOpen ? "-translate-y-1.5" : "translate-y-0"
         )}
       >
@@ -87,7 +88,7 @@ export const Header: React.FC = () => {
             </Link>
 
             {/* Masaüstü navigasyon */}
-            <nav aria-label="Ana Menü" className="hidden xl:flex items-center gap-0.5">
+            <nav aria-label="Ana Menü" className="hidden xl:flex flex-1 min-w-0 items-center justify-center gap-0.5">
               {NAV_LINKS.map((link) => {
                 const isActive = pathname === link.href;
                 return (
@@ -115,12 +116,8 @@ export const Header: React.FC = () => {
 
             {/* Masaüstü sağ kontroller */}
             <div className="hidden xl:flex items-center gap-1.5 shrink-0">
-              {/* Yüzen tema seçici üstte her zaman görünür; header kopyası yalnızca geniş ekranda */}
-              <div className="hidden 2xl:block">
-                <DesignThemeSwitcher variant="inline" />
-              </div>
-              <LanguageSwitcher />
-              <ThemeToggle />
+              <AppearanceMenu showLabel />
+              <span className="w-px h-5 bg-[var(--cg-hair)] mx-1" aria-hidden="true" />
 
               {user ? (
                 <Link
@@ -130,7 +127,7 @@ export const Header: React.FC = () => {
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-[var(--cg-accent)]" />
                   <span className="hidden 2xl:inline">{(user?.fullName || "Ege").split(" ")[0]}</span>
-                  <span className="cg-accent cg-num">({remainingSessions} Hak)</span>
+                  <span className="cg-accent cg-num">{remainingSessions} Hak</span>
                 </Link>
               ) : (
                 <Link
@@ -159,8 +156,8 @@ export const Header: React.FC = () => {
               >
                 <User className="w-[18px] h-[18px]" strokeWidth={1.5} />
               </Link>
-              <LanguageSwitcher variant="compact" hideScripts />
-              <ThemeToggle />
+              {/* Panel, hamburger butonunun genişliği kadar sağa kaydırılarak header kenarına hizalanır */}
+              <AppearanceMenu panelClassName="-right-[3.25rem]" />
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className="cg-focus w-10 h-10 rounded-full cg-btn-ink flex items-center justify-center"
@@ -248,9 +245,7 @@ export const Header: React.FC = () => {
                 </Link>
               )}
 
-              <DesignThemeSwitcher variant="drawer" />
-              <LanguageSwitcher variant="drawer" hideScripts className="mb-1" />
-              <ThemeToggle variant="drawer" className="mb-1" />
+              <AppearanceMenu variant="panel" />
 
               <Link href="/on-gorusme" className="cg-btn cg-btn-accent justify-between w-full">
                 <span>Ön görüşme randevusu al</span>

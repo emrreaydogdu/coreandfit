@@ -22,6 +22,44 @@ export interface LanguageSwitcherProps {
   hideScripts?: boolean;
 }
 
+/** googtrans çerezini ayarlar ve çevirinin uygulanması için sayfayı yeniler. */
+export function applyLanguage(lang: string) {
+  const hostname = window.location.hostname;
+
+  // Çerez temizleme fonksiyonu
+  const deleteCookie = (name: string) => {
+    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+    if (hostname && hostname !== "localhost") {
+      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${hostname};`;
+      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.${hostname};`;
+    }
+  };
+
+  if (lang === "tr") {
+    deleteCookie("googtrans");
+    document.cookie = `googtrans=/tr/tr; path=/;`;
+    if (hostname && hostname !== "localhost") {
+      document.cookie = `googtrans=/tr/tr; path=/; domain=${hostname};`;
+      document.cookie = `googtrans=/tr/tr; path=/; domain=.${hostname};`;
+    }
+  } else {
+    document.cookie = `googtrans=/tr/${lang}; path=/;`;
+    if (hostname && hostname !== "localhost") {
+      document.cookie = `googtrans=/tr/${lang}; path=/; domain=${hostname};`;
+      document.cookie = `googtrans=/tr/${lang}; path=/; domain=.${hostname};`;
+    }
+  }
+
+  // Google Translate çevirisinin anında uygulanması için sayfayı yenile
+  window.location.reload();
+}
+
+/** Çerezden aktif dil kodunu okur (varsayılan: tr). */
+export function readActiveLanguage(): string {
+  const match = document.cookie.match(/googtrans=\/tr\/([a-z]{2})/);
+  return match && match[1] ? match[1] : "tr";
+}
+
 export default function LanguageSwitcher({
   className,
   variant = "default",
@@ -59,34 +97,7 @@ export default function LanguageSwitcher({
     setActiveLang(lang);
     setLangDropdownOpen(false);
 
-    const hostname = window.location.hostname;
-
-    // Çerez temizleme fonksiyonu
-    const deleteCookie = (name: string) => {
-      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-      if (hostname && hostname !== "localhost") {
-        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${hostname};`;
-        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.${hostname};`;
-      }
-    };
-
-    if (lang === "tr") {
-      deleteCookie("googtrans");
-      document.cookie = `googtrans=/tr/tr; path=/;`;
-      if (hostname && hostname !== "localhost") {
-        document.cookie = `googtrans=/tr/tr; path=/; domain=${hostname};`;
-        document.cookie = `googtrans=/tr/tr; path=/; domain=.${hostname};`;
-      }
-    } else {
-      document.cookie = `googtrans=/tr/${lang}; path=/;`;
-      if (hostname && hostname !== "localhost") {
-        document.cookie = `googtrans=/tr/${lang}; path=/; domain=${hostname};`;
-        document.cookie = `googtrans=/tr/${lang}; path=/; domain=.${hostname};`;
-      }
-    }
-
-    // Google Translate çevirisinin anında uygulanması için sayfayı yenile
-    window.location.reload();
+    applyLanguage(lang);
   };
 
   const currentLangObj = LANGUAGES.find((l) => l.code === activeLang) || LANGUAGES[0];
@@ -218,46 +229,51 @@ export default function LanguageSwitcher({
       </div>
 
       {/* Google Translate Entegrasyon Kodları & Güvenli Stil Katmanı */}
-      {!hideScripts && (
-        <>
-          <div id="google_translate_element" style={{ display: "none" }} />
-          <style
-            dangerouslySetInnerHTML={{
-              __html: `
-            /* Google Translate varsayılan çirkin banner ve tooltip elemanlarını tamamen gizle */
-            body { top: 0 !important; position: static !important; }
-            .skiptranslate, .goog-te-banner-frame, #goog-gt-tt, .goog-te-balloon-frame { display: none !important; visibility: hidden !important; }
-            .goog-tooltip, .goog-tooltip:hover { display: none !important; }
-            .goog-text-highlight { background-color: transparent !important; border: none !important; box-shadow: none !important; }
-            .VIpgJd-ZVi9od-aZ2wEe-wOHMyf, .VIpgJd-ZVi9od-aZ2wEe-OiiCO, .VIpgJd-ZVi9od-OR94Gd-PR6Dhf { display: none !important; }
-            #google_translate_element { display: none !important; }
+      {!hideScripts && <GoogleTranslateScripts />}
+    </>
+  );
+}
+
+/** Google Translate entegrasyon kodları ve banner gizleme stili. Sayfada bir kez render edilmeli. */
+export function GoogleTranslateScripts() {
+  return (
+    <>
+      <div id="google_translate_element" style={{ display: "none" }} />
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+        /* Google Translate varsayılan çirkin banner ve tooltip elemanlarını tamamen gizle */
+        body { top: 0 !important; position: static !important; }
+        .skiptranslate, .goog-te-banner-frame, #goog-gt-tt, .goog-te-balloon-frame { display: none !important; visibility: hidden !important; }
+        .goog-tooltip, .goog-tooltip:hover { display: none !important; }
+        .goog-text-highlight { background-color: transparent !important; border: none !important; box-shadow: none !important; }
+        .VIpgJd-ZVi9od-aZ2wEe-wOHMyf, .VIpgJd-ZVi9od-aZ2wEe-OiiCO, .VIpgJd-ZVi9od-OR94Gd-PR6Dhf { display: none !important; }
+        #google_translate_element { display: none !important; }
+      `,
+        }}
+      />
+      <Script
+        id="google-translate-init"
+        strategy="afterInteractive"
+        dangerouslySetInnerHTML={{
+          __html: `
+            function googleTranslateElementInit() {
+              if (window.google && window.google.translate) {
+                new window.google.translate.TranslateElement({
+                  pageLanguage: 'tr',
+                  includedLanguages: 'tr,en,de,fr,ru,ar',
+                  autoDisplay: false
+                }, 'google_translate_element');
+              }
+            }
           `,
-            }}
-          />
-          <Script
-            id="google-translate-init"
-            strategy="afterInteractive"
-            dangerouslySetInnerHTML={{
-              __html: `
-                function googleTranslateElementInit() {
-                  if (window.google && window.google.translate) {
-                    new window.google.translate.TranslateElement({
-                      pageLanguage: 'tr',
-                      includedLanguages: 'tr,en,de,fr,ru,ar',
-                      autoDisplay: false
-                    }, 'google_translate_element');
-                  }
-                }
-              `,
-            }}
-          />
-          <Script
-            id="google-translate-cdn"
-            src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
-            strategy="afterInteractive"
-          />
-        </>
-      )}
+        }}
+      />
+      <Script
+        id="google-translate-cdn"
+        src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
+        strategy="afterInteractive"
+      />
     </>
   );
 }
