@@ -11,7 +11,6 @@ import {
   User,
   Smartphone,
   Monitor,
-  ExternalLink,
   ArrowLeft,
   ChevronRight,
   ShieldCheck,
@@ -31,6 +30,8 @@ import { HistoryTab } from "@/components/portal/tabs/HistoryTab";
 import { ProfileTab } from "@/components/portal/tabs/ProfileTab";
 import { FloatingGlassNav } from "@/components/portal/FloatingGlassNav";
 import { QuickQrModal } from "@/components/portal/QuickQrModal";
+import { todayIso } from "@/lib/slots";
+import { ACTIVE_BOOKING_STATUSES } from "@/lib/training";
 
 export const PortalLayout: React.FC = () => {
   const {
@@ -43,17 +44,24 @@ export const PortalLayout: React.FC = () => {
     bookedSessions,
     isQuickQrOpen,
     setIsQuickQrOpen,
+    isAdmin,
+    canGoBack,
+    goBack,
   } = useMember();
 
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState<boolean>(false);
 
   if (!user) return null;
 
+  const nextSession = bookedSessions
+    .filter((s) => ACTIVE_BOOKING_STATUSES.includes(s.status) && s.date >= todayIso())
+    .sort((a, b) => (a.date + a.timeSlot).localeCompare(b.date + b.timeSlot))[0];
+
   const NAV_ITEMS: { id: PortalTab; label: string; icon: React.ElementType }[] = [
     { id: "dashboard", label: "Özet", icon: Home },
-    { id: "workout", label: "Antrenman", icon: Dumbbell },
+    { id: "workout", label: "Program", icon: Dumbbell },
     { id: "sessions", label: "Seanslarım", icon: Calendar },
-    { id: "history", label: "Gelişim & Tanita", icon: BarChart3 },
+    { id: "history", label: "Gelişim", icon: BarChart3 },
     { id: "store", label: "Paket Al", icon: Zap },
     { id: "profile", label: "Hesabım", icon: User },
   ];
@@ -84,29 +92,25 @@ export const PortalLayout: React.FC = () => {
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           {/* Brand & Studio Indicator */}
           <div className="flex items-center gap-3 sm:gap-4">
-            <a
-              href="/"
-              className="flex items-center gap-2 group transition-all text-[#64748B] hover:text-[#0F172A]"
-              title="Web Sitesine Dön"
-            >
-              <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
-              <div className="flex items-center gap-1.5 font-sans font-black text-sm tracking-tight text-[#0F172A]">
-                <span>CORE & FIT</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
-              </div>
-            </a>
+            {canGoBack && (
+              <button
+                type="button"
+                onClick={goBack}
+                aria-label="Geri Dön"
+                className="inline-flex items-center justify-center gap-1.5 min-h-9 min-w-9 px-2 sm:px-3 rounded-full bg-[#F1F5F9] hover:bg-[#E2E8F0] text-xs font-semibold text-[#0F172A] whitespace-nowrap transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span className="hidden sm:inline">Geri Dön</span>
+              </button>
+            )}
 
-            <span className="text-[#CBD5E1] hidden sm:inline">|</span>
-
-            {/* Live Studio Occupancy Indicator (Apple Health Style Pill) */}
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1 bg-[#F1F5F9] border border-black/[0.04] rounded-full text-[11px] font-medium">
-              <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse" />
-              <span className="text-[#64748B]">Nişantaşı Stüdyo:</span>
-              <span className="text-[#0F172A] font-bold">%35 Sakin</span>
+            <div className="flex items-center gap-1.5 font-sans font-black text-sm tracking-tight text-[#0F172A] whitespace-nowrap">
+              <span>CORE & FIT</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
             </div>
 
             {/* Next Upcoming Session dynamic pill */}
-            {bookedSessions.length > 0 && (
+            {nextSession && (
               <button
                 type="button"
                 onClick={() => setActiveTab("sessions")}
@@ -115,7 +119,7 @@ export const PortalLayout: React.FC = () => {
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
                 <span>
-                  Sonraki: {bookedSessions[0].date} {bookedSessions[0].timeSlot.split(" - ")[0]}
+                  Sonraki: {nextSession.date} {nextSession.timeSlot.split(" - ")[0]}
                 </span>
               </button>
             )}
@@ -158,14 +162,6 @@ export const PortalLayout: React.FC = () => {
               )}
             </button>
 
-            <Link
-              href="/"
-              className="hidden md:inline-flex items-center gap-1.5 text-xs font-medium text-[#64748B] hover:text-[#0F172A] transition-colors px-2 py-1"
-            >
-              <span>Web Sitesi</span>
-              <ExternalLink className="w-3 h-3 text-[#94A3B8]" />
-            </Link>
-
             {/* User Profile Pill */}
             <div
               onClick={() => setActiveTab("profile")}
@@ -183,7 +179,7 @@ export const PortalLayout: React.FC = () => {
                   {user.fullName}
                 </span>
                 <span className="text-[10px] text-[#10B981] font-semibold leading-none mt-0.5">
-                  {remainingSessions} Seans Kaldı
+                  {remainingSessions} Ders Kaldı
                 </span>
               </div>
             </div>
@@ -317,7 +313,7 @@ export const PortalLayout: React.FC = () => {
                       <div className="mt-2.5 pt-2 border-t border-black/[0.06] flex items-center justify-between text-xs">
                         <span className="text-[#64748B]">Kalan Seans:</span>
                         <span className="font-bold text-[#10B981]">
-                          {remainingSessions} Seans
+                          {remainingSessions} Ders
                         </span>
                       </div>
                     </div>
@@ -420,7 +416,7 @@ export const PortalLayout: React.FC = () => {
                     <p className="text-[10px] text-[#64748B] font-mono">{user.memberNo}</p>
                     <div className="flex items-center gap-1.5 mt-1">
                       <span className="px-2 py-0.5 bg-emerald-100/80 text-emerald-800 font-bold text-[10px] rounded-md">
-                        {remainingSessions} Seans Kredisi
+                        {remainingSessions} Ders Hakkı
                       </span>
                     </div>
                   </div>
@@ -472,13 +468,13 @@ export const PortalLayout: React.FC = () => {
                           <Icon className={`w-4 h-4 ${isActive ? "text-emerald-400" : "text-[#64748B]"}`} />
                           <span>{tab.label}</span>
                         </div>
-                        {tab.id === "sessions" && bookedSessions.length > 0 && (
+                        {tab.id === "sessions" && remainingSessions > 0 && (
                           <span
                             className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                               isActive ? "bg-emerald-500 text-white" : "bg-emerald-100 text-emerald-800"
                             }`}
                           >
-                            {bookedSessions.length}
+                            {remainingSessions}
                           </span>
                         )}
                         {tab.id === "workout" && (
@@ -497,23 +493,18 @@ export const PortalLayout: React.FC = () => {
               </div>
 
               {/* Drawer Footer */}
-              <div className="p-4 border-t border-black/[0.06] bg-slate-50/80 space-y-2">
-                <Link
-                  href="/admin"
-                  onClick={() => setIsMobileDrawerOpen(false)}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 px-3 bg-white border border-black/[0.08] hover:border-black/[0.16] rounded-xl text-xs font-bold text-[#0F172A] transition-all shadow-2xs"
-                >
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Yönetici Paneline Geç</span>
-                </Link>
-                <Link
-                  href="/"
-                  onClick={() => setIsMobileDrawerOpen(false)}
-                  className="w-full flex items-center justify-center gap-2 py-2 px-3 text-xs font-medium text-[#64748B] hover:text-[#0F172A] transition-colors"
-                >
-                  <span>Ana Web Sitesine Dön</span>
-                </Link>
-              </div>
+              {isAdmin && (
+                <div className="p-4 border-t border-black/[0.06] bg-slate-50/80">
+                  <Link
+                    href="/admin"
+                    onClick={() => setIsMobileDrawerOpen(false)}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 px-3 bg-white border border-black/[0.08] hover:border-black/[0.16] rounded-xl text-xs font-bold text-[#0F172A] transition-all shadow-2xs"
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Yönetici Paneline Geç</span>
+                  </Link>
+                </div>
+              )}
             </motion.div>
           </div>
         )}

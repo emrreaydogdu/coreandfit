@@ -33,8 +33,8 @@ export const DigitalPassCard: React.FC<DigitalPassCardProps> = ({
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
 
   const generateToken = async () => {
-    const memberNo = user?.memberNo || "CF-89210";
-    const fullName = user?.fullName || "Ege Mert";
+    const memberNo = user.memberNo;
+    const fullName = user.fullName;
     const currentMinute = Math.floor(Date.now() / 60000);
     const hash = Math.abs(
       (memberNo.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0) * 31 + currentMinute) % 900000
@@ -62,8 +62,6 @@ export const DigitalPassCard: React.FC<DigitalPassCardProps> = ({
   };
 
   useEffect(() => {
-    generateToken();
-
     const syncTime = () => {
       const now = new Date();
       const rem = 60 - now.getSeconds();
@@ -73,9 +71,17 @@ export const DigitalPassCard: React.FC<DigitalPassCardProps> = ({
       }
     };
 
-    syncTime();
+    // İlk kod bir sonraki tick'te üretilir, sonra her saniye senkronize edilir.
+    const first = setTimeout(() => {
+      generateToken();
+      syncTime();
+    }, 0);
     const interval = setInterval(syncTime, 1000);
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(first);
+      clearInterval(interval);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.memberNo, user?.fullName]);
 
   const handleManualRefresh = (e: React.MouseEvent) => {

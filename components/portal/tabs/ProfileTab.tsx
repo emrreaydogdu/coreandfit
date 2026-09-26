@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import {
-  User,
   Mail,
   Phone,
   Shield,
@@ -17,13 +16,20 @@ import {
   Plus,
   Trash2,
   Edit3,
-  Check,
   X,
-  Sparkles,
+  KeyRound,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useMember } from "@/context/MemberContext";
-import { SavedCard, UserAddress } from "@/types/portal";
+import { formatTL } from "@/lib/pricing";
+import { formatDateMedium } from "@/lib/format";
+import type { PaymentMethod } from "@/types/portal";
+
+const PAYMENT_LABEL: Record<PaymentMethod, string> = {
+  online_card: "Online Kart",
+  cash_register: "Stüdyoda Nakit",
+  bank_transfer: "Havale / FAST",
+};
 
 export const ProfileTab: React.FC = () => {
   const {
@@ -35,6 +41,7 @@ export const ProfileTab: React.FC = () => {
     removeSavedCard,
     setDefaultCard,
     updateAddress,
+    changePassword,
   } = useMember();
 
   const [downloadSuccess, setDownloadSuccess] = useState<string | null>(null);
@@ -47,7 +54,7 @@ export const ProfileTab: React.FC = () => {
   // Form states - Profile
   const [editFullName, setEditFullName] = useState(user?.fullName || "");
   const [editPhone, setEditPhone] = useState(user?.phone || "");
-  const [editBirthDate, setEditBirthDate] = useState(user?.birthDate || "14 Mayıs 1994 (32 Yaş)");
+  const [editBirthDate, setEditBirthDate] = useState(user?.birthDate || "");
   const [editEmergency, setEditEmergency] = useState(user?.emergencyContact || "");
   const [editHealth, setEditHealth] = useState(user?.healthNotes || "");
 
@@ -59,10 +66,15 @@ export const ProfileTab: React.FC = () => {
 
   // Form states - Address
   const [addressTitle, setAddressTitle] = useState(user?.address?.title || "Ev Adresi");
-  const [addressStreet, setAddressStreet] = useState(user?.address?.street || "Abdi İpekçi Cad. No: 42/8");
-  const [addressDistrict, setAddressDistrict] = useState(user?.address?.district || "Nişantaşı, Şişli");
+  const [addressStreet, setAddressStreet] = useState(user?.address?.street || "");
+  const [addressDistrict, setAddressDistrict] = useState(user?.address?.district || "");
   const [addressCity, setAddressCity] = useState(user?.address?.city || "İstanbul");
-  const [addressPostal, setAddressPostal] = useState(user?.address?.postalCode || "34367");
+  const [addressPostal, setAddressPostal] = useState(user?.address?.postalCode || "");
+
+  // Şifre değiştirme
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [passwordMsg, setPasswordMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   if (!user) return null;
 
@@ -98,6 +110,16 @@ export const ProfileTab: React.FC = () => {
     setNewCardHolder("");
     setNewCardExpiry("");
     setIsAddCardOpen(false);
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const res = await changePassword(currentPassword, newPassword);
+    setPasswordMsg(res.ok ? { ok: true, text: res.message ?? "Şifreniz güncellendi." } : { ok: false, text: res.error });
+    if (res.ok) {
+      setCurrentPassword("");
+      setNewPassword("");
+    }
   };
 
   const handleSaveAddress = (e: React.FormEvent) => {
@@ -149,7 +171,7 @@ export const ProfileTab: React.FC = () => {
                 </span>
               </div>
               <p className="text-xs text-[#64748B] font-sans mt-0.5">
-                {user.membershipTier} • Kayıt: {user.joinDate}
+                {user.membershipTier} • Kayıt: {formatDateMedium(user.joinDate)}
               </p>
             </div>
           </div>
@@ -182,7 +204,7 @@ export const ProfileTab: React.FC = () => {
             </div>
             <div>
               <span className="text-[10px] text-[#64748B] block uppercase font-medium">DOĞUM TARİHİ</span>
-              <span className="text-[#0F172A] font-semibold">{user.birthDate || "14 Mayıs 1994 (32 Yaş)"}</span>
+              <span className="text-[#0F172A] font-semibold">{user.birthDate || "Belirtilmemiş"}</span>
             </div>
           </div>
 
@@ -225,7 +247,7 @@ export const ProfileTab: React.FC = () => {
               <HeartPulse className="w-4 h-4" />
             </div>
             <div>
-              <span className="text-[10px] text-[#64748B] block uppercase font-medium">SAĞLIK & POSTÜR NOTU</span>
+              <span className="text-[10px] text-[#64748B] block uppercase font-medium">SAĞLIK NOTU</span>
               <span className="text-[#0F172A] font-semibold leading-relaxed">
                 {user.healthNotes || "Aktif bir sağlık uyarısı bulunmamaktadır."}
               </span>
@@ -362,12 +384,16 @@ export const ProfileTab: React.FC = () => {
                   Birincil
                 </span>
               </div>
-              <p className="text-xs text-[#334155] leading-relaxed">
-                {user.address?.street || "Abdi İpekçi Cad. No: 42/8"}
-              </p>
-              <p className="text-xs font-semibold text-[#0F172A]">
-                {user.address?.district || "Nişantaşı, Şişli"} / {user.address?.city || "İstanbul"}
-              </p>
+              {user.address?.street ? (
+                <>
+                  <p className="text-xs text-[#334155] leading-relaxed">{user.address.street}</p>
+                  <p className="text-xs font-semibold text-[#0F172A]">
+                    {user.address.district} / {user.address.city}
+                  </p>
+                </>
+              ) : (
+                <p className="text-xs text-[#64748B]">Henüz adres eklenmedi.</p>
+              )}
               {user.address?.postalCode && (
                 <span className="text-[11px] text-[#64748B] block">
                   Posta Kodu: {user.address.postalCode}
@@ -380,6 +406,41 @@ export const ProfileTab: React.FC = () => {
             Resmi fatura ve üyelik sözleşmesi tebligat adresi olarak kullanılır.
           </div>
         </div>
+      </div>
+
+      {/* Şifre değiştir */}
+      <div className="bg-white border border-black/[0.06] rounded-3xl p-6 shadow-[0_4px_24px_rgba(0,0,0,0.02)]">
+        <div className="flex items-center gap-2 mb-4">
+          <KeyRound className="w-4 h-4 text-[#10B981]" />
+          <h3 className="text-base font-bold font-display uppercase text-[#0F172A]">Şifre Değiştir</h3>
+        </div>
+        <form onSubmit={handleChangePassword} className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+          <input
+            type="password"
+            required
+            autoComplete="current-password"
+            placeholder="Mevcut şifre"
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+            className="min-h-11 bg-[#F8FAFC] border border-black/[0.08] rounded-xl px-3.5 text-[#0F172A] focus:outline-none focus:border-[#10B981]"
+          />
+          <input
+            type="password"
+            required
+            minLength={8}
+            autoComplete="new-password"
+            placeholder="Yeni şifre (en az 8 karakter)"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            className="min-h-11 bg-[#F8FAFC] border border-black/[0.08] rounded-xl px-3.5 text-[#0F172A] focus:outline-none focus:border-[#10B981]"
+          />
+          <button type="submit" className="min-h-11 rounded-xl bg-[#0F172A] text-white font-bold uppercase tracking-wider hover:bg-black">
+            Şifreyi Güncelle
+          </button>
+        </form>
+        {passwordMsg && (
+          <p className={`mt-3 text-xs font-medium ${passwordMsg.ok ? "text-emerald-700" : "text-rose-600"}`}>{passwordMsg.text}</p>
+        )}
       </div>
 
       {/* Orders & Payments List */}
@@ -417,20 +478,18 @@ export const ProfileTab: React.FC = () => {
                     {ord.paymentStatus === "completed"
                       ? "Ödendi"
                       : ord.paymentMethod === "cash_register"
-                      ? "Kasada Nakit"
-                      : ord.paymentMethod === "pos_register"
-                      ? "Kasada POS"
+                      ? "Stüdyoda Ödenecek"
                       : "Havale Bekliyor"}
                   </span>
                 </div>
                 <span className="text-[11px] text-[#64748B] block mt-1">
-                  {ord.orderNumber} • {ord.createdAt} • {ord.paymentMethod.toUpperCase()}
+                  {ord.orderNumber} • {formatDateMedium(ord.createdAt)} • {PAYMENT_LABEL[ord.paymentMethod]}
                 </span>
               </div>
 
               <div className="flex items-center gap-4 justify-between sm:justify-end border-t sm:border-t-0 border-black/[0.05] pt-2 sm:pt-0">
                 <span className="font-black text-sm text-[#0F172A]">
-                  {ord.formattedAmount}
+                  {formatTL(ord.amount)}
                 </span>
 
                 <button
@@ -492,7 +551,7 @@ export const ProfileTab: React.FC = () => {
                   <input
                     type="text"
                     required
-                    placeholder="14 Mayıs 1994 (32 Yaş)"
+                    placeholder="Örn: 14 Mayıs 1994"
                     value={editBirthDate}
                     onChange={(e) => setEditBirthDate(e.target.value)}
                     className="w-full bg-[#F8FAFC] border border-black/[0.08] rounded-xl px-3.5 py-2.5 text-xs text-[#0F172A] focus:outline-none focus:border-[#10B981]"
@@ -527,7 +586,7 @@ export const ProfileTab: React.FC = () => {
 
                 <div>
                   <label className="text-[10px] font-bold text-[#64748B] uppercase block mb-1">
-                    SAĞLIK & POSTÜR / SAKATLIK NOTLARI
+                    SAĞLIK / SAKATLIK NOTLARI
                   </label>
                   <textarea
                     rows={3}

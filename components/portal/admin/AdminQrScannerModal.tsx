@@ -1,36 +1,30 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import jsQR from "jsqr";
 import {
   X,
   Camera,
-  QrCode,
   CheckCircle2,
   AlertCircle,
   Zap,
   Volume2,
   VolumeX,
-  RefreshCw,
   Upload,
-  Image as ImageIcon,
-  Sparkles,
 } from "lucide-react";
 import { useMember } from "@/context/MemberContext";
 
 interface AdminQrScannerModalProps {
   isOpen: boolean;
   onClose: () => void;
-  defaultCoach?: string;
 }
 
 export const AdminQrScannerModal: React.FC<AdminQrScannerModalProps> = ({
   isOpen,
   onClose,
-  defaultCoach = "İlker Yüksel",
 }) => {
-  const { user, remainingSessions, adminCheckInMember } = useMember();
+  const { adminCheckIn } = useMember();
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -40,10 +34,8 @@ export const AdminQrScannerModal: React.FC<AdminQrScannerModalProps> = ({
     status: "success" | "error";
     memberName: string;
     memberNo: string;
-    remaining: number;
     message: string;
     time: string;
-    rawPayload?: string;
   } | null>(null);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -56,7 +48,8 @@ export const AdminQrScannerModal: React.FC<AdminQrScannerModalProps> = ({
   const playTurnstileSound = (type: "success" | "error") => {
     if (!soundEnabled) return;
     try {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      const AudioCtx =
+        window.AudioContext || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
       if (!AudioCtx) return;
       const ctx = new AudioCtx();
       const osc = ctx.createOscillator();
@@ -85,161 +78,115 @@ export const AdminQrScannerModal: React.FC<AdminQrScannerModalProps> = ({
     }
   };
 
-  // Process decoded QR data
-  const handleDecodedData = useCallback(
-    (decodedString: string) => {
-      if (isProcessingScan) return;
-      setIsProcessingScan(true);
+  const processingRef = useRef(false);
 
-      // Parse format: CF-PASS|CF-89210|Ege Mert|minute|hash OR simple memberNo
-      let memberNo = "CF-89210";
-      let memberName = user?.fullName || "Ege Mert";
+  // QR içeriğinden üye numarasını çıkarır ve girişi sunucuda işler (bakiye kontrolü sunucuda yapılır).
+  const handleDecodedData = async (decodedString: string) => {
+    if (processingRef.current) return;
+    processingRef.current = true;
+    setIsProcessingScan(true);
 
-      if (decodedString.includes("|")) {
-        const parts = decodedString.split("|");
-        if (parts.length >= 3) {
-          memberNo = parts[1] || memberNo;
-          memberName = parts[2] || memberName;
-        }
-      } else if (decodedString.includes("CF-")) {
-        const match = decodedString.match(/CF-\d+/);
-        if (match) memberNo = match[0];
-      }
-
-      if (remainingSessions <= 0) {
-        playTurnstileSound("error");
-        setScanResult({
-          status: "error",
-          memberName,
-          memberNo,
-          remaining: 0,
-          message: "GEÇİŞ REDDEDİLDİ: Üyenin kalan seansı yok (0 Seans)!",
-          time: new Date().toLocaleTimeString("tr-TR"),
-          rawPayload: decodedString,
-        });
-
-        setTimeout(() => {
-          setScanResult(null);
-          setIsProcessingScan(false);
-        }, 3500);
-        return;
-      }
-
-      // Deduct 1 session automatically
-      adminCheckInMember({
-        coachName: defaultCoach,
-        sessionType: "1:1 Birebir Antrenman (Turnike Girişi)",
-        performanceNote: "Optik kamera ile gerçek QR kod okundu ve kapı açıldı.",
-        keyMetric: "Canlı Optik QR Doğrulandı",
-      });
-
-      playTurnstileSound("success");
-      setScanResult({
-        status: "success",
-        memberName,
-        memberNo,
-        remaining: remainingSessions - 1,
-        message: "GERÇEK QR OKUNDU • TURNİKE AÇILDI (-1 SEANS)",
-        time: new Date().toLocaleTimeString("tr-TR"),
-        rawPayload: decodedString,
-      });
-
-      // Auto reset after 3.5 seconds
-      setTimeout(() => {
-        setScanResult(null);
-        setIsProcessingScan(false);
-      }, 3500);
-    },
-    [isProcessingScan, remainingSessions, user, defaultCoach, adminCheckInMember]
-  );
-
-  // Frame decoding loop using jsQR
-  const scanVideoFrame = useCallback(() => {
-    if (!videoRef.current || !canvasRef.current || isProcessingScan) {
-      animationFrameRef.current = requestAnimationFrame(scanVideoFrame);
-      return;
+    // Biçim: CF-PASS|<üye no>|<ad>|<dakika>|<özet> veya yalnızca üye numarası
+    let memberNo = "";
+    let memberName = "";
+    if (decodedString.includes("|")) {
+      const parts = decodedString.split("|");
+      memberNo = parts[1] || "";
+      memberName = parts[2] || "";
+    } else {
+      memberNo = decodedString.match(/CF-\d+/)?.[0] ?? "";
     }
 
-    const video = videoRef.current;
-    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+    const res = memberNo ? await adminCheckIn(memberNo) : { ok: false as const, error: "QR kodu okunamadı." };
+    playTurnstileSound(res.ok ? "success" : "error");
+    setScanResult({
+      status: res.ok ? "success" : "error",
+      memberName,
+      memberNo,
+      message: res.ok ? res.message ?? "Giriş onaylandı." : res.error,
+      time: new Date().toLocaleTimeString("tr-TR"),
+    });
+
+    setTimeout(() => {
+      setScanResult(null);
+      setIsProcessingScan(false);
+      processingRef.current = false;
+    }, 3500);
+  };
+
+  // Kamera döngüsü her zaman en güncel işleyiciyi çağırır.
+  const decodeRef = useRef(handleDecodedData);
+  useEffect(() => {
+    decodeRef.current = handleDecodedData;
+  });
+
+  // Modal açıkken kamerayı başlatır, kapanınca akışı durdurur. "Tekrar Dene" cameraAttempt'i artırır.
+  const [cameraAttempt, setCameraAttempt] = useState(0);
+  useEffect(() => {
+    if (!isOpen) return;
+    let cancelled = false;
+
+    const scanFrame = () => {
+      const video = videoRef.current;
       const canvas = canvasRef.current;
-      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      if (video && canvas && !processingRef.current && video.readyState === video.HAVE_ENOUGH_DATA) {
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
+        if (ctx) {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
+          if (code?.data?.trim()) void decodeRef.current(code.data);
+        }
+      }
+      animationFrameRef.current = requestAnimationFrame(scanFrame);
+    };
 
-      if (ctx) {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const code = jsQR(imageData.data, imageData.width, imageData.height, {
-          inversionAttempts: "dontInvert",
+    const startCamera = async () => {
+      try {
+        if (!navigator.mediaDevices?.getUserMedia) throw new Error("unsupported");
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
         });
-
-        if (code && code.data && code.data.trim()) {
-          handleDecodedData(code.data);
+        if (cancelled) {
+          stream.getTracks().forEach((track) => track.stop());
           return;
         }
-      }
-    }
-
-    animationFrameRef.current = requestAnimationFrame(scanVideoFrame);
-  }, [isProcessingScan, handleDecodedData]);
-
-  // Start / Stop Camera Stream
-  useEffect(() => {
-    if (!isOpen) {
-      stopCamera();
-      setScanResult(null);
-      return;
-    }
-
-    startCamera();
-    return () => stopCamera();
-  }, [isOpen]);
-
-  const startCamera = async () => {
-    setCameraError(null);
-    try {
-      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: "environment",
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-          },
-        });
         streamRef.current = stream;
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
           videoRef.current.setAttribute("playsinline", "true");
           await videoRef.current.play();
         }
+        setCameraError(null);
         setCameraActive(true);
-        animationFrameRef.current = requestAnimationFrame(scanVideoFrame);
-      } else {
-        setCameraError("Tarayıcınız kamera akışını desteklemiyor.");
+        animationFrameRef.current = requestAnimationFrame(scanFrame);
+      } catch (err) {
+        if (cancelled) return;
+        setCameraActive(false);
+        setCameraError(
+          err instanceof Error && err.message === "unsupported"
+            ? "Tarayıcınız kamera akışını desteklemiyor."
+            : err instanceof DOMException && err.name === "NotAllowedError"
+              ? "Kamera erişim izni verilmedi. Tarayıcı izinlerinden kamerayı aktif edebilir veya görsel yükleyebilirsiniz."
+              : "Kamera bulunamadı veya başka bir uygulama tarafından kullanılıyor."
+        );
       }
-    } catch (err: any) {
-      setCameraActive(false);
-      setCameraError(
-        err.name === "NotAllowedError"
-          ? "Kamera erişim izni verilmedi. Tarayıcı izinlerinden kamerayı aktif edebilir veya görsel yükleyebilirsiniz."
-          : "Kamera bulunamadı veya başka bir uygulama tarafından kullanılıyor."
-      );
-    }
-  };
+    };
 
-  const stopCamera = () => {
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-      animationFrameRef.current = null;
-    }
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
+    void startCamera();
+    return () => {
+      cancelled = true;
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+      streamRef.current?.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
-    }
-    setCameraActive(false);
-  };
+      setCameraActive(false);
+    };
+  }, [isOpen, cameraAttempt]);
 
   // Decode QR from uploaded image file
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -399,18 +346,9 @@ export const AdminQrScannerModal: React.FC<AdminQrScannerModalProps> = ({
                     <span className="font-bold">{scanResult.memberName} ({scanResult.memberNo})</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-400">Kalan Bakiye:</span>
-                    <span className="font-bold text-emerald-400">{scanResult.remaining} Seans</span>
-                  </div>
-                  <div className="flex justify-between">
                     <span className="text-slate-400">Giriş Saati:</span>
                     <span className="font-mono">{scanResult.time}</span>
                   </div>
-                  {scanResult.rawPayload && (
-                    <div className="pt-1 text-[9px] text-slate-400 font-mono truncate border-t border-white/10">
-                      Token: {scanResult.rawPayload}
-                    </div>
-                  )}
                 </div>
 
                 <p className="text-[10px] text-slate-300 mt-2">
@@ -444,7 +382,7 @@ export const AdminQrScannerModal: React.FC<AdminQrScannerModalProps> = ({
 
             <button
               type="button"
-              onClick={() => startCamera()}
+              onClick={() => setCameraAttempt((n) => n + 1)}
               className="py-2.5 px-3 bg-white/10 hover:bg-white/15 text-white text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 transition-colors"
             >
               <Camera className="w-3.5 h-3.5 text-blue-400" />
@@ -452,18 +390,8 @@ export const AdminQrScannerModal: React.FC<AdminQrScannerModalProps> = ({
             </button>
           </div>
 
-          {/* Quick Simulation Button */}
-          <button
-            type="button"
-            onClick={() => handleDecodedData(`CF-PASS|CF-89210|${user?.fullName || "Ege Mert"}|${Math.floor(Date.now() / 60000)}|999111`)}
-            className="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-md flex items-center justify-center gap-2 active:scale-98"
-          >
-            <QrCode className="w-4 h-4" />
-            <span>Hızlı Test: Gerçek Üye QR'ını Okut (CF-89210)</span>
-          </button>
-
           <p className="text-[10px] text-center text-slate-400 leading-relaxed">
-            Telefonunuzdaki gerçek QR kodu kameraya tuttuğunuzda veya fotoğrafını yüklediğinizde <strong className="text-white">jsQR optik motoru</strong> kodu milisaniyeler içinde çözer ve turnikeden 1 seans otomatik düşürür.
+            Üyenin paneldeki QR kodunu kameraya tutun veya fotoğrafını yükleyin. Bugün onaylı randevusu varsa tamamlanır, yoksa 1 ders düşülür.
           </p>
         </div>
       </motion.div>

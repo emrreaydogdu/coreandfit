@@ -1,0 +1,12 @@
+import { adminUpdateMember, getAdminSnapshot } from "@/lib/server/repo";
+import { handle, requireAdmin } from "@/lib/server/auth";
+
+export async function PATCH(request: Request, ctx: { params: Promise<{ id: string }> }) {
+  return handle(async () => {
+    await requireAdmin();
+    const { id } = await ctx.params;
+    const body = await request.json().catch(() => ({}));
+    adminUpdateMember(id, body);
+    return Response.json(getAdminSnapshot());
+  });
+}

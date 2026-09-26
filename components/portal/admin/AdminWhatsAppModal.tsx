@@ -10,11 +10,13 @@ import {
   CreditCard,
   Award,
   Sparkles,
-  Phone,
   Copy,
   CheckCircle2,
 } from "lucide-react";
 import { useMember } from "@/context/MemberContext";
+import { formatDateLong } from "@/lib/format";
+import { todayIso } from "@/lib/slots";
+import { HEAD_COACH_NAME } from "@/lib/training";
 
 interface AdminWhatsAppModalProps {
   isOpen: boolean;
@@ -24,7 +26,6 @@ interface AdminWhatsAppModalProps {
   defaultSessionInfo?: {
     date: string;
     timeSlot: string;
-    focusArea?: string;
   };
 }
 
@@ -37,27 +38,34 @@ export const AdminWhatsAppModal: React.FC<AdminWhatsAppModalProps> = ({
 }) => {
   const { studioSettings } = useMember();
 
-  const recipientName = defaultMemberName || "Ege Mert";
-  const recipientPhone = (defaultPhone || "+90 532 555 0124").replace(/\s+/g, "");
+  const recipientName = defaultMemberName || "";
+  const recipientPhone = (defaultPhone || "").replace(/\s+/g, "");
+  const coachShort = `${HEAD_COACH_NAME.split(" ")[0]} Hoca`;
+  const sessionDay = defaultSessionInfo
+    ? defaultSessionInfo.date === todayIso()
+      ? "Bugün"
+      : `${formatDateLong(defaultSessionInfo.date)} günü`
+    : "Bugün";
+  const bank = studioSettings?.bankAccounts[0];
 
   const [activeTemplate, setActiveTemplate] = useState<
     "reminder" | "remaining" | "payment" | "feedback"
   >("reminder");
 
   const templates = {
-    reminder: `Merhaba ${recipientName}, Core & Fit Nişantaşı stüdyomuzda bugün${
-      defaultSessionInfo ? ` saat ${defaultSessionInfo.timeSlot}` : " planlanan saatte"
-    } İlker Hoca ile 1:1 Personal Training seansınız bulunmaktadır. Biyomekanik hazırlık için 10 dakika öncesinde hazır olmanızı rica eder, keyifli bir antrenman dileriz. 💪`,
+    reminder: `Merhaba ${recipientName} 👋\n\n${sessionDay} ${
+      defaultSessionInfo ? `${defaultSessionInfo.timeSlot} saatleri arasında` : "planlanan saatte"
+    } ${coachShort} ile Core & Fit’te antrenmanınız bulunmaktadır.\n\nSeansınızdan yaklaşık 10 dakika önce stüdyoda olmanızı rica ederiz.\n\nKeyifli bir antrenman dileriz. 💪\n\nCore & Fit`,
 
-    remaining: `Merhaba ${recipientName}, Core & Fit stüdyomuzdaki mevcut seans paketinizde son 1 seansınız kalmıştır. Antrenman programınızın ve kuvvet gelişiminizin kesintiye uğramaması adına yeni dönem seans rezervasyonunuzu stüdyodan veya panelinizden yenileyebilirsiniz. Detaylar için buradayız!`,
+    remaining: `Merhaba ${recipientName}, Core & Fit stüdyomuzdaki mevcut seans paketinizde son 1 seansınız kalmıştır. Antrenman düzeninizin kesintiye uğramaması için yeni paketinizi stüdyodan veya üye panelinizden alabilirsiniz. Detaylar için buradayız!`,
 
-    payment: `Merhaba ${recipientName}, Core & Fit stüdyo paket ödemeniz için stüdyomuz banka bilgileri:\n\nBanka: ${
-      studioSettings.bankAccounts[0]?.bankName || "Garanti BBVA"
-    }\nAlıcı: ${studioSettings.legalTitle}\nIBAN: ${
-      studioSettings.bankAccounts[0]?.iban || "TR34 0006 2000 1234 5678 9012 34"
-    }\n\nÖdeme sonrası dekontu bu numaraya iletmeniz halinde seanslarınız hesabınıza anında tanımlanacaktır.`,
+    payment: `Merhaba ${recipientName}, Core & Fit paket ödemeniz için banka bilgilerimiz:\n\nBanka: ${
+      bank?.bankName ?? ""
+    }\nAlıcı: ${studioSettings?.legalTitle ?? ""}\nIBAN: ${
+      bank?.iban ?? ""
+    }\n\nÖdeme sonrası dekontu bu numaraya iletmeniz halinde dersleriniz hesabınıza tanımlanacaktır.`,
 
-    feedback: `Tebrikler ${recipientName}! Bugünkü antrenmanda sergilediğin form ve core stabilizasyonu harikaydı. 👏 Dinlenme sürecinde bol su tüketmeyi ve kas toparlanması için kaliteli protein alımını ihmal etme. Bir sonraki seansta görüşmek üzere!`,
+    feedback: `Tebrikler ${recipientName}! Bugünkü antrenmanda harika iş çıkardın. 👏 Bol su içmeyi ve iyi dinlenmeyi unutma. Bir sonraki seansta görüşmek üzere!`,
   };
 
   const [messageText, setMessageText] = useState(templates.reminder);
@@ -122,19 +130,19 @@ export const AdminWhatsAppModal: React.FC<AdminWhatsAppModalProps> = ({
               HAZIR STÜDYO ŞABLONLARI
             </label>
             <div className="grid grid-cols-2 gap-2">
-              {[
+              {([
                 { id: "reminder", label: "Randevu Hatırlatma", icon: Calendar },
-                { id: "remaining", label: "Kalan Seans / Yenileme", icon: Award },
+                { id: "remaining", label: "Kalan Ders / Yenileme", icon: Award },
                 { id: "payment", label: "Kasa & IBAN Bilgisi", icon: CreditCard },
-                { id: "feedback", label: "Tebrik & Koç Notu", icon: Sparkles },
-              ].map((tpl) => {
+                { id: "feedback", label: "Tebrik Mesajı", icon: Sparkles },
+              ] as const).map((tpl) => {
                 const Icon = tpl.icon;
                 const isActive = activeTemplate === tpl.id;
                 return (
                   <button
                     key={tpl.id}
                     type="button"
-                    onClick={() => handleSelectTemplate(tpl.id as any)}
+                    onClick={() => handleSelectTemplate(tpl.id)}
                     className={`p-2.5 rounded-xl border text-left flex items-center gap-2 transition-all ${
                       isActive
                         ? "border-emerald-600 bg-emerald-50/80 text-emerald-900 font-bold"

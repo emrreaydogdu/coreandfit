@@ -1,7 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
-import { PACKAGES_DATA } from "@/data/packages";
+import React, { useEffect, useState } from "react";
+import { ALL_PACKAGES, INDIVIDUAL_PACKAGES } from "@/data/packages";
+import { formatTL } from "@/lib/pricing";
+import { SELECT_PACKAGE_EVENT } from "@/components/packages/PublicPackageGrid";
 import { buildPackageWhatsAppUrl } from "@/lib/whatsapp";
 import { MessageSquare, Send, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
@@ -13,8 +15,7 @@ interface PackageInquiryFormProps {
 export const PackageInquiryForm: React.FC<PackageInquiryFormProps> = ({
   defaultPackageSlug,
 }) => {
-  const defaultPkg =
-    PACKAGES_DATA.find((p) => p.slug === defaultPackageSlug) || PACKAGES_DATA[2];
+  const defaultPkg = ALL_PACKAGES.find((p) => p.slug === defaultPackageSlug) || INDIVIDUAL_PACKAGES[2];
 
   const [formData, setFormData] = useState({
     name: "",
@@ -28,6 +29,16 @@ export const PackageInquiryForm: React.FC<PackageInquiryFormProps> = ({
   });
 
   const [submitted, setSubmitted] = useState(false);
+
+  // Paket kartından veya Düet penceresinden gelen seçimi forma işler
+  useEffect(() => {
+    const onSelect = (e: Event) => {
+      const pkg = ALL_PACKAGES.find((p) => p.id === (e as CustomEvent<string>).detail);
+      if (pkg) setFormData((prev) => ({ ...prev, packageName: pkg.name }));
+    };
+    window.addEventListener(SELECT_PACKAGE_EVENT, onSelect);
+    return () => window.removeEventListener(SELECT_PACKAGE_EVENT, onSelect);
+  }, []);
   const [error, setError] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -145,9 +156,9 @@ export const PackageInquiryForm: React.FC<PackageInquiryFormProps> = ({
               }
               className="w-full bg-[#131519] border border-[#23272F] focus:border-[#E8FF36] px-3.5 py-2.5 text-white focus:outline-none"
             >
-              {PACKAGES_DATA.map((p) => (
+              {ALL_PACKAGES.map((p) => (
                 <option key={p.id} value={p.name} className="bg-[#08090B]">
-                  {p.name} ({p.sessionCount})
+                  {p.name} ({formatTL(p.basePrice)})
                 </option>
               ))}
             </select>
@@ -165,7 +176,7 @@ export const PackageInquiryForm: React.FC<PackageInquiryFormProps> = ({
               <option value="Yağ Kaybı & Sıkılaşma">Yağ Kaybı & Sıkılaşma</option>
               <option value="Kas Kazanımı & Hipertrofi">Kas Kazanımı & Hipertrofi</option>
               <option value="Saf Kuvvet & Güç">Saf Kuvvet & Güç</option>
-              <option value="Kondisyon & VO2 Max">Kondisyon & VO2 Max</option>
+              <option value="Kondisyon & Dayanıklılık">Kondisyon & Dayanıklılık</option>
               <option value="Postür Düzeltme & Mobilite">Postür Düzeltme & Mobilite</option>
               <option value="Spora Sıfırdan Başlangıç">Spora Sıfırdan Başlangıç</option>
             </select>

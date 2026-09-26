@@ -6,15 +6,12 @@ import {
   X,
   QrCode,
   ShieldCheck,
-  Zap,
   RefreshCw,
-  Sparkles,
   MapPin,
-  Clock,
-  Dumbbell,
-  CheckCircle2,
 } from "lucide-react";
 import { useMember } from "@/context/MemberContext";
+import { todayIso } from "@/lib/slots";
+import { ACTIVE_BOOKING_STATUSES, workoutLabel } from "@/lib/training";
 
 interface QuickQrModalProps {
   isOpen: boolean;
@@ -27,7 +24,9 @@ export const QuickQrModal: React.FC<QuickQrModalProps> = ({ isOpen, onClose }) =
   const [tokenSeed, setTokenSeed] = useState<string>("8921-9941");
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
-  const upcomingSession = bookedSessions[0];
+  const upcomingSession = bookedSessions.find(
+    (s) => s.date === todayIso() && ACTIVE_BOOKING_STATUSES.includes(s.status)
+  );
 
   useEffect(() => {
     if (!isOpen) return;
@@ -159,7 +158,7 @@ export const QuickQrModal: React.FC<QuickQrModalProps> = ({ isOpen, onClose }) =
           {/* Next Session Context */}
           {upcomingSession && (
             <div className="w-full mt-2 text-center text-[10px] text-slate-400 font-sans z-10">
-              Bugün {upcomingSession.timeSlot} • {upcomingSession.station}
+              Bugün {upcomingSession.timeSlot} • {workoutLabel(upcomingSession.workoutType)}
             </div>
           )}
         </motion.div>

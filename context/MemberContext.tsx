@@ -1,1439 +1,520 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
-import {
-  MemberUser,
-  BookedSession,
-  CheckInLog,
-  OrderItem,
-  PortalTab,
-  PaymentMethod,
-  SavedCard,
-  UserAddress,
-  StudioSettings,
-  StudioBankAccount,
-  CoachScheduleProfile,
-  CoachDaySchedule,
-  CoachTimeSlot,
-  StudioInventoryItem,
-  StudioMaintenanceTask,
-  StudioDailyChecklistItem,
-  StudioMemberCRM,
+import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
+import type {
+  AdminSnapshot,
+  AvailabilityData,
   BodyMeasurementRecord,
-  WorkoutRoutine,
-  UserBadge,
+  BookedSession,
+  CoachScheduleProfile,
+  CoachTimeSlot,
+  MemberGift,
+  MemberSnapshot,
+  MemberStatus,
+  MemberUser,
+  OrderItem,
+  PaymentMethod,
+  PortalTab,
+  ReferralSummary,
+  SavedCard,
+  StudioBankAccount,
+  StudioMemberCRM,
+  StudioSettings,
+  UserAddress,
 } from "@/types/portal";
-import {
-  DEMO_USER,
-  INITIAL_BOOKED_SESSIONS,
-  INITIAL_CHECKIN_LOGS,
-  INITIAL_ORDERS,
-  PORTAL_PACKAGES,
-  DEFAULT_STUDIO_SETTINGS,
-  DEFAULT_COACH_SCHEDULES,
-  DEFAULT_CRM_MEMBERS,
-  DEFAULT_INVENTORY_ITEMS,
-  DEFAULT_MAINTENANCE_TASKS,
-  DEFAULT_CHECKLIST,
-  INITIAL_BODY_MEASUREMENTS,
-  INITIAL_WORKOUT_ROUTINE,
-  INITIAL_USER_BADGES,
-} from "@/data/portal-mock";
+import { ACTIVE_BOOKING_STATUSES, type ProgramDay } from "@/lib/training";
+import { slotStatus, todayIso, timeSlotsOverlap, type SlotUnavailableReason } from "@/lib/slots";
+
+export type ActionResult = { ok: true; message?: string } | { ok: false; error: string };
+
+type MeasurementInput = Omit<BodyMeasurementRecord, "id" | "memberId">;
 
 interface MemberContextType {
   user: MemberUser | null;
   isAuthenticated: boolean;
+  isAdmin: boolean;
   mounted: boolean;
   activeTab: PortalTab;
   setActiveTab: (tab: PortalTab) => void;
+  canGoBack: boolean;
+  goBack: () => void;
   viewMode: "app_frame" | "responsive";
-  setViewMode: (mode: "app_frame" | "responsive") => void;
   toggleViewMode: () => void;
+  refresh: () => Promise<void>;
 
-  // Seans Durumları
+  // Üye verisi (yönetici için bookedSessions tüm randevulardır)
   remainingSessions: number;
   totalSessions: number;
   packageExpiry: string;
   bookedSessions: BookedSession[];
-  checkInLogs: CheckInLog[];
+  bodyMeasurements: BodyMeasurementRecord[];
+  program: ProgramDay[];
+  gifts: MemberGift[];
   orders: OrderItem[];
+  referral: ReferralSummary | null;
+  bankAccounts: StudioBankAccount[];
 
-  // İşletme & Stüdyo Ayarları
-  studioSettings: StudioSettings;
-  updateStudioSettings: (newSettings: Partial<StudioSettings>) => void;
-  addStudioBankAccount: (account: Omit<StudioBankAccount, "id">) => void;
-  removeStudioBankAccount: (accountId: string) => void;
+  // Kimlik
+  login: (email: string, password: string) => Promise<{ ok: true; role: string } | { ok: false; error: string }>;
+  register: (data: {
+    fullName: string;
+    email: string;
+    phone: string;
+    password: string;
+    referralCode?: string;
+  }) => Promise<{ ok: true; referralApplied: boolean } | { ok: false; error: string }>;
+  logout: () => Promise<void>;
 
-  // Koç Randevu Saatleri & Müsaitlik
+  // Üye işlemleri
+  bookSession: (data: { date: string; timeSlot: string; workoutType: string; memberNote?: string }) => Promise<ActionResult>;
+  cancelSession: (sessionId: string) => Promise<ActionResult>;
+  purchasePackage: (data: { packageId: string; paymentMethod: PaymentMethod }) => Promise<
+    { ok: true; order: OrderItem } | { ok: false; error: string }
+  >;
+  addBodyMeasurement: (m: MeasurementInput) => Promise<ActionResult>;
+  updateUserProfile: (data: Partial<MemberUser>) => Promise<ActionResult>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<ActionResult>;
+  addSavedCard: (card: Omit<SavedCard, "id">) => Promise<ActionResult>;
+  removeSavedCard: (cardId: string) => Promise<ActionResult>;
+  setDefaultCard: (cardId: string) => Promise<ActionResult>;
+  updateAddress: (address: UserAddress) => Promise<ActionResult>;
+
+  // Müsaitlik
   coachSchedules: CoachScheduleProfile[];
+  coachBlockedDateSlots: Record<string, string[]>;
+  checkSlotAvailability: (
+    date: string,
+    timeSlot: string,
+    ignoreBookingId?: string
+  ) => { isAvailable: true } | { isAvailable: false; reason: SlotUnavailableReason };
+
+  // Yönetici verisi
+  crmMembers: StudioMemberCRM[];
+  adminOrders: OrderItem[];
+  adminMeasurements: BodyMeasurementRecord[];
+  adminGifts: MemberGift[];
+  studioSettings: StudioSettings | null;
+
+  // Yönetici işlemleri
+  adminCreateSession: (data: {
+    memberId: string;
+    date: string;
+    timeSlot: string;
+    workoutType: string;
+    internalNote?: string;
+    deductCredit: boolean;
+  }) => Promise<ActionResult>;
+  confirmBooking: (sessionId: string) => Promise<ActionResult>;
+  cancelBookedSession: (sessionId: string, refundCredit: boolean, reason?: string) => Promise<ActionResult>;
+  completeBookedSession: (sessionId: string, internalNote?: string) => Promise<ActionResult>;
+  rescheduleBookedSession: (sessionId: string, newDate: string, newTime: string) => Promise<ActionResult>;
+  approveOrder: (orderId: string) => Promise<ActionResult>;
+  adminQuickSale: (data: {
+    memberId: string;
+    packageId: string;
+    paymentMethod: PaymentMethod;
+    extraDiscountPercent?: number;
+  }) => Promise<{ ok: true; order: OrderItem } | { ok: false; error: string }>;
+  addNewMember: (data: {
+    fullName: string;
+    email: string;
+    phone: string;
+    initialSessions: number;
+    injuryAlert?: string;
+    targetGoal?: string;
+  }) => Promise<{ ok: true; memberNo: string; tempPassword: string } | { ok: false; error: string }>;
+  updateMemberDetails: (
+    memberId: string,
+    patch: {
+      status?: MemberStatus;
+      injuryAlert?: string;
+      targetGoal?: string;
+      healthNotes?: string;
+      program?: ProgramDay[];
+      referralCodeDisabled?: boolean;
+    }
+  ) => Promise<ActionResult>;
+  updateMemberSessions: (memberId: string, delta: number) => Promise<ActionResult>;
+  adminAddMeasurement: (memberId: string, m: MeasurementInput) => Promise<ActionResult>;
+  createGift: (data: { memberId: string | null; title: string; description: string }) => Promise<ActionResult>;
+  updateGiftStatus: (giftId: string, status: MemberGift["status"]) => Promise<ActionResult>;
+  adminCheckIn: (memberRef: string) => Promise<ActionResult>;
+  updateStudioSettings: (newSettings: Partial<StudioSettings>) => Promise<ActionResult>;
+  addStudioBankAccount: (account: Omit<StudioBankAccount, "id">) => Promise<ActionResult>;
+  removeStudioBankAccount: (accountId: string) => Promise<ActionResult>;
   updateCoachDayStatus: (coachId: string, dayKey: string, isWorkingDay: boolean) => void;
   toggleCoachSlotAvailability: (coachId: string, dayKey: string, slotId: string) => void;
   addCoachSlot: (coachId: string, dayKey: string, time: string, label?: string) => void;
   removeCoachSlot: (coachId: string, dayKey: string, slotId: string) => void;
   copyCoachScheduleToWeekdays: (coachId: string, sourceDayKey: string) => void;
-
-  // Yönetici Manuel Seans Planlama
-  adminCreateSession: (data: {
-    memberId?: string;
-    memberName: string;
-    memberNo?: string;
-    coachId: string;
-    coachName: string;
-    coachTitle?: string;
-    coachAvatar?: string;
-    date: string;
-    timeSlot: string;
-    focusArea: string;
-    station: string;
-    notes?: string;
-    deductCredit: boolean;
-  }) => { success: boolean; message: string; session: BookedSession };
-
-  // Fonksiyonlar
-  login: (email: string, pass: string) => boolean;
-  loginDemo: () => void;
-  logout: () => void;
-  register: (userData: { fullName: string; email: string; phone: string }) => void;
-  bookSession: (data: {
-    coachId: string;
-    coachName: string;
-    coachTitle: string;
-    coachAvatar: string;
-    date: string;
-    timeSlot: string;
-    focusArea: string;
-    station: string;
-    notes?: string;
-  }) => { success: boolean; message: string };
-  cancelSession: (sessionId: string) => { success: boolean; message: string };
-  purchasePackage: (data: {
-    packageId: string;
-    paymentMethod: PaymentMethod;
-    cardDetails?: {
-      cardNumber: string;
-      cardHolder: string;
-      expiry: string;
-      cvv: string;
-    };
-  }) => { success: boolean; order: OrderItem };
-
-  // Profil & Bilgi Güncelleme
-  updateUserProfile: (data: Partial<MemberUser>) => void;
-  addSavedCard: (card: Omit<SavedCard, "id">) => void;
-  removeSavedCard: (cardId: string) => void;
-  setDefaultCard: (cardId: string) => void;
-  updateAddress: (address: UserAddress) => void;
-
-  // Yönetici & Koç İşlemleri
-  approveOrder: (orderId: string) => void;
-  adminCheckInMember: (data: {
-    coachName: string;
-    sessionType: string;
-    performanceNote: string;
-    keyMetric?: string;
-  }) => { success: boolean; message: string };
-  adminAddSessions: (count: number) => void;
-  completeBookedSession: (sessionId: string, coachNote: string, metric?: string) => void;
-  cancelBookedSession: (sessionId: string, refundCredit: boolean, reason?: string) => { success: boolean; message: string };
-  rescheduleBookedSession: (sessionId: string, newDate: string, newTime: string) => { success: boolean; message: string };
-  adminQuickSale: (data: {
-    memberName: string;
-    memberNo?: string;
-    packageId: string;
-    packageName: string;
-    sessionCount: number;
-    amount: number;
-    paymentMethod: PaymentMethod;
-    discountPercent?: number;
-    notes?: string;
-  }) => { success: boolean; order: OrderItem };
-
-  // CRM Üye Yönetimi
-  crmMembers: StudioMemberCRM[];
-  addNewMember: (member: Omit<StudioMemberCRM, "id" | "memberNo">) => StudioMemberCRM;
-  updateMemberSessions: (memberId: string, delta: number) => void;
-  updateMemberDetails: (memberId: string, data: Partial<StudioMemberCRM>) => void;
-
-  // Envanter & Donanım Bakımı
-  inventoryItems: StudioInventoryItem[];
-  updateInventoryQty: (itemId: string, delta: number) => void;
-  addInventoryItem: (item: Omit<StudioInventoryItem, "id" | "lastRestocked">) => void;
-  maintenanceTasks: StudioMaintenanceTask[];
-  toggleMaintenanceStatus: (taskId: string) => void;
-
-  // Günlük Stüdyo Brifingi & Checklist
-  dailyChecklist: StudioDailyChecklistItem[];
-  toggleChecklistItem: (itemId: string) => void;
-  addChecklistItem: (title: string, category: "acilis" | "hijyen" | "kapanis" | "guvenlik") => void;
-  dailyNotes: string;
-  updateDailyNotes: (notes: string) => void;
-
-  // Tarih Bazlı Müsaitlik & Doluluk (Date-Integrated Slots)
-  coachBlockedDateSlots: Record<string, string[]>;
   toggleCoachSlotForDate: (date: string, timeSlot: string) => void;
-  checkSlotAvailability: (date: string, timeSlot: string) => {
-    isAvailable: boolean;
-    reason?: "booked" | "blocked" | "day_off" | "break";
-    session?: BookedSession;
-  };
 
-  // Vücut Ölçümleri & InBody
-  bodyMeasurements: BodyMeasurementRecord[];
-  addBodyMeasurement: (m: Omit<BodyMeasurementRecord, "id" | "coachConfirmed">) => void;
-
-  // Antrenman Programı & Form
-  activeWorkout: WorkoutRoutine;
-  completedExerciseIds: string[];
-  toggleExerciseCompleted: (exerciseId: string) => void;
-  resetWorkoutProgress: () => void;
-
-  // Günlük Su & Alışkanlık & Rozetler
-  waterIntakeMl: number;
-  addWater: (amountMl: number) => void;
-  resetWater: () => void;
-  userBadges: UserBadge[];
-  streakWeeks: number;
-
-  // Hızlı Turnike QR Modal
+  // Hızlı turnike QR penceresi
   isQuickQrOpen: boolean;
   setIsQuickQrOpen: (open: boolean) => void;
 }
 
 const MemberContext = createContext<MemberContextType | undefined>(undefined);
 
-const STORAGE_KEYS = {
-  USER: "cf_member_user",
-  REMAINING: "cf_member_remaining_sessions",
-  TOTAL: "cf_member_total_sessions",
-  EXPIRY: "cf_member_package_expiry",
-  BOOKED: "cf_member_booked_sessions",
-  CHECKIN: "cf_member_checkin_logs",
-  ORDERS: "cf_member_orders",
-  VIEW_MODE: "cf_member_view_mode",
-  STUDIO_SETTINGS: "cf_studio_settings",
-  COACH_SCHEDULES: "cf_coach_schedules",
-  CRM_MEMBERS: "cf_crm_members",
-  INVENTORY: "cf_studio_inventory",
-  MAINTENANCE: "cf_studio_maintenance",
-  CHECKLIST: "cf_daily_checklist",
-  DAILY_NOTES: "cf_daily_notes",
-  BLOCKED_DATE_SLOTS: "cf_coach_blocked_date_slots",
-  BODY_MEASUREMENTS: "cf_body_measurements",
-  WORKOUT_ROUTINE: "cf_workout_routine",
-  COMPLETED_EXERCISES: "cf_completed_exercises",
-  WATER_INTAKE: "cf_water_intake",
-  USER_BADGES: "cf_user_badges",
-};
+const VIEW_MODE_KEY = "cf_member_view_mode";
+
+async function api<T>(url: string, init?: { method?: string; body?: unknown }): Promise<T> {
+  const res = await fetch(url, {
+    method: init?.method ?? "GET",
+    headers: init?.body !== undefined ? { "Content-Type": "application/json" } : undefined,
+    body: init?.body !== undefined ? JSON.stringify(init.body) : undefined,
+    credentials: "same-origin",
+    cache: "no-store",
+  });
+  const data = await res.json().catch(() => null);
+  if (!res.ok) throw new Error((data && data.error) || "İşlem tamamlanamadı. Lütfen tekrar deneyin.");
+  return data as T;
+}
+
+const failure = (error: unknown) => ({
+  ok: false as const,
+  error: error instanceof Error ? error.message : "İşlem tamamlanamadı.",
+});
 
 export const MemberProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [mounted, setMounted] = useState(false);
-  const [user, setUser] = useState<MemberUser | null>(null);
-  const [activeTab, setActiveTab] = useState<PortalTab>("dashboard");
+  const [snapshot, setSnapshot] = useState<MemberSnapshot | null>(null);
+  const [admin, setAdmin] = useState<AdminSnapshot | null>(null);
+  const [availability, setAvailability] = useState<AvailabilityData | null>(null);
+  const [activeTab, setActiveTabState] = useState<PortalTab>("dashboard");
+  // "Geri Dön" için portal içi sekme geçmişi
+  const [tabHistory, setTabHistory] = useState<PortalTab[]>([]);
   const [viewMode, setViewMode] = useState<"app_frame" | "responsive">("responsive");
+  const [isQuickQrOpen, setIsQuickQrOpen] = useState(false);
 
-  const [remainingSessions, setRemainingSessions] = useState<number>(9);
-  const [totalSessions, setTotalSessions] = useState<number>(12);
-  const [packageExpiry, setPackageExpiry] = useState<string>("28 Ekim 2026");
-  const [bookedSessions, setBookedSessions] = useState<BookedSession[]>(INITIAL_BOOKED_SESSIONS);
-  const [checkInLogs, setCheckInLogs] = useState<CheckInLog[]>(INITIAL_CHECKIN_LOGS);
-  const [orders, setOrders] = useState<OrderItem[]>(INITIAL_ORDERS);
-  const [studioSettings, setStudioSettings] = useState<StudioSettings>(DEFAULT_STUDIO_SETTINGS);
-  const [coachSchedules, setCoachSchedules] = useState<CoachScheduleProfile[]>(DEFAULT_COACH_SCHEDULES);
-  const [crmMembers, setCrmMembers] = useState<StudioMemberCRM[]>(DEFAULT_CRM_MEMBERS);
-  const [inventoryItems, setInventoryItems] = useState<StudioInventoryItem[]>(DEFAULT_INVENTORY_ITEMS);
-  const [maintenanceTasks, setMaintenanceTasks] = useState<StudioMaintenanceTask[]>(DEFAULT_MAINTENANCE_TASKS);
-  const [dailyChecklist, setDailyChecklist] = useState<StudioDailyChecklistItem[]>(DEFAULT_CHECKLIST);
-  const [dailyNotes, setDailyNotes] = useState<string>(
-    "• Saat 15:00 - Özel istasyon kablo makaraları gresleme kontrolü\n• Burak Bey sağ omuz impingement kontrol edilecek (overhead pressten kaçın)\n• Akşam havlu çamaşır teslimatı teslim alınacak"
-  );
-  const [coachBlockedDateSlots, setCoachBlockedDateSlots] = useState<Record<string, string[]>>({});
+  const user = snapshot?.user ?? null;
+  const isAdmin = user?.role === "admin";
 
-  // Fitness & Mobil Uygulama Takip State'leri
-  const [bodyMeasurements, setBodyMeasurements] = useState<BodyMeasurementRecord[]>(INITIAL_BODY_MEASUREMENTS);
-  const [activeWorkout, setActiveWorkout] = useState<WorkoutRoutine>(INITIAL_WORKOUT_ROUTINE);
-  const [completedExerciseIds, setCompletedExerciseIds] = useState<string[]>(["ex-1", "ex-2"]);
-  const [waterIntakeMl, setWaterIntakeMl] = useState<number>(1250);
-  const [userBadges, setUserBadges] = useState<UserBadge[]>(INITIAL_USER_BADGES);
-  const [streakWeeks, setStreakWeeks] = useState<number>(3);
-  const [isQuickQrOpen, setIsQuickQrOpen] = useState<boolean>(false);
-
-  // LocalStorage senkronizasyonu
-  useEffect(() => {
-    try {
-      const savedUser = localStorage.getItem(STORAGE_KEYS.USER);
-      if (savedUser) {
-        try {
-          const parsed = JSON.parse(savedUser);
-          if (parsed && typeof parsed === "object") {
-            setUser({ ...DEMO_USER, ...parsed });
-          } else {
-            setUser(DEMO_USER);
-            localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(DEMO_USER));
-          }
-        } catch {
-          setUser(DEMO_USER);
-          localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(DEMO_USER));
-        }
-      } else {
-        // Varsayılan olarak hazır demo kullanıcı oturumu açık olsun (müşteriye anında çalışan deneyim)
-        setUser(DEMO_USER);
-        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(DEMO_USER));
-      }
-
-      const savedRemaining = localStorage.getItem(STORAGE_KEYS.REMAINING);
-      if (savedRemaining) setRemainingSessions(parseInt(savedRemaining, 10));
-
-      const savedTotal = localStorage.getItem(STORAGE_KEYS.TOTAL);
-      if (savedTotal) setTotalSessions(parseInt(savedTotal, 10));
-
-      const savedExpiry = localStorage.getItem(STORAGE_KEYS.EXPIRY);
-      if (savedExpiry) setPackageExpiry(savedExpiry);
-
-      const savedBooked = localStorage.getItem(STORAGE_KEYS.BOOKED);
-      if (savedBooked) {
-        try {
-          const parsed = JSON.parse(savedBooked);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            // Zorunlu Sanitizasyon: Stüdyo tek koçlu (İlker Yüksel) ve demo seansların (Örn: bugünkü 17:30 seansı) kaybolmamasını garanti et
-            const existingIds = new Set(parsed.map((s: any) => s.id));
-            const merged = [...parsed];
-            INITIAL_BOOKED_SESSIONS.forEach((initSess) => {
-              if (!existingIds.has(initSess.id)) {
-                merged.push(initSess);
-              }
-            });
-
-            const sanitized: BookedSession[] = merged.map((s: any) => ({
-              ...s,
-              coachId: "coach-1",
-              coachName: "İlker Yüksel",
-              coachTitle: "Kurucu & Baş Antrenör (Founder & Head Coach)",
-              coachAvatar:
-                "https://images.unsplash.com/photo-1567013127542-490d757e51fc?auto=format&fit=crop&w=400&q=80",
-            }));
-            setBookedSessions(sanitized);
-            localStorage.setItem(STORAGE_KEYS.BOOKED, JSON.stringify(sanitized));
-          } else {
-            setBookedSessions(INITIAL_BOOKED_SESSIONS);
-          }
-        } catch {
-          setBookedSessions(INITIAL_BOOKED_SESSIONS);
-        }
-      } else {
-        setBookedSessions(INITIAL_BOOKED_SESSIONS);
-      }
-
-      const savedCheckIn = localStorage.getItem(STORAGE_KEYS.CHECKIN);
-      if (savedCheckIn) {
-        try {
-          const parsed = JSON.parse(savedCheckIn);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            const sanitized: CheckInLog[] = parsed.map((l: any) => ({
-              ...l,
-              coachName: "İlker Yüksel",
-            }));
-            setCheckInLogs(sanitized);
-            localStorage.setItem(STORAGE_KEYS.CHECKIN, JSON.stringify(sanitized));
-          } else {
-            setCheckInLogs(INITIAL_CHECKIN_LOGS);
-          }
-        } catch {
-          setCheckInLogs(INITIAL_CHECKIN_LOGS);
-        }
-      } else {
-        setCheckInLogs(INITIAL_CHECKIN_LOGS);
-      }
-
-      const savedOrders = localStorage.getItem(STORAGE_KEYS.ORDERS);
-      if (savedOrders) setOrders(JSON.parse(savedOrders));
-
-      const savedSettings = localStorage.getItem(STORAGE_KEYS.STUDIO_SETTINGS);
-      if (savedSettings) {
-        setStudioSettings(JSON.parse(savedSettings));
-      } else {
-        setStudioSettings(DEFAULT_STUDIO_SETTINGS);
-        localStorage.setItem(STORAGE_KEYS.STUDIO_SETTINGS, JSON.stringify(DEFAULT_STUDIO_SETTINGS));
-      }
-
-      const savedSchedules = localStorage.getItem(STORAGE_KEYS.COACH_SCHEDULES);
-      if (savedSchedules) {
-        try {
-          const parsed = JSON.parse(savedSchedules);
-          // Tek koç İlker Yüksel programını doğrula ve garanti et
-          if (Array.isArray(parsed) && parsed.length === 1 && parsed[0]?.coachName === "İlker Yüksel") {
-            setCoachSchedules(parsed);
-          } else {
-            setCoachSchedules(DEFAULT_COACH_SCHEDULES);
-            localStorage.setItem(STORAGE_KEYS.COACH_SCHEDULES, JSON.stringify(DEFAULT_COACH_SCHEDULES));
-          }
-        } catch {
-          setCoachSchedules(DEFAULT_COACH_SCHEDULES);
-        }
-      } else {
-        setCoachSchedules(DEFAULT_COACH_SCHEDULES);
-        localStorage.setItem(STORAGE_KEYS.COACH_SCHEDULES, JSON.stringify(DEFAULT_COACH_SCHEDULES));
-      }
-
-      const savedMembers = localStorage.getItem(STORAGE_KEYS.CRM_MEMBERS);
-      if (savedMembers) {
-        try {
-          const parsed = JSON.parse(savedMembers);
-          if (Array.isArray(parsed) && parsed.length > 0) setCrmMembers(parsed);
-        } catch {
-          setCrmMembers(DEFAULT_CRM_MEMBERS);
-        }
-      }
-
-      const savedInv = localStorage.getItem(STORAGE_KEYS.INVENTORY);
-      if (savedInv) {
-        try {
-          const parsed = JSON.parse(savedInv);
-          if (Array.isArray(parsed) && parsed.length > 0) setInventoryItems(parsed);
-        } catch {
-          setInventoryItems(DEFAULT_INVENTORY_ITEMS);
-        }
-      }
-
-      const savedMaint = localStorage.getItem(STORAGE_KEYS.MAINTENANCE);
-      if (savedMaint) {
-        try {
-          const parsed = JSON.parse(savedMaint);
-          if (Array.isArray(parsed) && parsed.length > 0) setMaintenanceTasks(parsed);
-        } catch {
-          setMaintenanceTasks(DEFAULT_MAINTENANCE_TASKS);
-        }
-      }
-
-      const savedChecklist = localStorage.getItem(STORAGE_KEYS.CHECKLIST);
-      if (savedChecklist) {
-        try {
-          const parsed = JSON.parse(savedChecklist);
-          if (Array.isArray(parsed) && parsed.length > 0) setDailyChecklist(parsed);
-        } catch {
-          setDailyChecklist(DEFAULT_CHECKLIST);
-        }
-      }
-
-      const savedNotes = localStorage.getItem(STORAGE_KEYS.DAILY_NOTES);
-      if (savedNotes) setDailyNotes(savedNotes);
-
-      const savedBlocked = localStorage.getItem(STORAGE_KEYS.BLOCKED_DATE_SLOTS);
-      if (savedBlocked) {
-        try {
-          const parsed = JSON.parse(savedBlocked);
-          if (parsed && typeof parsed === "object") setCoachBlockedDateSlots(parsed);
-        } catch {}
-      }
-
-      const savedMeasurements = localStorage.getItem(STORAGE_KEYS.BODY_MEASUREMENTS);
-      if (savedMeasurements) {
-        try {
-          const parsed = JSON.parse(savedMeasurements);
-          if (Array.isArray(parsed) && parsed.length > 0) setBodyMeasurements(parsed);
-        } catch {}
-      }
-
-      const savedExercises = localStorage.getItem(STORAGE_KEYS.COMPLETED_EXERCISES);
-      if (savedExercises) {
-        try {
-          const parsed = JSON.parse(savedExercises);
-          if (Array.isArray(parsed)) setCompletedExerciseIds(parsed);
-        } catch {}
-      }
-
-      const savedWater = localStorage.getItem(STORAGE_KEYS.WATER_INTAKE);
-      if (savedWater) {
-        const parsed = parseInt(savedWater, 10);
-        if (!isNaN(parsed)) setWaterIntakeMl(parsed);
-      }
-
-      const savedViewMode = localStorage.getItem(STORAGE_KEYS.VIEW_MODE);
-      if (savedViewMode === "app_frame" || savedViewMode === "responsive") {
-        setViewMode(savedViewMode);
-      }
-    } catch (e) {
-      console.error("Storage error:", e);
-    } finally {
-      setMounted(true);
-    }
+  const loadAvailability = useCallback(async () => {
+    setAvailability(await api<AvailabilityData>("/api/availability"));
   }, []);
 
-  const saveToStorage = (key: string, value: any) => {
+  const refresh = useCallback(async () => {
     try {
-      if (typeof window !== "undefined") {
-        localStorage.setItem(key, typeof value === "string" ? value : JSON.stringify(value));
+      const me = await api<MemberSnapshot | null>("/api/me");
+      setSnapshot(me);
+      if (!me) {
+        setAdmin(null);
+        setAvailability(null);
+        return;
       }
-    } catch (e) {
-      console.error("Failed to save to storage:", e);
+      if (me.user.role === "admin") {
+        setAdmin(await api<AdminSnapshot>("/api/admin"));
+      } else {
+        await loadAvailability();
+      }
+    } catch {
+      setSnapshot(null);
     }
+  }, [loadAvailability]);
+
+  // İlk yüklemede oturumu sunucudan okur; state güncellemeleri istek tamamlandıktan sonra gelir.
+  useEffect(() => {
+    const load = async () => {
+      await refresh();
+      try {
+        const saved = localStorage.getItem(VIEW_MODE_KEY);
+        if (saved === "app_frame" || saved === "responsive") setViewMode(saved);
+      } catch {}
+      setMounted(true);
+    };
+    void load();
+  }, [refresh]);
+
+  const setActiveTab = (tab: PortalTab) => {
+    if (tab === activeTab) return;
+    setTabHistory((h) => [...h, activeTab].slice(-20));
+    setActiveTabState(tab);
+  };
+
+  const goBack = () => {
+    const previous = tabHistory[tabHistory.length - 1] ?? "dashboard";
+    setTabHistory((h) => h.slice(0, -1));
+    setActiveTabState(previous);
   };
 
   const toggleViewMode = () => {
-    const nextMode = viewMode === "app_frame" ? "responsive" : "app_frame";
-    setViewMode(nextMode);
-    saveToStorage(STORAGE_KEYS.VIEW_MODE, nextMode);
-  };
-
-  const login = (email: string, pass: string): boolean => {
-    // Basit doğrulama veya demo
-    const loggedUser: MemberUser = {
-      ...DEMO_USER,
-      email: email || DEMO_USER.email,
-    };
-    setUser(loggedUser);
-    saveToStorage(STORAGE_KEYS.USER, loggedUser);
-    return true;
-  };
-
-  const loginDemo = () => {
-    setUser(DEMO_USER);
-    saveToStorage(STORAGE_KEYS.USER, DEMO_USER);
-  };
-
-  const logout = () => {
-    setUser(null);
+    const next = viewMode === "app_frame" ? "responsive" : "app_frame";
+    setViewMode(next);
     try {
-      localStorage.removeItem(STORAGE_KEYS.USER);
-    } catch (e) {
-      console.error(e);
+      localStorage.setItem(VIEW_MODE_KEY, next);
+    } catch {}
+  };
+
+  // Üye uçları güncel snapshot döndürür; müsaitlik de tazelenir.
+  const memberAction = async (url: string, method: string, body?: unknown, successMessage?: string): Promise<ActionResult> => {
+    try {
+      setSnapshot(await api<MemberSnapshot>(url, { method, body }));
+      await loadAvailability();
+      return { ok: true, message: successMessage };
+    } catch (error) {
+      return failure(error);
     }
   };
 
-  const register = (userData: { fullName: string; email: string; phone: string }) => {
-    const newUser: MemberUser = {
-      id: `user-${Date.now()}`,
-      memberNo: `CF-${Math.floor(10000 + Math.random() * 90000)}`,
-      fullName: userData.fullName,
-      email: userData.email,
-      phone: userData.phone,
-      avatarUrl: DEMO_USER.avatarUrl,
-      membershipTier: "VIP 1:1 Personal Training",
-      joinDate: "Bugün",
-    };
-    setUser(newUser);
-    saveToStorage(STORAGE_KEYS.USER, newUser);
+  // Yönetici uçları güncel yönetici tablosunu döndürür.
+  const adminAction = async (url: string, method: string, body?: unknown, successMessage?: string): Promise<ActionResult> => {
+    try {
+      setAdmin(await api<AdminSnapshot>(url, { method, body }));
+      return { ok: true, message: successMessage };
+    } catch (error) {
+      return failure(error);
+    }
   };
 
-  // Tarih ve Saat Normalize Yardımcıları
-  const normalizeDateStr = (rawDate: string): string => {
-    if (!rawDate) return "";
-    const trimmed = rawDate.trim();
-
-    // Standard YYYY-MM-DD
-    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
-
-    // DD.MM.YYYY or DD/MM/YYYY
-    const dmyMatch = trimmed.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/);
-    if (dmyMatch) {
-      const day = dmyMatch[1].padStart(2, "0");
-      const month = dmyMatch[2].padStart(2, "0");
-      const year = dmyMatch[3];
-      return `${year}-${month}-${day}`;
+  // ---------------------------------------------------------------- Kimlik
+  const login: MemberContextType["login"] = async (email, password) => {
+    try {
+      const res = await api<{ role: string }>("/api/auth/login", { method: "POST", body: { email, password } });
+      await refresh();
+      return { ok: true, role: res.role };
+    } catch (error) {
+      return failure(error);
     }
-
-    const todayObj = new Date();
-    const todayIso = `${todayObj.getFullYear()}-${String(todayObj.getMonth() + 1).padStart(2, "0")}-${String(todayObj.getDate()).padStart(2, "0")}`;
-
-    if (trimmed.toLowerCase() === "bugün" || trimmed.toLowerCase() === "today") {
-      return todayIso;
-    }
-    if (trimmed.toLowerCase() === "yarın" || trimmed.toLowerCase() === "tomorrow") {
-      const tom = new Date(todayObj);
-      tom.setDate(todayObj.getDate() + 1);
-      return `${tom.getFullYear()}-${String(tom.getMonth() + 1).padStart(2, "0")}-${String(tom.getDate()).padStart(2, "0")}`;
-    }
-
-    const trMonths: Record<string, string> = {
-      ocak: "01", oca: "01",
-      subat: "02", şubat: "02", şub: "02",
-      mart: "03", mar: "03",
-      nisan: "04", nis: "04",
-      mayis: "05", mayıs: "05", may: "05",
-      haziran: "06", haz: "06",
-      temmuz: "07", tem: "07",
-      agustos: "08", ağustos: "08", ağu: "08",
-      eylul: "09", eylül: "09", eyl: "09",
-      ekim: "10", eki: "10",
-      kasim: "11", kasım: "11", kas: "11",
-      aralik: "12", aralık: "12", ara: "12",
-    };
-
-    const parts = trimmed.toLowerCase().split(/[\s,]+/);
-    if (parts.length >= 2) {
-      const dayMatch = parts[0].match(/\d+/);
-      const day = dayMatch ? dayMatch[0].padStart(2, "0") : "";
-      const monthKey = parts[1].replace(/[^a-zçşğüöı]/gi, "");
-      const month = trMonths[monthKey];
-      const yearMatch = parts.find((p, idx) => idx >= 2 && /^\d{4}$/.test(p));
-      const year = yearMatch || String(todayObj.getFullYear());
-      if (day && month) {
-        return `${year}-${month}-${day}`;
-      }
-    }
-    return trimmed;
   };
 
-  const isTimeSlotOverlap = (timeA: string, timeB: string): boolean => {
-    if (!timeA || !timeB) return false;
-    const cleanA = timeA.replace(/\./g, ":").trim();
-    const cleanB = timeB.replace(/\./g, ":").trim();
-    if (cleanA === cleanB) return true;
-
-    // Direct includes match (e.g. "17:30" in "17:30 - 18:30")
-    if (cleanA.includes(cleanB) || cleanB.includes(cleanA)) return true;
-
-    // Parse all HH:MM or HH in strings
-    const parseSlotTimes = (str: string) => {
-      const matches = Array.from(str.matchAll(/(\d{1,2}):(\d{2})/g));
-      if (matches.length === 0) {
-        const hourOnly = Array.from(str.matchAll(/(\d{1,2})/g));
-        if (hourOnly.length === 0) return null;
-        const h = parseInt(hourOnly[0][1], 10);
-        return { start: h * 60, end: h * 60 + 60 };
-      }
-      const start = parseInt(matches[0][1], 10) * 60 + parseInt(matches[0][2], 10);
-      let end = matches.length > 1
-        ? parseInt(matches[1][1], 10) * 60 + parseInt(matches[1][2], 10)
-        : start + 60;
-      if (end <= start) end = start + 60;
-      return { start, end };
-    };
-
-    const rangeA = parseSlotTimes(cleanA);
-    const rangeB = parseSlotTimes(cleanB);
-
-    if (rangeA && rangeB) {
-      if (rangeA.start === rangeB.start) return true;
-      if (Math.max(rangeA.start, rangeB.start) < Math.min(rangeA.end, rangeB.end)) {
-        return true;
-      }
+  const register: MemberContextType["register"] = async (data) => {
+    try {
+      const res = await api<{ referralApplied: boolean }>("/api/auth/register", { method: "POST", body: data });
+      await refresh();
+      return { ok: true, referralApplied: res.referralApplied };
+    } catch (error) {
+      return failure(error);
     }
-
-    return false;
   };
 
-  // Tarih ve Saat Bazlı Müsaitlik & Doluluk Kontrolü
-  const checkSlotAvailability = (date: string, timeSlot: string) => {
-    const normalizedTargetDate = normalizeDateStr(date);
-
-    // 1. Randevulu seans kontrolü (Örn: 21 Eylül saat 09:00'da Deniz Aydın veya başka danışan seansı varsa)
-    const booked = bookedSessions.find((sess) => {
-      if (sess.status === "cancelled") return false;
-      const sessNormDate = normalizeDateStr(sess.date);
-      const isDateEqual =
-        sessNormDate === normalizedTargetDate ||
-        sess.date === date ||
-        (date && sess.date && (sess.date.includes(date) || date.includes(sess.date)));
-      if (!isDateEqual) return false;
-
-      return isTimeSlotOverlap(sess.timeSlot, timeSlot);
-    });
-
-    if (booked) {
-      return { isAvailable: false, reason: "booked" as const, session: booked };
-    }
-
-    // 2. Koç tarafından o spesifik tarihe özel kapatılmış/blokelenmiş slot kontrolü
-    const blockedSlotsForDate = coachBlockedDateSlots[normalizedTargetDate] || coachBlockedDateSlots[date] || [];
-    const isBlocked = blockedSlotsForDate.some((bSlot) => isTimeSlotOverlap(bSlot, timeSlot));
-    if (isBlocked) {
-      return { isAvailable: false, reason: "blocked" as const };
-    }
-
-    // 3. Haftalık genel takvimdeki izinli gün veya mola kontrolü
-    if (normalizedTargetDate && normalizedTargetDate.includes("-")) {
-      const dObj = new Date(normalizedTargetDate);
-      if (!isNaN(dObj.getTime())) {
-        const dayIdx = dObj.getDay();
-        const dayKeys: ("paz" | "pzt" | "sal" | "car" | "per" | "cum" | "cts")[] = [
-          "paz", "pzt", "sal", "car", "per", "cum", "cts",
-        ];
-        const dayKey = dayKeys[dayIdx];
-        const currentCoach = coachSchedules.find((c) => c.coachId === "coach-1") || coachSchedules[0];
-        const daySched = currentCoach?.weeklySchedule.find((d) => d.dayKey === dayKey);
-
-        if (daySched && daySched.isWorkingDay === false) {
-          return { isAvailable: false, reason: "day_off" as const };
-        }
-
-        const slotInSched = daySched?.slots.find((s) => isTimeSlotOverlap(s.time, timeSlot));
-        if (slotInSched && slotInSched.isAvailable === false) {
-          return { isAvailable: false, reason: "break" as const };
-        }
-      }
-    }
-
-    return { isAvailable: true };
+  const logout = async () => {
+    await api("/api/auth/logout", { method: "POST" }).catch(() => null);
+    setSnapshot(null);
+    setAdmin(null);
+    setAvailability(null);
+    setTabHistory([]);
+    setActiveTabState("dashboard");
   };
 
-  // Koçun spesifik bir tarihteki slotunu Aç/Kapat (Dolu/Müsait yap)
-  const toggleCoachSlotForDate = (date: string, timeSlot: string) => {
-    const normalizedDate = normalizeDateStr(date);
-    setCoachBlockedDateSlots((prev) => {
-      const currentList = prev[normalizedDate] || [];
-      const alreadyBlocked = currentList.some((s) => isTimeSlotOverlap(s, timeSlot));
-      const nextList = alreadyBlocked
-        ? currentList.filter((s) => !isTimeSlotOverlap(s, timeSlot))
-        : [...currentList, timeSlot];
+  // ---------------------------------------------------------------- Üye
+  const bookSession: MemberContextType["bookSession"] = (data) =>
+    memberAction("/api/me/bookings", "POST", data, "Randevu talebiniz alındı. Onaylandığında bu ekranda göreceksiniz.");
 
-      const updated = { ...prev, [normalizedDate]: nextList };
-      saveToStorage(STORAGE_KEYS.BLOCKED_DATE_SLOTS, updated);
-      return updated;
-    });
+  const cancelSession: MemberContextType["cancelSession"] = (sessionId) =>
+    memberAction(`/api/me/bookings/${sessionId}`, "DELETE", undefined, "Randevu iptal edildi, ders hakkınız iade edildi.");
+
+  const purchasePackage: MemberContextType["purchasePackage"] = async (data) => {
+    try {
+      const res = await api<{ order: OrderItem; snapshot: MemberSnapshot }>("/api/me/orders", { method: "POST", body: data });
+      setSnapshot(res.snapshot);
+      return { ok: true, order: res.order };
+    } catch (error) {
+      return failure(error);
+    }
   };
 
-  // Yeni Seans Ayırtma
-  const bookSession = (data: {
-    coachId: string;
-    coachName: string;
-    coachTitle: string;
-    coachAvatar: string;
-    date: string;
-    timeSlot: string;
-    focusArea: string;
-    station: string;
-    notes?: string;
-  }) => {
-    if (remainingSessions <= 0) {
+  const addBodyMeasurement: MemberContextType["addBodyMeasurement"] = (m) =>
+    memberAction("/api/me/measurements", "POST", m, "Ölçüm kaydedildi.");
+
+  const updateUserProfile: MemberContextType["updateUserProfile"] = (data) =>
+    memberAction("/api/me", "PATCH", { profile: data }, "Bilgileriniz güncellendi.");
+
+  const changePassword: MemberContextType["changePassword"] = (currentPassword, newPassword) =>
+    memberAction("/api/me", "PATCH", { currentPassword, newPassword }, "Şifreniz güncellendi.");
+
+  const savedCards = user?.savedCards ?? [];
+  const addSavedCard: MemberContextType["addSavedCard"] = (card) => {
+    const newCard = { ...card, id: `card-${Date.now()}` };
+    const cards = newCard.isDefault ? [...savedCards.map((c) => ({ ...c, isDefault: false })), newCard] : [...savedCards, newCard];
+    return updateUserProfile({ savedCards: cards });
+  };
+  const removeSavedCard: MemberContextType["removeSavedCard"] = (cardId) =>
+    updateUserProfile({ savedCards: savedCards.filter((c) => c.id !== cardId) });
+  const setDefaultCard: MemberContextType["setDefaultCard"] = (cardId) =>
+    updateUserProfile({ savedCards: savedCards.map((c) => ({ ...c, isDefault: c.id === cardId })) });
+  const updateAddress: MemberContextType["updateAddress"] = (address) => updateUserProfile({ address });
+
+  // ---------------------------------------------------------------- Müsaitlik
+  const coachSchedules = admin?.coachSchedules ?? availability?.coachSchedules ?? [];
+  const coachBlockedDateSlots = admin?.blocked ?? availability?.blocked ?? {};
+  const occupied = admin
+    ? admin.bookings.filter((b) => ACTIVE_BOOKING_STATUSES.includes(b.status))
+    : availability?.occupied ?? [];
+
+  const checkSlotAvailability: MemberContextType["checkSlotAvailability"] = (date, timeSlot, ignoreBookingId) => {
+    if (date < todayIso()) return { isAvailable: false, reason: "past" };
+    return slotStatus({ occupied, blocked: coachBlockedDateSlots, coachSchedules }, date, timeSlot, ignoreBookingId);
+  };
+
+  // ---------------------------------------------------------------- Yönetici
+  const adminCreateSession: MemberContextType["adminCreateSession"] = async (data) => {
+    try {
+      const res = await api<{ result: { creditDeducted: boolean }; snapshot: AdminSnapshot }>("/api/admin/bookings", {
+        method: "POST",
+        body: data,
+      });
+      setAdmin(res.snapshot);
+      return { ok: true, message: res.result.creditDeducted ? "Randevu oluşturuldu, 1 ders hakkı düşüldü." : "Randevu oluşturuldu." };
+    } catch (error) {
+      return failure(error);
+    }
+  };
+
+  const confirmBooking: MemberContextType["confirmBooking"] = (id) =>
+    adminAction(`/api/admin/bookings/${id}`, "PATCH", { action: "confirm" }, "Randevu onaylandı.");
+  const cancelBookedSession: MemberContextType["cancelBookedSession"] = (id, refund, reason) =>
+    adminAction(`/api/admin/bookings/${id}`, "PATCH", { action: "cancel", refund, reason }, "Randevu iptal edildi.");
+  const completeBookedSession: MemberContextType["completeBookedSession"] = (id, internalNote) =>
+    adminAction(`/api/admin/bookings/${id}`, "PATCH", { action: "complete", internalNote }, "Seans tamamlandı.");
+  const rescheduleBookedSession: MemberContextType["rescheduleBookedSession"] = (id, date, timeSlot) =>
+    adminAction(`/api/admin/bookings/${id}`, "PATCH", { action: "reschedule", date, timeSlot }, "Randevu yeni saate taşındı.");
+  const approveOrder: MemberContextType["approveOrder"] = (id) =>
+    adminAction(`/api/admin/orders/${id}`, "PATCH", undefined, "Ödeme tahsil edildi.");
+
+  const adminQuickSale: MemberContextType["adminQuickSale"] = async (data) => {
+    try {
+      const res = await api<{ order: OrderItem; snapshot: AdminSnapshot }>("/api/admin/orders", { method: "POST", body: data });
+      setAdmin(res.snapshot);
+      return { ok: true, order: res.order };
+    } catch (error) {
+      return failure(error);
+    }
+  };
+
+  const addNewMember: MemberContextType["addNewMember"] = async (data) => {
+    try {
+      const res = await api<{ created: { memberNo: string; tempPassword: string }; snapshot: AdminSnapshot }>(
+        "/api/admin/members",
+        { method: "POST", body: data }
+      );
+      setAdmin(res.snapshot);
+      return { ok: true, memberNo: res.created.memberNo, tempPassword: res.created.tempPassword };
+    } catch (error) {
+      return failure(error);
+    }
+  };
+
+  const updateMemberDetails: MemberContextType["updateMemberDetails"] = (memberId, patch) =>
+    adminAction(`/api/admin/members/${memberId}`, "PATCH", patch, "Üye bilgileri güncellendi.");
+  const updateMemberSessions: MemberContextType["updateMemberSessions"] = (memberId, delta) =>
+    adminAction(`/api/admin/members/${memberId}`, "PATCH", { sessionsDelta: delta }, "Ders hakkı güncellendi.");
+  const adminAddMeasurement: MemberContextType["adminAddMeasurement"] = (memberId, m) =>
+    adminAction(`/api/admin/members/${memberId}/measurements`, "POST", m, "Ölçüm kaydedildi.");
+  const createGift: MemberContextType["createGift"] = (data) =>
+    adminAction("/api/admin/gifts", "POST", data, "Hediye tanımlandı.");
+  const updateGiftStatus: MemberContextType["updateGiftStatus"] = (id, status) =>
+    adminAction(`/api/admin/gifts/${id}`, "PATCH", { status }, "Hediye durumu güncellendi.");
+
+  const adminCheckIn: MemberContextType["adminCheckIn"] = async (memberRef) => {
+    try {
+      const res = await api<{ result: { memberName: string; remaining: number; usedBooking: boolean }; snapshot: AdminSnapshot }>(
+        "/api/admin/checkin",
+        { method: "POST", body: { member: memberRef } }
+      );
+      setAdmin(res.snapshot);
+      const { memberName, remaining, usedBooking } = res.result;
       return {
-        success: false,
-        message: "Kayıtlı seans krediniz kalmamıştır. Lütfen 'Paket Al' sekmesinden yeni seans yükleyiniz.",
+        ok: true,
+        message: usedBooking
+          ? `${memberName} girişi onaylandı. Bugünkü randevusu tamamlandı olarak işaretlendi.`
+          : `${memberName} girişi onaylandı. 1 ders düşüldü, kalan: ${remaining}.`,
       };
+    } catch (error) {
+      return failure(error);
     }
-
-    const slotStatus = checkSlotAvailability(data.date, data.timeSlot);
-    if (!slotStatus.isAvailable) {
-      const reasonText =
-        slotStatus.reason === "booked"
-          ? "Antrenörümüzün bu tarih ve saatte başka bir randevusu bulunmaktadır (Dolu)."
-          : slotStatus.reason === "blocked"
-          ? "Bu saat antrenör tarafından randevuya kapatılmıştır (Dolu)."
-          : slotStatus.reason === "day_off"
-          ? "Bu gün antrenörümüzün izinli günüdür."
-          : "Bu saat stüdyo mola / hijyen aralığıdır.";
-      return {
-        success: false,
-        message: `${data.date} saat ${data.timeSlot} için randevu oluşturulamaz: ${reasonText}`,
-      };
-    }
-
-    const newSession: BookedSession = {
-      id: `sess-${Date.now()}`,
-      coachId: "coach-1",
-      coachName: "İlker Yüksel",
-      coachTitle: "Kurucu & Baş Antrenör (Founder & Head Coach)",
-      coachAvatar:
-        "https://images.unsplash.com/photo-1567013127542-490d757e51fc?auto=format&fit=crop&w=400&q=80",
-      date: data.date,
-      timeSlot: data.timeSlot,
-      focusArea: data.focusArea,
-      station: data.station,
-      status: "confirmed",
-      notes: data.notes,
-      createdAt: "Bugün",
-    };
-
-    const nextBooked = [newSession, ...bookedSessions];
-    const nextRemaining = remainingSessions - 1;
-
-    setBookedSessions(nextBooked);
-    setRemainingSessions(nextRemaining);
-
-    saveToStorage(STORAGE_KEYS.BOOKED, nextBooked);
-    saveToStorage(STORAGE_KEYS.REMAINING, nextRemaining.toString());
-
-    return {
-      success: true,
-      message: `${data.date} saat ${data.timeSlot} için Kurucu & Baş Antrenör İlker Yüksel ile seansınız onaylandı. 1 seans bakiyenizden düşüldü.`,
-    };
   };
 
-  // Seans İptal Etme
-  const cancelSession = (sessionId: string) => {
-    const targetSession = bookedSessions.find((s) => s.id === sessionId);
-    if (!targetSession) {
-      return { success: false, message: "Seans bulunamadı." };
-    }
+  const saveSettings = (body: {
+    studioSettings?: StudioSettings;
+    coachSchedules?: CoachScheduleProfile[];
+    blocked?: Record<string, string[]>;
+  }) => adminAction("/api/admin/settings", "PUT", body, "Ayarlar kaydedildi.");
 
-    const nextBooked = bookedSessions.filter((s) => s.id !== sessionId);
-    const nextRemaining = remainingSessions + 1; // Kredi iade edilir
+  const studioSettings = admin?.studioSettings ?? null;
 
-    setBookedSessions(nextBooked);
-    setRemainingSessions(nextRemaining);
+  const updateStudioSettings: MemberContextType["updateStudioSettings"] = (newSettings) =>
+    studioSettings ? saveSettings({ studioSettings: { ...studioSettings, ...newSettings } }) : Promise.resolve(failure(null));
+  const addStudioBankAccount: MemberContextType["addStudioBankAccount"] = (account) =>
+    studioSettings
+      ? saveSettings({
+          studioSettings: { ...studioSettings, bankAccounts: [...studioSettings.bankAccounts, { ...account, id: `bank-${Date.now()}` }] },
+        })
+      : Promise.resolve(failure(null));
+  const removeStudioBankAccount: MemberContextType["removeStudioBankAccount"] = (accountId) =>
+    studioSettings
+      ? saveSettings({
+          studioSettings: { ...studioSettings, bankAccounts: studioSettings.bankAccounts.filter((b) => b.id !== accountId) },
+        })
+      : Promise.resolve(failure(null));
 
-    saveToStorage(STORAGE_KEYS.BOOKED, nextBooked);
-    saveToStorage(STORAGE_KEYS.REMAINING, nextRemaining.toString());
-
-    return {
-      success: true,
-      message: "Seans başarıyla iptal edildi ve 1 seans krediniz bakiyenize iade edildi.",
-    };
+  // Koç takvimi: yeni durum yerelde hesaplanır, anında gösterilir ve sunucuya yazılır.
+  const mutateSchedules = (fn: (schedules: CoachScheduleProfile[]) => CoachScheduleProfile[]) => {
+    if (!admin) return;
+    const next = fn(admin.coachSchedules);
+    setAdmin({ ...admin, coachSchedules: next });
+    void saveSettings({ coachSchedules: next });
   };
 
-  // Paket Satın Alma (Online Kart, Kasada Nakit, Kasada POS, Havale)
-  const purchasePackage = (data: {
-    packageId: string;
-    paymentMethod: PaymentMethod;
-    cardDetails?: {
-      cardNumber: string;
-      cardHolder: string;
-      expiry: string;
-      cvv: string;
-    };
-  }) => {
-    const pkg = PORTAL_PACKAGES.find((p) => p.id === data.packageId) || PORTAL_PACKAGES[0];
+  const mapDay = (
+    coachId: string,
+    dayKey: string,
+    fn: (day: CoachScheduleProfile["weeklySchedule"][number]) => CoachScheduleProfile["weeklySchedule"][number]
+  ) =>
+    mutateSchedules((all) =>
+      all.map((coach) =>
+        coach.coachId !== coachId
+          ? coach
+          : { ...coach, weeklySchedule: coach.weeklySchedule.map((d) => (d.dayKey === dayKey ? fn(d) : d)) }
+      )
+    );
 
-    const isOnline = data.paymentMethod === "online_card";
-    const status = isOnline
-      ? "completed"
-      : data.paymentMethod === "bank_transfer"
-      ? "pending_transfer"
-      : "pending_cashier";
-
-    const randomOrderNum = Math.floor(1000 + Math.random() * 9000);
-    const now = new Date();
-    const formattedDate = `${now.getDate()} ${
-      ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"][
-        now.getMonth()
-      ]
-    } ${now.getFullYear()} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-
-    const newOrder: OrderItem = {
-      id: `ord-${Date.now()}`,
-      orderNumber: `CF-ORD-${now.getFullYear()}-${randomOrderNum}`,
-      packageId: pkg.id,
-      packageName: pkg.name,
-      sessionCount: pkg.sessionCount,
-      amount: pkg.price,
-      formattedAmount: pkg.formattedPrice,
-      paymentMethod: data.paymentMethod,
-      paymentStatus: status,
-      createdAt: formattedDate,
-      receiptCode: `REC-${randomOrderNum}-${data.paymentMethod.toUpperCase()}`,
-      paidAt: isOnline ? formattedDate : undefined,
-    };
-
-    const nextOrders = [newOrder, ...orders];
-    setOrders(nextOrders);
-    saveToStorage(STORAGE_KEYS.ORDERS, nextOrders);
-
-    // Seans bakiyesini güncelle
-    const nextRemaining = remainingSessions + pkg.sessionCount;
-    const nextTotal = totalSessions + pkg.sessionCount;
-    setRemainingSessions(nextRemaining);
-    setTotalSessions(nextTotal);
-
-    saveToStorage(STORAGE_KEYS.REMAINING, nextRemaining.toString());
-    saveToStorage(STORAGE_KEYS.TOTAL, nextTotal.toString());
-
-    return {
-      success: true,
-      order: newOrder,
-    };
-  };
-
-  const updateUserProfile = (data: Partial<MemberUser>) => {
-    if (!user) return;
-    const updated = { ...user, ...data };
-    setUser(updated);
-    saveToStorage(STORAGE_KEYS.USER, updated);
-  };
-
-  const addSavedCard = (newCardData: Omit<SavedCard, "id">) => {
-    if (!user) return;
-    const newCard: SavedCard = {
-      ...newCardData,
-      id: `card-${Date.now()}`,
-    };
-    const currentCards = user.savedCards || [];
-    const updatedCards = newCard.isDefault
-      ? [...currentCards.map((c) => ({ ...c, isDefault: false })), newCard]
-      : [...currentCards, newCard];
-    updateUserProfile({ savedCards: updatedCards });
-  };
-
-  const removeSavedCard = (cardId: string) => {
-    if (!user || !user.savedCards) return;
-    const updatedCards = user.savedCards.filter((c) => c.id !== cardId);
-    updateUserProfile({ savedCards: updatedCards });
-  };
-
-  const setDefaultCard = (cardId: string) => {
-    if (!user || !user.savedCards) return;
-    const updatedCards = user.savedCards.map((c) => ({
-      ...c,
-      isDefault: c.id === cardId,
+  const updateCoachDayStatus: MemberContextType["updateCoachDayStatus"] = (coachId, dayKey, isWorkingDay) =>
+    mapDay(coachId, dayKey, (d) => ({ ...d, isWorkingDay }));
+  const toggleCoachSlotAvailability: MemberContextType["toggleCoachSlotAvailability"] = (coachId, dayKey, slotId) =>
+    mapDay(coachId, dayKey, (d) => ({
+      ...d,
+      slots: d.slots.map((s) => (s.id === slotId ? { ...s, isAvailable: !s.isAvailable } : s)),
     }));
-    updateUserProfile({ savedCards: updatedCards });
-  };
-
-  const updateAddress = (address: UserAddress) => {
-    updateUserProfile({ address });
-  };
-
-  const approveOrder = (orderId: string) => {
-    const updatedOrders = orders.map((ord) => {
-      if (ord.id === orderId) {
+  const addCoachSlot: MemberContextType["addCoachSlot"] = (coachId, dayKey, time, label) =>
+    mapDay(coachId, dayKey, (d) => ({
+      ...d,
+      slots: [...d.slots, { id: `${dayKey}-custom-${Date.now()}`, time, isAvailable: true, label } as CoachTimeSlot],
+    }));
+  const removeCoachSlot: MemberContextType["removeCoachSlot"] = (coachId, dayKey, slotId) =>
+    mapDay(coachId, dayKey, (d) => ({ ...d, slots: d.slots.filter((s) => s.id !== slotId) }));
+  const copyCoachScheduleToWeekdays: MemberContextType["copyCoachScheduleToWeekdays"] = (coachId, sourceDayKey) =>
+    mutateSchedules((all) =>
+      all.map((coach) => {
+        if (coach.coachId !== coachId) return coach;
+        const source = coach.weeklySchedule.find((d) => d.dayKey === sourceDayKey);
+        if (!source) return coach;
+        const weekdays = ["pzt", "sal", "car", "per", "cum"];
         return {
-          ...ord,
-          paymentStatus: "completed" as const,
-          paidAt: new Date().toLocaleString("tr-TR"),
+          ...coach,
+          weeklySchedule: coach.weeklySchedule.map((day) =>
+            weekdays.includes(day.dayKey)
+              ? {
+                  ...day,
+                  isWorkingDay: source.isWorkingDay,
+                  slots: source.slots.map((s) => ({ ...s, id: `${day.dayKey}-${s.id.split("-").slice(1).join("-")}` })),
+                }
+              : day
+          ),
         };
-      }
-      return ord;
-    });
-    setOrders(updatedOrders);
-    saveToStorage(STORAGE_KEYS.ORDERS, updatedOrders);
-  };
-
-  const adminCheckInMember = (data: {
-    coachName: string;
-    sessionType: string;
-    performanceNote: string;
-    keyMetric?: string;
-  }) => {
-    if (remainingSessions <= 0) {
-      return { success: false, message: "Üyenin kalan seans bakiyesi bulunmuyor (0 Seans)!" };
-    }
-    const nextRemaining = remainingSessions - 1;
-    setRemainingSessions(nextRemaining);
-    saveToStorage(STORAGE_KEYS.REMAINING, nextRemaining.toString());
-
-    const now = new Date();
-    const trMonths = [
-      "Ocak",
-      "Şubat",
-      "Mart",
-      "Nisan",
-      "Mayıs",
-      "Haziran",
-      "Temmuz",
-      "Ağustos",
-      "Eylül",
-      "Ekim",
-      "Kasım",
-      "Aralık",
-    ];
-    const formattedDate = `${now.getDate()} ${trMonths[now.getMonth()]} ${now.getFullYear()}`;
-    const formattedTime = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-
-    const newLog: CheckInLog = {
-      id: `log-${Date.now()}`,
-      date: formattedDate,
-      time: formattedTime,
-      coachName: "İlker Yüksel",
-      sessionType: data.sessionType,
-      performanceNote: data.performanceNote,
-      keyMetric: data.keyMetric,
-    };
-
-    const nextLogs = [newLog, ...checkInLogs];
-    setCheckInLogs(nextLogs);
-    saveToStorage(STORAGE_KEYS.CHECKIN, nextLogs);
-
-    return {
-      success: true,
-      message: `Turnike girişi onaylandı! 1 Seans düşüldü. Kalan: ${nextRemaining}`,
-    };
-  };
-
-  const adminAddSessions = (count: number) => {
-    const nextRemaining = remainingSessions + count;
-    const nextTotal = totalSessions + count;
-    setRemainingSessions(nextRemaining);
-    setTotalSessions(nextTotal);
-    saveToStorage(STORAGE_KEYS.REMAINING, nextRemaining.toString());
-    saveToStorage(STORAGE_KEYS.TOTAL, nextTotal.toString());
-  };
-
-  const completeBookedSession = (sessionId: string, coachNote: string, metric?: string) => {
-    const sess = bookedSessions.find((s) => s.id === sessionId);
-    if (!sess) return;
-
-    const updatedBooked = bookedSessions.map((s) =>
-      s.id === sessionId ? { ...s, status: "completed" as const } : s
+      })
     );
-    setBookedSessions(updatedBooked);
-    saveToStorage(STORAGE_KEYS.BOOKED, updatedBooked);
 
-    adminCheckInMember({
-      coachName: "İlker Yüksel",
-      sessionType: sess.focusArea,
-      performanceNote: coachNote,
-      keyMetric: metric,
-    });
-  };
-
-  // Seans İptal & Erteleme (Reschedule)
-  const cancelBookedSession = (sessionId: string, refundCredit: boolean, reason?: string) => {
-    const sess = bookedSessions.find((s) => s.id === sessionId);
-    if (!sess) return { success: false, message: "Seans bulunamadı." };
-
-    const updatedBooked = bookedSessions.map((s) =>
-      s.id === sessionId
-        ? {
-            ...s,
-            status: "cancelled" as const,
-            notes: reason ? `${s.notes ? s.notes + " • " : ""}[İPTAL: ${reason}]` : s.notes,
-          }
-        : s
-    );
-    setBookedSessions(updatedBooked);
-    saveToStorage(STORAGE_KEYS.BOOKED, updatedBooked);
-
-    let refundMsg = "";
-    if (refundCredit) {
-      const nextRemaining = remainingSessions + 1;
-      setRemainingSessions(nextRemaining);
-      saveToStorage(STORAGE_KEYS.REMAINING, nextRemaining.toString());
-      refundMsg = " (1 seans kredisi iade edildi)";
-    }
-
-    return {
-      success: true,
-      message: `Seans başarıyla iptal edildi${refundMsg}.`,
+  const toggleCoachSlotForDate: MemberContextType["toggleCoachSlotForDate"] = (date, timeSlot) => {
+    if (!admin) return;
+    const current = admin.blocked[date] || [];
+    const exists = current.some((s) => timeSlotsOverlap(s, timeSlot));
+    const blocked = {
+      ...admin.blocked,
+      [date]: exists ? current.filter((s) => !timeSlotsOverlap(s, timeSlot)) : [...current, timeSlot],
     };
-  };
-
-  const rescheduleBookedSession = (sessionId: string, newDate: string, newTime: string) => {
-    const sess = bookedSessions.find((s) => s.id === sessionId);
-    if (!sess) return { success: false, message: "Seans bulunamadı." };
-
-    const updatedBooked = bookedSessions.map((s) =>
-      s.id === sessionId ? { ...s, date: newDate, timeSlot: newTime, status: "confirmed" as const } : s
-    );
-    setBookedSessions(updatedBooked);
-    saveToStorage(STORAGE_KEYS.BOOKED, updatedBooked);
-
-    return {
-      success: true,
-      message: `Seans ${newDate} saat ${newTime} olarak yeniden planlandı.`,
-    };
-  };
-
-  // Hızlı Kasa Satış & Tahsilat
-  const adminQuickSale = (data: {
-    memberName: string;
-    memberNo?: string;
-    packageId: string;
-    packageName: string;
-    sessionCount: number;
-    amount: number;
-    paymentMethod: PaymentMethod;
-    discountPercent?: number;
-    notes?: string;
-  }) => {
-    const randomOrderNum = Math.floor(1000 + Math.random() * 9000);
-    const now = new Date();
-    const trMonths = [
-      "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
-      "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"
-    ];
-    const formattedDate = `${now.getDate()} ${trMonths[now.getMonth()]} ${now.getFullYear()} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-
-    const newOrder: OrderItem = {
-      id: `ord-adm-${Date.now()}`,
-      orderNumber: `CF-KASA-${now.getFullYear()}-${randomOrderNum}`,
-      packageId: data.packageId,
-      packageName: data.packageName,
-      sessionCount: data.sessionCount,
-      amount: data.amount,
-      formattedAmount: `₺${data.amount.toLocaleString("tr-TR")}`,
-      paymentMethod: data.paymentMethod,
-      paymentStatus: "completed",
-      createdAt: formattedDate,
-      receiptCode: `REC-${randomOrderNum}-KASA`,
-      paidAt: formattedDate,
-    };
-
-    const nextOrders = [newOrder, ...orders];
-    setOrders(nextOrders);
-    saveToStorage(STORAGE_KEYS.ORDERS, nextOrders);
-
-    // Üye seans bakiyesini güncelle
-    const member = crmMembers.find((m) => m.name === data.memberName || m.memberNo === data.memberNo);
-    if (member) {
-      updateMemberSessions(member.id, data.sessionCount);
-    } else {
-      adminAddSessions(data.sessionCount);
-    }
-
-    return {
-      success: true,
-      order: newOrder,
-    };
-  };
-
-  // CRM Members
-  const addNewMember = (memberData: Omit<StudioMemberCRM, "id" | "memberNo">) => {
-    const randomNum = Math.floor(10000 + Math.random() * 89999);
-    const newMember: StudioMemberCRM = {
-      ...memberData,
-      id: `mem-${Date.now()}`,
-      memberNo: `CF-${randomNum}`,
-      status: "Aktif",
-      coach: "İlker Yüksel",
-    };
-    const updated = [newMember, ...crmMembers];
-    setCrmMembers(updated);
-    saveToStorage(STORAGE_KEYS.CRM_MEMBERS, updated);
-    return newMember;
-  };
-
-  const updateMemberSessions = (memberId: string, delta: number) => {
-    const updated = crmMembers.map((m) => {
-      if (m.id === memberId) {
-        const nextRem = Math.max(0, m.remaining + delta);
-        const nextTot = delta > 0 ? m.total + delta : m.total;
-        return { ...m, remaining: nextRem, total: nextTot };
-      }
-      return m;
-    });
-    setCrmMembers(updated);
-    saveToStorage(STORAGE_KEYS.CRM_MEMBERS, updated);
-
-    // If matching active demo user
-    const targetMember = crmMembers.find((m) => m.id === memberId);
-    if (targetMember && (targetMember.id === "mem-1" || targetMember.memberNo === user?.memberNo)) {
-      const nextRemaining = Math.max(0, remainingSessions + delta);
-      const nextTotal = delta > 0 ? totalSessions + delta : totalSessions;
-      setRemainingSessions(nextRemaining);
-      setTotalSessions(nextTotal);
-      saveToStorage(STORAGE_KEYS.REMAINING, nextRemaining.toString());
-      saveToStorage(STORAGE_KEYS.TOTAL, nextTotal.toString());
-    }
-  };
-
-  const updateMemberDetails = (memberId: string, data: Partial<StudioMemberCRM>) => {
-    const updated = crmMembers.map((m) => (m.id === memberId ? { ...m, ...data } : m));
-    setCrmMembers(updated);
-    saveToStorage(STORAGE_KEYS.CRM_MEMBERS, updated);
-  };
-
-  // Envanter & Donanım Bakımı
-  const updateInventoryQty = (itemId: string, delta: number) => {
-    const updated = inventoryItems.map((item) => {
-      if (item.id === itemId) {
-        const nextQty = Math.max(0, item.quantity + delta);
-        const now = new Date();
-        const trMonths = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
-        const todayStr = `${now.getDate()} ${trMonths[now.getMonth()]} ${now.getFullYear()}`;
-        return {
-          ...item,
-          quantity: nextQty,
-          lastRestocked: delta > 0 ? todayStr : item.lastRestocked,
-        };
-      }
-      return item;
-    });
-    setInventoryItems(updated);
-    saveToStorage(STORAGE_KEYS.INVENTORY, updated);
-  };
-
-  const addInventoryItem = (item: Omit<StudioInventoryItem, "id" | "lastRestocked">) => {
-    const now = new Date();
-    const trMonths = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
-    const newItem: StudioInventoryItem = {
-      ...item,
-      id: `inv-${Date.now()}`,
-      lastRestocked: `${now.getDate()} ${trMonths[now.getMonth()]} ${now.getFullYear()}`,
-    };
-    const updated = [newItem, ...inventoryItems];
-    setInventoryItems(updated);
-    saveToStorage(STORAGE_KEYS.INVENTORY, updated);
-  };
-
-  const toggleMaintenanceStatus = (taskId: string) => {
-    const now = new Date();
-    const trMonths = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
-    const todayStr = `${now.getDate()} ${trMonths[now.getMonth()]} ${now.getFullYear()}`;
-    const updated = maintenanceTasks.map((t) => {
-      if (t.id === taskId) {
-        const nextStatus = t.status === "perfect" ? "attention" : "perfect";
-        return {
-          ...t,
-          status: nextStatus as any,
-          lastChecked: todayStr,
-        };
-      }
-      return t;
-    });
-    setMaintenanceTasks(updated);
-    saveToStorage(STORAGE_KEYS.MAINTENANCE, updated);
-  };
-
-  // Checklist & Notes
-  const toggleChecklistItem = (itemId: string) => {
-    const now = new Date();
-    const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-    const updated = dailyChecklist.map((c) => {
-      if (c.id === itemId) {
-        const nextComp = !c.completed;
-        return { ...c, completed: nextComp, time: nextComp ? timeStr : undefined };
-      }
-      return c;
-    });
-    setDailyChecklist(updated);
-    saveToStorage(STORAGE_KEYS.CHECKLIST, updated);
-  };
-
-  const addChecklistItem = (title: string, category: "acilis" | "hijyen" | "kapanis" | "guvenlik") => {
-    const newItem: StudioDailyChecklistItem = {
-      id: `chk-${Date.now()}`,
-      title,
-      category,
-      completed: false,
-    };
-    const updated = [...dailyChecklist, newItem];
-    setDailyChecklist(updated);
-    saveToStorage(STORAGE_KEYS.CHECKLIST, updated);
-  };
-
-  const updateDailyNotes = (notes: string) => {
-    setDailyNotes(notes);
-    saveToStorage(STORAGE_KEYS.DAILY_NOTES, notes);
-  };
-
-  // İşletme Ayarları Yönetimi
-  const updateStudioSettings = (newSettings: Partial<StudioSettings>) => {
-    setStudioSettings((prev) => {
-      const updated = { ...prev, ...newSettings };
-      saveToStorage(STORAGE_KEYS.STUDIO_SETTINGS, updated);
-      return updated;
-    });
-  };
-
-  const addStudioBankAccount = (account: Omit<StudioBankAccount, "id">) => {
-    setStudioSettings((prev) => {
-      const newAcc: StudioBankAccount = {
-        ...account,
-        id: `bank-${Date.now()}`,
-      };
-      const updated = {
-        ...prev,
-        bankAccounts: [...prev.bankAccounts, newAcc],
-      };
-      saveToStorage(STORAGE_KEYS.STUDIO_SETTINGS, updated);
-      return updated;
-    });
-  };
-
-  const removeStudioBankAccount = (accountId: string) => {
-    setStudioSettings((prev) => {
-      const updated = {
-        ...prev,
-        bankAccounts: prev.bankAccounts.filter((b) => b.id !== accountId),
-      };
-      saveToStorage(STORAGE_KEYS.STUDIO_SETTINGS, updated);
-      return updated;
-    });
-  };
-
-  // Koç Randevu Saatleri & Müsaitlik Yönetimi
-  const updateCoachDayStatus = (coachId: string, dayKey: string, isWorkingDay: boolean) => {
-    setCoachSchedules((prev) => {
-      const updated = prev.map((coach) => {
-        if (coach.coachId !== coachId) return coach;
-        return {
-          ...coach,
-          weeklySchedule: coach.weeklySchedule.map((day) => {
-            if (day.dayKey !== dayKey) return day;
-            return { ...day, isWorkingDay };
-          }),
-        };
-      });
-      saveToStorage(STORAGE_KEYS.COACH_SCHEDULES, updated);
-      return updated;
-    });
-  };
-
-  const toggleCoachSlotAvailability = (coachId: string, dayKey: string, slotId: string) => {
-    setCoachSchedules((prev) => {
-      const updated = prev.map((coach) => {
-        if (coach.coachId !== coachId) return coach;
-        return {
-          ...coach,
-          weeklySchedule: coach.weeklySchedule.map((day) => {
-            if (day.dayKey !== dayKey) return day;
-            return {
-              ...day,
-              slots: day.slots.map((slot) => {
-                if (slot.id !== slotId) return slot;
-                return { ...slot, isAvailable: !slot.isAvailable };
-              }),
-            };
-          }),
-        };
-      });
-      saveToStorage(STORAGE_KEYS.COACH_SCHEDULES, updated);
-      return updated;
-    });
-  };
-
-  const addCoachSlot = (coachId: string, dayKey: string, time: string, label?: string) => {
-    setCoachSchedules((prev) => {
-      const updated = prev.map((coach) => {
-        if (coach.coachId !== coachId) return coach;
-        return {
-          ...coach,
-          weeklySchedule: coach.weeklySchedule.map((day) => {
-            if (day.dayKey !== dayKey) return day;
-            const newSlot: CoachTimeSlot = {
-              id: `${dayKey}-custom-${Date.now()}`,
-              time,
-              isAvailable: true,
-              label,
-            };
-            return {
-              ...day,
-              slots: [...day.slots, newSlot],
-            };
-          }),
-        };
-      });
-      saveToStorage(STORAGE_KEYS.COACH_SCHEDULES, updated);
-      return updated;
-    });
-  };
-
-  const removeCoachSlot = (coachId: string, dayKey: string, slotId: string) => {
-    setCoachSchedules((prev) => {
-      const updated = prev.map((coach) => {
-        if (coach.coachId !== coachId) return coach;
-        return {
-          ...coach,
-          weeklySchedule: coach.weeklySchedule.map((day) => {
-            if (day.dayKey !== dayKey) return day;
-            return {
-              ...day,
-              slots: day.slots.filter((s) => s.id !== slotId),
-            };
-          }),
-        };
-      });
-      saveToStorage(STORAGE_KEYS.COACH_SCHEDULES, updated);
-      return updated;
-    });
-  };
-
-  const copyCoachScheduleToWeekdays = (coachId: string, sourceDayKey: string) => {
-    setCoachSchedules((prev) => {
-      const targetCoach = prev.find((c) => c.coachId === coachId);
-      if (!targetCoach) return prev;
-      const sourceDay = targetCoach.weeklySchedule.find((d) => d.dayKey === sourceDayKey);
-      if (!sourceDay) return prev;
-
-      const weekdays = ["pzt", "sal", "car", "per", "cum"];
-      const updated = prev.map((coach) => {
-        if (coach.coachId !== coachId) return coach;
-        return {
-          ...coach,
-          weeklySchedule: coach.weeklySchedule.map((day) => {
-            if (!weekdays.includes(day.dayKey)) return day;
-            return {
-              ...day,
-              isWorkingDay: sourceDay.isWorkingDay,
-              slots: sourceDay.slots.map((s) => ({ ...s, id: `${day.dayKey}-${s.id.split("-").slice(1).join("-")}` })),
-            };
-          }),
-        };
-      });
-      saveToStorage(STORAGE_KEYS.COACH_SCHEDULES, updated);
-      return updated;
-    });
-  };
-
-  // Yönetici Tarafından Manuel Seans Oluşturma
-  const adminCreateSession = (data: {
-    memberId?: string;
-    memberName: string;
-    memberNo?: string;
-    coachId: string;
-    coachName: string;
-    coachTitle?: string;
-    coachAvatar?: string;
-    date: string;
-    timeSlot: string;
-    focusArea: string;
-    station: string;
-    notes?: string;
-    deductCredit: boolean;
-  }) => {
-    const newSession: BookedSession = {
-      id: `sess-adm-${Date.now()}`,
-      memberId: data.memberId || user?.id,
-      memberName: data.memberName,
-      memberNo: data.memberNo || user?.memberNo,
-      coachId: "coach-1",
-      coachName: "İlker Yüksel",
-      coachTitle: "Kurucu & Baş Antrenör (Founder & Head Coach)",
-      coachAvatar:
-        "https://images.unsplash.com/photo-1567013127542-490d757e51fc?auto=format&fit=crop&w=400&q=80",
-      date: data.date,
-      timeSlot: data.timeSlot,
-      focusArea: data.focusArea,
-      station: data.station,
-      status: "confirmed",
-      notes: data.notes,
-      createdAt: "Yönetici Tarafından Eklendi",
-    };
-
-    const nextBooked = [newSession, ...bookedSessions];
-    setBookedSessions(nextBooked);
-    saveToStorage(STORAGE_KEYS.BOOKED, nextBooked);
-
-    let creditMsg = "";
-    if (data.deductCredit && remainingSessions > 0) {
-      const nextRemaining = remainingSessions - 1;
-      setRemainingSessions(nextRemaining);
-      saveToStorage(STORAGE_KEYS.REMAINING, nextRemaining.toString());
-      creditMsg = ` (1 seans kredisi düşüldü, kalan: ${nextRemaining})`;
-    }
-
-    return {
-      success: true,
-      message: `${data.memberName} için ${data.date} saat ${data.timeSlot} seansı başarıyla oluşturuldu!${creditMsg}`,
-      session: newSession,
-    };
-  };
-
-  // Fitness Takip & Alışkanlık Fonksiyonları
-  const addBodyMeasurement = (m: Omit<BodyMeasurementRecord, "id" | "coachConfirmed">) => {
-    const newRecord: BodyMeasurementRecord = {
-      ...m,
-      id: `meas-${Date.now()}`,
-      coachConfirmed: true,
-    };
-    const next = [newRecord, ...bodyMeasurements];
-    setBodyMeasurements(next);
-    saveToStorage(STORAGE_KEYS.BODY_MEASUREMENTS, next);
-  };
-
-  const toggleExerciseCompleted = (exerciseId: string) => {
-    setCompletedExerciseIds((prev) => {
-      const exists = prev.includes(exerciseId);
-      const next = exists ? prev.filter((id) => id !== exerciseId) : [...prev, exerciseId];
-      saveToStorage(STORAGE_KEYS.COMPLETED_EXERCISES, next);
-      return next;
-    });
-  };
-
-  const resetWorkoutProgress = () => {
-    setCompletedExerciseIds([]);
-    saveToStorage(STORAGE_KEYS.COMPLETED_EXERCISES, []);
-  };
-
-  const addWater = (amountMl: number) => {
-    setWaterIntakeMl((prev) => {
-      const next = Math.min(4000, Math.max(0, prev + amountMl));
-      saveToStorage(STORAGE_KEYS.WATER_INTAKE, next.toString());
-      return next;
-    });
-  };
-
-  const resetWater = () => {
-    setWaterIntakeMl(0);
-    saveToStorage(STORAGE_KEYS.WATER_INTAKE, "0");
+    setAdmin({ ...admin, blocked });
+    void saveSettings({ blocked });
   };
 
   return (
@@ -1441,76 +522,69 @@ export const MemberProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       value={{
         user,
         isAuthenticated: !!user,
+        isAdmin,
         mounted,
         activeTab,
         setActiveTab,
+        canGoBack: tabHistory.length > 0 || activeTab !== "dashboard",
+        goBack,
         viewMode,
-        setViewMode,
         toggleViewMode,
-        remainingSessions,
-        totalSessions,
-        packageExpiry,
-        bookedSessions,
-        checkInLogs,
-        orders,
+        refresh,
+        remainingSessions: snapshot?.remainingSessions ?? 0,
+        totalSessions: snapshot?.totalSessions ?? 0,
+        packageExpiry: snapshot?.packageExpiry ?? "",
+        bookedSessions: admin ? admin.bookings : snapshot?.bookings ?? [],
+        bodyMeasurements: snapshot?.measurements ?? [],
+        program: snapshot?.program ?? [],
+        gifts: snapshot?.gifts ?? [],
+        orders: snapshot?.orders ?? [],
+        referral: snapshot?.referral ?? null,
+        bankAccounts: snapshot?.bankAccounts ?? [],
+        login,
+        register,
+        logout,
+        bookSession,
+        cancelSession,
+        purchasePackage,
+        addBodyMeasurement,
+        updateUserProfile,
+        changePassword,
+        addSavedCard,
+        removeSavedCard,
+        setDefaultCard,
+        updateAddress,
+        coachSchedules,
+        coachBlockedDateSlots,
+        checkSlotAvailability,
+        crmMembers: admin?.members ?? [],
+        adminOrders: admin?.orders ?? [],
+        adminMeasurements: admin?.measurements ?? [],
+        adminGifts: admin?.gifts ?? [],
         studioSettings,
+        adminCreateSession,
+        confirmBooking,
+        cancelBookedSession,
+        completeBookedSession,
+        rescheduleBookedSession,
+        approveOrder,
+        adminQuickSale,
+        addNewMember,
+        updateMemberDetails,
+        updateMemberSessions,
+        adminAddMeasurement,
+        createGift,
+        updateGiftStatus,
+        adminCheckIn,
         updateStudioSettings,
         addStudioBankAccount,
         removeStudioBankAccount,
-        coachSchedules,
         updateCoachDayStatus,
         toggleCoachSlotAvailability,
         addCoachSlot,
         removeCoachSlot,
         copyCoachScheduleToWeekdays,
-        adminCreateSession,
-        login,
-        loginDemo,
-        logout,
-        register,
-        bookSession,
-        cancelSession,
-        purchasePackage,
-        updateUserProfile,
-        addSavedCard,
-        removeSavedCard,
-        setDefaultCard,
-        updateAddress,
-        approveOrder,
-        adminCheckInMember,
-        adminAddSessions,
-        completeBookedSession,
-        cancelBookedSession,
-        rescheduleBookedSession,
-        adminQuickSale,
-        crmMembers,
-        addNewMember,
-        updateMemberSessions,
-        updateMemberDetails,
-        inventoryItems,
-        updateInventoryQty,
-        addInventoryItem,
-        maintenanceTasks,
-        toggleMaintenanceStatus,
-        dailyChecklist,
-        toggleChecklistItem,
-        addChecklistItem,
-        dailyNotes,
-        updateDailyNotes,
-        coachBlockedDateSlots,
         toggleCoachSlotForDate,
-        checkSlotAvailability,
-        bodyMeasurements,
-        addBodyMeasurement,
-        activeWorkout,
-        completedExerciseIds,
-        toggleExerciseCompleted,
-        resetWorkoutProgress,
-        waterIntakeMl,
-        addWater,
-        resetWater,
-        userBadges,
-        streakWeeks,
         isQuickQrOpen,
         setIsQuickQrOpen,
       }}

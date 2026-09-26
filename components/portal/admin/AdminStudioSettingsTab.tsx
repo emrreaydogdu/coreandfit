@@ -4,27 +4,20 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Building2,
-  Phone,
-  Mail,
-  MapPin,
   Clock,
-  ShieldCheck,
   CreditCard,
   Plus,
   Trash2,
   Copy,
   CheckCircle2,
   Save,
-  Activity,
   Sliders,
-  Sparkles,
 } from "lucide-react";
 import { useMember } from "@/context/MemberContext";
-import { StudioBankAccount } from "@/types/portal";
+import type { StudioBankAccount, StudioSettings } from "@/types/portal";
 
-export const AdminStudioSettingsTab: React.FC = () => {
+const StudioSettingsForm: React.FC<{ studioSettings: StudioSettings }> = ({ studioSettings }) => {
   const {
-    studioSettings,
     updateStudioSettings,
     addStudioBankAccount,
     removeStudioBankAccount,
@@ -246,10 +239,10 @@ export const AdminStudioSettingsTab: React.FC = () => {
                   onChange={(e) => setFormData({ ...formData, maxCapacity: Number(e.target.value) })}
                   className="w-20 p-2 bg-white border border-black/[0.08] rounded-xl text-sm font-bold text-[#0F172A] text-center"
                 />
-                <span className="text-xs text-[#64748B] font-medium">Kişi / İstasyon</span>
+                <span className="text-xs text-[#64748B] font-medium">Kişi</span>
               </div>
               <p className="text-[10px] text-[#94A3B8]">
-                Stüdyodaki toplam antrenman istasyonu adedi.
+                Stüdyonun aynı anda ağırlayabileceği kişi sayısı.
               </p>
             </div>
 
@@ -529,4 +522,11 @@ export const AdminStudioSettingsTab: React.FC = () => {
       </form>
     </div>
   );
+};
+
+// Ayarlar sunucudan yüklendikten sonra form açılır.
+export const AdminStudioSettingsTab: React.FC = () => {
+  const { studioSettings } = useMember();
+  if (!studioSettings) return null;
+  return <StudioSettingsForm studioSettings={studioSettings} />;
 };

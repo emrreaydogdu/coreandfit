@@ -3,30 +3,21 @@
 import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  Calendar as CalendarIcon,
   Clock,
-  User,
   Plus,
   Trash2,
   CheckCircle2,
-  AlertCircle,
   Sparkles,
   Copy,
-  ToggleLeft,
-  ToggleRight,
-  ShieldCheck,
-  Zap,
   LayoutGrid,
   CalendarDays,
-  Check,
-  Coffee,
-  Sun,
-  Moon,
   ChevronLeft,
   ChevronRight,
   Calendar,
 } from "lucide-react";
 import { useMember } from "@/context/MemberContext";
+import { timeSlotsOverlap } from "@/lib/slots";
+import { workoutLabel } from "@/lib/training";
 import { COACHES_DATA } from "@/data/coaches";
 
 const DAYS_META: { key: "pzt" | "sal" | "car" | "per" | "cum" | "cts" | "paz"; name: string; short: string }[] = [
@@ -49,11 +40,11 @@ export const AdminCoachSlotsTab: React.FC = () => {
     copyCoachScheduleToWeekdays,
     checkSlotAvailability,
     toggleCoachSlotForDate,
-    coachBlockedDateSlots,
     bookedSessions,
   } = useMember();
 
-  const [selectedCoachId, setSelectedCoachId] = useState<string>("coach-1");
+  // Stüdyoda tek koç çalışıyor.
+  const selectedCoachId = "coach-1";
   const [selectedDayKey, setSelectedDayKey] = useState<"pzt" | "sal" | "car" | "per" | "cum" | "cts" | "paz">("pzt");
   const [viewMode, setViewMode] = useState<"matrix" | "day_detail">("matrix");
   const [weekOffset, setWeekOffset] = useState<number>(0);
@@ -190,7 +181,7 @@ export const AdminCoachSlotsTab: React.FC = () => {
     });
 
     bookedSessions.forEach((sess) => {
-      if (sess.timeSlot && sess.status !== "cancelled") {
+      if (sess.timeSlot && sess.status !== "CANCELLED") {
         set.add(sess.timeSlot);
       }
     });
@@ -486,7 +477,9 @@ export const AdminCoachSlotsTab: React.FC = () => {
 
                       // 1. Randevulu seans (Dolu)
                       if (!slotStatus.isAvailable && slotStatus.reason === "booked") {
-                        const bookedSess = slotStatus.session;
+                        const bookedSess = bookedSessions.find(
+                          (s) => s.date === day.dateStr && s.status !== "CANCELLED" && timeSlotsOverlap(s.timeSlot, timeStr)
+                        );
                         return (
                           <td
                             key={`${day.dateStr}-${timeStr}`}
@@ -506,7 +499,7 @@ export const AdminCoachSlotsTab: React.FC = () => {
                                 {bookedSess?.memberName || "Danışan Randevusu"}
                               </div>
                               <div className="text-[10px] text-blue-700/90 truncate font-medium">
-                                {bookedSess?.focusArea?.split("&")[0] || "Özel Seans"}
+                                {bookedSess ? workoutLabel(bookedSess.workoutType) : "Randevu"}
                               </div>
                             </div>
                           </td>

@@ -13,6 +13,8 @@ export default function MemberPortalPage() {
   useEffect(() => {
     if (mounted && !user) {
       router.push("/portal/giris");
+    } else if (mounted && user?.role === "admin") {
+      router.replace("/admin");
     }
   }, [mounted, user, router]);
 
@@ -29,7 +31,7 @@ export default function MemberPortalPage() {
     );
   }
 
-  if (!user) {
+  if (!user || user.role === "admin") {
     return null;
   }
 

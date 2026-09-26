@@ -41,3 +41,9 @@ yarn-error.log*
 next-env.d.ts
 
 .vercel
+
+# env örneği repoda kalır
+!.env.example
+
+# yerel SQLite veritabanı
+/.data/

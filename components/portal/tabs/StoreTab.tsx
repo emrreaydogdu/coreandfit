@@ -1,138 +1,133 @@
 "use client";
 
 import React, { useState } from "react";
-import {
-  Zap,
-  Check,
-  CreditCard,
-  Banknote,
-  Building2,
-  ChevronRight,
-  ShieldCheck,
-} from "lucide-react";
-import { PORTAL_PACKAGES } from "@/data/portal-mock";
-import { PortalPackage } from "@/types/portal";
+import { Check, Banknote, Building2, ChevronRight, Users, BadgePercent } from "lucide-react";
+import { INDIVIDUAL_PACKAGES, packageFeatures, type PackageItem } from "@/data/packages";
+import { finalPrice, formatTL } from "@/lib/pricing";
+import { useMember } from "@/context/MemberContext";
 import { CheckoutModal } from "@/components/portal/CheckoutModal";
+import { DuetModal } from "@/components/packages/DuetModal";
 
 export const StoreTab: React.FC = () => {
-  const [selectedPkg, setSelectedPkg] = useState<PortalPackage | null>(null);
+  const { referral } = useMember();
+  const discountActive = referral?.discountActive ?? false;
+  const [selectedPkg, setSelectedPkg] = useState<PackageItem | null>(null);
+  const [duetOpen, setDuetOpen] = useState(false);
 
   return (
     <div className="space-y-6 pb-28 text-[#0F172A]">
-      {/* Header */}
       <div>
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] font-sans text-[#10B981] uppercase tracking-wider font-bold">
-            ÖZEL DERS & SEANS MAĞAZASI
-          </span>
-          <span className="text-[#CBD5E1]">•</span>
-          <span className="text-[11px] font-sans text-[#64748B]">1:1 Kişisel Koçluk</span>
-        </div>
-        <h2 className="text-2xl sm:text-3xl font-extrabold uppercase font-display text-[#0F172A] tracking-tight mt-0.5">
-          Paket Satın Al & Seans Yükle
-        </h2>
+        <span className="text-[11px] text-[#10B981] uppercase tracking-wider font-bold">Bireysel ve Düet Paketler</span>
+        <h2 className="text-2xl sm:text-3xl font-extrabold uppercase font-display text-[#0F172A] tracking-tight mt-0.5">Paket Al</h2>
         <p className="text-xs text-[#64748B] font-medium mt-1 max-w-2xl leading-relaxed">
-          Hedefinize ve antrenman sıklığınıza uygun paketi seçerek seanslarınızı hemen yükleyin. Online kart, stüdyo kasasında nakit veya POS taksit imkanıyla ödeme yapabilirsiniz.
+          Size uygun paketi seçin; stüdyoda nakit veya havale ile ödeyebilirsiniz. Online kart ödemesi yakında.
         </p>
       </div>
 
-      {/* Payment Security / Options Banner (Apple Style Clean Pills) */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="p-3.5 bg-white border border-black/[0.06] rounded-2xl flex items-center gap-3 shadow-xs">
-          <CreditCard className="w-4 h-4 text-[#2563EB] shrink-0" />
-          <span className="text-xs font-semibold text-[#0F172A]">Online Kart</span>
+      {discountActive && (
+        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3 text-emerald-900">
+          <BadgePercent className="w-5 h-5 text-emerald-600 shrink-0" />
+          <p className="text-xs font-semibold">%10 Referans İndirimi Aktif. İndirimli fiyatlar aşağıda gösteriliyor.</p>
         </div>
-        <div className="p-3.5 bg-white border border-black/[0.06] rounded-2xl flex items-center gap-3 shadow-xs">
-          <Banknote className="w-4 h-4 text-[#10B981] shrink-0" />
-          <span className="text-xs font-semibold text-[#0F172A]">Kasada Nakit</span>
-        </div>
-        <div className="p-3.5 bg-white border border-black/[0.06] rounded-2xl flex items-center gap-3 shadow-xs">
-          <CreditCard className="w-4 h-4 text-[#D97706] shrink-0" />
-          <span className="text-xs font-semibold text-[#0F172A]">Kasada POS</span>
-        </div>
-        <div className="p-3.5 bg-white border border-black/[0.06] rounded-2xl flex items-center gap-3 shadow-xs">
-          <Building2 className="w-4 h-4 text-[#6366F1] shrink-0" />
-          <span className="text-xs font-semibold text-[#0F172A]">Havale / FAST</span>
-        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-2 sm:gap-3">
+        {[
+          { icon: Banknote, label: "Stüdyoda Nakit", color: "text-[#10B981]" },
+          { icon: Building2, label: "Havale / FAST", color: "text-[#6366F1]" },
+        ].map(({ icon: Icon, label, color }) => (
+          <div key={label} className="p-3 bg-white border border-black/[0.06] rounded-2xl flex items-center gap-2">
+            <Icon className={`w-4 h-4 shrink-0 ${color}`} />
+            <span className="text-[11px] sm:text-xs font-semibold">{label}</span>
+          </div>
+        ))}
       </div>
 
-      {/* Package Grid (Apple White Cards) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {PORTAL_PACKAGES.map((pkg) => (
-          <div
-            key={pkg.id}
-            className={`relative bg-white border rounded-3xl p-7 flex flex-col justify-between transition-all duration-300 hover:shadow-[0_16px_45px_rgba(0,0,0,0.06)] ${
-              pkg.badge
-                ? "border-[#0F172A] shadow-[0_8px_30px_rgba(0,0,0,0.06)] ring-1 ring-black/[0.08]"
-                : "border-black/[0.06] shadow-[0_4px_24px_rgba(0,0,0,0.02)]"
-            }`}
-          >
-            {pkg.badge && (
-              <div className="absolute -top-3 right-6 bg-[#0F172A] text-white px-3.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-sm">
-                {pkg.badge}
-              </div>
-            )}
-
-            <div>
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <span className="text-xs font-bold font-sans text-[#10B981] uppercase tracking-wider">
-                  {pkg.sessionCount} SEANS • {pkg.validityDays} GÜN
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        {INDIVIDUAL_PACKAGES.map((pkg) => {
+          const price = finalPrice(pkg, discountActive);
+          const discounted = price < pkg.basePrice;
+          return (
+            <div
+              key={pkg.id}
+              className={`relative bg-white border rounded-3xl p-6 flex flex-col justify-between ${
+                pkg.isPopular ? "border-[#0F172A] ring-1 ring-black/[0.08] shadow-[0_8px_30px_rgba(0,0,0,0.06)]" : "border-black/[0.06]"
+              }`}
+            >
+              {pkg.isPopular && (
+                <div className="absolute -top-3 right-6 bg-[#0F172A] text-white px-3.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                  En Çok Tercih Edilen
+                </div>
+              )}
+              <div>
+                <span className="text-xs font-bold text-[#10B981] uppercase tracking-wider">
+                  {pkg.sessionCount} Ders • {pkg.validityDays} Gün
                 </span>
+                <h3 className="text-2xl font-bold uppercase font-display mt-1">{pkg.name}</h3>
+                <p className="text-xs text-[#64748B] font-medium mt-1">{pkg.subtitle}</p>
+
+                <div className="py-4 border-y border-black/[0.06] my-4">
+                  {discounted && <span className="text-sm text-[#94A3B8] line-through block">{formatTL(pkg.basePrice)}</span>}
+                  <span className="text-3xl sm:text-4xl font-black font-display tracking-tight">{formatTL(price)}</span>
+                  {pkg.sessionCount > 1 && (
+                    <span className="text-xs text-[#64748B] font-medium block mt-1">
+                      Ders başı {formatTL(Math.round(price / pkg.sessionCount))}
+                    </span>
+                  )}
+                </div>
+
+                <ul className="space-y-2.5 mb-5">
+                  {packageFeatures(pkg).map((feat) => (
+                    <li key={feat} className="flex items-start gap-2.5 text-xs text-[#334155] font-medium">
+                      <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
+                      <span>{feat}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
-
-              <h3 className="text-2xl font-bold uppercase font-display text-[#0F172A]">
-                {pkg.name}
-              </h3>
-              <p className="text-xs text-[#64748B] font-medium mt-1 mb-5 leading-relaxed">
-                {pkg.subtitle}
-              </p>
-
-              <div className="py-4 border-y border-black/[0.06] my-4">
-                <span className="text-4xl font-black font-display text-[#0F172A] tracking-tight">
-                  {pkg.formattedPrice}
-                </span>
-                <span className="text-xs text-[#64748B] font-medium block mt-1">
-                  Seans başı ~₺{Math.round(pkg.price / pkg.sessionCount).toLocaleString("tr-TR")}
-                </span>
-              </div>
-
-              {/* Features list */}
-              <ul className="space-y-3 my-5">
-                {pkg.features.map((feat, i) => (
-                  <li key={i} className="flex items-start gap-2.5 text-xs text-[#334155] font-medium">
-                    <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
-                    <span>{feat}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Purchase CTA Button */}
-            <div className="pt-4 mt-2">
               <button
                 onClick={() => setSelectedPkg(pkg)}
-                className={`w-full py-4 rounded-full font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-95 shadow-sm ${
-                  pkg.badge
-                    ? "bg-[#0F172A] text-white hover:bg-[#1E293B]"
-                    : "bg-[#F8FAFC] border border-black/[0.12] text-[#0F172A] hover:bg-[#F1F5F9]"
+                className={`w-full min-h-12 rounded-full font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 active:scale-95 transition-all ${
+                  pkg.isPopular ? "bg-[#0F172A] text-white hover:bg-[#1E293B]" : "bg-[#F8FAFC] border border-black/[0.12] hover:bg-[#F1F5F9]"
                 }`}
               >
                 <span>Paketi Satın Al</span>
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
-      {/* Checkout Modal */}
-      {selectedPkg && (
-        <CheckoutModal
-          pkg={selectedPkg}
-          onClose={() => setSelectedPkg(null)}
-          onSuccess={() => {}}
-        />
-      )}
+      <button
+        type="button"
+        onClick={() => setDuetOpen(true)}
+        className="w-full text-left bg-gradient-to-br from-slate-900 to-black text-white rounded-3xl p-6 flex items-center justify-between gap-4 hover:shadow-lg transition-shadow"
+        data-keep-white
+      >
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center shrink-0">
+            <Users className="w-6 h-6 text-emerald-300" />
+          </div>
+          <div>
+            <h3 className="text-xl font-bold">Düet Ders</h3>
+            <p className="text-xs text-slate-300 mt-0.5">Birlikte antrenman yapmak istediğiniz biriyle 2 kişilik paketler</p>
+          </div>
+        </div>
+        <ChevronRight className="w-5 h-5 text-slate-300 shrink-0" />
+      </button>
+
+      <DuetModal
+        open={duetOpen}
+        onClose={() => setDuetOpen(false)}
+        referralDiscountActive={discountActive}
+        onSelect={(pkg) => {
+          setDuetOpen(false);
+          setSelectedPkg(pkg);
+        }}
+      />
+
+      {selectedPkg && <CheckoutModal pkg={selectedPkg} onClose={() => setSelectedPkg(null)} />}
     </div>
   );
 };

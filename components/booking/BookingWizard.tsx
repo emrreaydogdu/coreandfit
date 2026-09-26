@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { buildBookingWhatsAppUrl } from "@/lib/whatsapp";
-import { ArrowRight, ArrowLeft, Calendar, Clock, CheckCircle2, MessageSquare, ShieldCheck, LayoutGrid, List } from "lucide-react";
+import { ArrowRight, ArrowLeft, Calendar, CheckCircle2, MessageSquare, LayoutGrid, List } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { useMember } from "@/context/MemberContext";
@@ -12,13 +12,13 @@ const BOOKING_TYPES = [
     id: "on-gorusme",
     title: "Ücretsiz Ön Görüşme",
     duration: "25 Dakika",
-    desc: "Stüdyomuzu ziyaret ederek koçumuzla hedeflerinizi konuşun, ücretsiz postür ve mobilite analizinizi yaptırın.",
+    desc: "Stüdyomuzu ziyaret ederek koçumuzla hedeflerinizi konuşun, ücretsiz ilk değerlendirmenizi yaptırın.",
   },
   {
     id: "pt-bilgi",
     title: "1:1 Antrenman Bilgilendirmesi",
     duration: "20 Dakika",
-    desc: "Kişisel antrenörlük sistemi, haftalık periyotlama ve biyomekanik takip yöntemlerimiz hakkında detaylı bilgi alın.",
+    desc: "Kişisel antrenörlük sistemimiz, haftalık programınız ve gelişim takibi hakkında bilgi alın.",
   },
   {
     id: "paket-gorusmesi",
@@ -33,7 +33,7 @@ const TIME_SLOTS = [
 ];
 
 export const BookingWizard: React.FC = () => {
-  const { checkSlotAvailability, adminCreateSession } = useMember();
+  const { checkSlotAvailability } = useMember();
   const [step, setStep] = useState(1);
 
   // Generate the next 10 days for booking
@@ -88,24 +88,9 @@ export const BookingWizard: React.FC = () => {
     setStep((prev) => Math.max(prev - 1, 1));
   };
 
+  // Ön görüşme talebi hesap gerektirmez; talep WhatsApp üzerinden stüdyoya iletilir ve saat stüdyo tarafından teyit edilir.
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (adminCreateSession) {
-      const matchedDate = dates.find((d) => d.fullDate === formData.date);
-      const bookingDate = matchedDate ? matchedDate.id : formData.date;
-
-      adminCreateSession({
-        memberName: formData.name.trim() || "Ön Görüşme Danışanı",
-        coachId: "coach-1",
-        coachName: "İlker Yüksel",
-        date: bookingDate,
-        timeSlot: formData.timeSlot,
-        focusArea: formData.bookingType,
-        station: "Ön Görüşme & Danışmanlık",
-        notes: `Telefon: ${formData.phone.trim() || "-"} | E-posta: ${formData.email.trim() || "-"}`,
-        deductCredit: false,
-      });
-    }
     setSubmitted(true);
   };
 
@@ -130,7 +115,7 @@ export const BookingWizard: React.FC = () => {
           Talebiniz Alındı
         </h3>
         <p className="text-sm text-[#A5A7AD] leading-relaxed mb-6">
-          Sayın <strong className="text-white">{formData.name}</strong>, <strong>{formData.date}</strong> saat <strong>{formData.timeSlot}</strong> için oluşturduğunuz randevu talebi stüdyo takvimimize işlendi.
+          Sayın <strong className="text-white">{formData.name}</strong>, <strong>{formData.date}</strong> saat <strong>{formData.timeSlot}</strong> için ön görüşme talebiniz hazır. Aşağıdaki butonla WhatsApp üzerinden gönderin; ekibimiz saati teyit edecek.
         </p>
 
         <div className="p-4 bg-[#131519] border border-[#23272F] text-xs font-mono text-left mb-8 divide-y divide-[#191B20]">
@@ -156,7 +141,7 @@ export const BookingWizard: React.FC = () => {
             className="w-full inline-flex items-center justify-center gap-2 min-h-[50px] px-6 bg-[#25D366] text-white font-bold text-xs uppercase tracking-wider hover:bg-[#20bd5a] transition-all"
           >
             <MessageSquare className="w-4 h-4" />
-            <span>WhatsApp&apos;tan Onayla & Hatırlatma Al</span>
+            <span>Talebi WhatsApp&apos;tan Gönder</span>
           </a>
 
           <Link

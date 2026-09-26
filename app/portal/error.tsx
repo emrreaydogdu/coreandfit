@@ -2,6 +2,8 @@
 
 import React, { useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useMember } from "@/context/MemberContext";
 import { AlertCircle, RefreshCw, LogIn, ArrowLeft } from "lucide-react";
 
 export default function PortalError({
@@ -11,18 +13,17 @@ export default function PortalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const router = useRouter();
+  const { logout } = useMember();
+
   useEffect(() => {
     console.error("Portal error:", error);
   }, [error]);
 
-  const handleResetSession = () => {
-    try {
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("cf_member_user");
-        sessionStorage.clear();
-      }
-    } catch {}
-    window.location.href = "/portal/giris";
+  // Sunucu oturumunu kapatır, istemci state'ini temizler ve giriş sayfasına döner.
+  const handleResetSession = async () => {
+    await logout();
+    router.replace("/portal/giris");
   };
 
   return (

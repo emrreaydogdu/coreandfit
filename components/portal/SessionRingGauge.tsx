@@ -2,11 +2,12 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { Plus, Calendar, CheckCircle2, Activity, ArrowUpRight } from "lucide-react";
+import { Plus, Calendar, CheckCircle2, Activity, Package } from "lucide-react";
 
 interface SessionRingGaugeProps {
   remaining: number;
   total: number;
+  packageName: string;
   expiryDate: string;
   onAddSessions: () => void;
 }
@@ -14,6 +15,7 @@ interface SessionRingGaugeProps {
 export const SessionRingGauge: React.FC<SessionRingGaugeProps> = ({
   remaining,
   total,
+  packageName,
   expiryDate,
   onAddSessions,
 }) => {
@@ -35,10 +37,10 @@ export const SessionRingGauge: React.FC<SessionRingGaugeProps> = ({
           </div>
           <div>
             <h4 className="text-sm font-bold uppercase font-display text-[#0F172A] tracking-tight">
-              SEANS BAKIYESİ & İLERLEME
+              DERS HAKKIM
             </h4>
             <span className="text-[10px] font-sans text-[#64748B] uppercase">
-              1:1 PERSONAL TRAINING HAKLARI
+              KALAN DERS VE PAKETİM
             </span>
           </div>
         </div>
@@ -93,7 +95,7 @@ export const SessionRingGauge: React.FC<SessionRingGaugeProps> = ({
               {remaining}
             </span>
             <span className="text-[10px] font-sans font-bold uppercase tracking-wider text-[#64748B] mt-1">
-              SEANS KALDI
+              DERS KALDI
             </span>
             <span className="text-[10px] font-bold text-[#10B981] mt-0.5 bg-[#ECFDF5] px-2 py-0.5 rounded-full">
               %{percentage} Kalan
@@ -103,8 +105,16 @@ export const SessionRingGauge: React.FC<SessionRingGaugeProps> = ({
 
         {/* Breakdown Stats (Apple Health Style) */}
         <div className="flex-1 w-full space-y-2.5 font-sans text-xs">
+          <div className="flex items-center justify-between gap-2 p-3 bg-[#F8FAFC] border border-black/[0.04] rounded-2xl">
+            <span className="text-[#64748B] font-medium">Paketim:</span>
+            <span className="font-bold text-[#0F172A] flex items-center gap-1.5 text-right">
+              <Package className="w-3.5 h-3.5 text-[#10B981] shrink-0" />
+              {packageName}
+            </span>
+          </div>
+
           <div className="flex items-center justify-between p-3 bg-[#F8FAFC] border border-black/[0.04] rounded-2xl">
-            <span className="text-[#64748B] font-medium">Tamamlanan Seans:</span>
+            <span className="text-[#64748B] font-medium">Kullanılan Ders:</span>
             <span className="font-bold text-[#0F172A] flex items-center gap-1.5">
               <CheckCircle2 className="w-3.5 h-3.5 text-[#10B981]" />
               {used} Seans

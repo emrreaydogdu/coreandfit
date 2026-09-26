@@ -10,38 +10,35 @@ import {
   CheckCircle2,
   Copy,
   Check,
-  ShieldCheck,
   Loader2,
   ArrowRight,
 } from "lucide-react";
-import { PortalPackage, PaymentMethod, OrderItem } from "@/types/portal";
-import { STUDIO_BANK_ACCOUNTS } from "@/data/portal-mock";
+import type { PaymentMethod, OrderItem } from "@/types/portal";
+import type { PackageItem } from "@/data/packages";
+import { finalPrice, formatTL } from "@/lib/pricing";
 import { useMember } from "@/context/MemberContext";
 
 interface CheckoutModalProps {
-  pkg: PortalPackage | null;
+  pkg: PackageItem | null;
   onClose: () => void;
-  onSuccess: (order: OrderItem) => void;
 }
 
 export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   pkg,
   onClose,
-  onSuccess,
 }) => {
-  const { purchasePackage } = useMember();
-  const [method, setMethod] = useState<PaymentMethod>("online_card");
+  const { purchasePackage, referral, bankAccounts } = useMember();
+  const [method, setMethod] = useState<PaymentMethod>("bank_transfer");
   const [processing, setProcessing] = useState(false);
   const [completedOrder, setCompletedOrder] = useState<OrderItem | null>(null);
   const [copiedIban, setCopiedIban] = useState<string | null>(null);
-
-  // Form states for online card
-  const [cardNumber, setCardNumber] = useState("");
-  const [cardHolder, setCardHolder] = useState("");
-  const [expiry, setExpiry] = useState("");
-  const [cvv, setCvv] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   if (!pkg) return null;
+
+  // Gösterim için merkezi hesap; kesin tutarı sunucu aynı kuralla belirler.
+  const price = finalPrice(pkg, referral?.discountActive ?? false);
+  const priceText = formatTL(price);
 
   const handleCopyIban = (iban: string) => {
     navigator.clipboard.writeText(iban.replace(/\s+/g, ""));
@@ -49,25 +46,14 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     setTimeout(() => setCopiedIban(null), 2500);
   };
 
-  const handlePay = (e: React.FormEvent) => {
+  const handlePay = async (e: React.FormEvent) => {
     e.preventDefault();
     setProcessing(true);
-
-    // Simulate payment gateway delay (1.2 seconds)
-    setTimeout(() => {
-      const result = purchasePackage({
-        packageId: pkg.id,
-        paymentMethod: method,
-        cardDetails:
-          method === "online_card"
-            ? { cardNumber, cardHolder, expiry, cvv }
-            : undefined,
-      });
-
-      setProcessing(false);
-      setCompletedOrder(result.order);
-      onSuccess(result.order);
-    }, 1200);
+    setError(null);
+    const result = await purchasePackage({ packageId: pkg.id, paymentMethod: method });
+    setProcessing(false);
+    if (result.ok) setCompletedOrder(result.order);
+    else setError(result.error);
   };
 
   return (
@@ -100,7 +86,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 Paket Satın Alma
               </h3>
               <p className="text-xs text-[#64748B] mt-0.5">
-                {pkg.name} ({pkg.sessionCount} Seans • {pkg.formattedPrice})
+                {pkg.name} ({pkg.sessionCount} Ders • {priceText})
               </p>
             </div>
 
@@ -111,12 +97,15 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 <div>
                   <span className="text-sm font-bold text-[#0F172A] block">{pkg.name}</span>
                   <span className="text-xs text-[#10B981] font-semibold">
-                    +{pkg.sessionCount} Seans Hesabınıza Yüklenir
+                    +{pkg.sessionCount} ders hesabınıza yüklenir
                   </span>
                 </div>
                 <div className="text-right">
+                  {price < pkg.basePrice && (
+                    <span className="text-xs text-[#94A3B8] line-through block">{formatTL(pkg.basePrice)}</span>
+                  )}
                   <span className="text-lg sm:text-xl font-black font-display text-[#0F172A]">
-                    {pkg.formattedPrice}
+                    {priceText}
                   </span>
                   <span className="text-[10px] text-[#64748B] block">KDV Dahil</span>
                 </div>
@@ -129,28 +118,19 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 </label>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {/* 1. Online Kredi Kartı */}
+                  {/* 1. Online Kart: ödeme sağlayıcısı bağlanana kadar kapalı */}
                   <button
                     type="button"
-                    onClick={() => setMethod("online_card")}
-                    className={`p-3 rounded-xl border text-left flex items-start gap-2.5 transition-all ${
-                      method === "online_card"
-                        ? "border-[#0F172A] bg-[#F1F5F9] text-[#0F172A] shadow-xs ring-1 ring-[#0F172A]"
-                        : "border-black/[0.06] bg-white text-[#64748B] hover:border-black/[0.15]"
-                    }`}
+                    disabled
+                    aria-disabled="true"
+                    className="p-3 rounded-xl border border-dashed border-black/[0.08] bg-[#F8FAFC] text-left flex items-start gap-2.5 opacity-60 cursor-not-allowed"
                   >
-                    <CreditCard
-                      className={`w-4 h-4 shrink-0 mt-0.5 ${
-                        method === "online_card" ? "text-[#0F172A]" : "text-[#94A3B8]"
-                      }`}
-                    />
+                    <CreditCard className="w-4 h-4 shrink-0 mt-0.5 text-[#94A3B8]" />
                     <div>
                       <span className="text-xs font-bold block text-[#0F172A]">
                         Online Kart ile Öde
                       </span>
-                      <span className="text-[10px] text-[#64748B]">
-                        Anında seans yükleme (3D Secure)
-                      </span>
+                      <span className="text-[10px] text-[#64748B]">Yakında</span>
                     </div>
                   </button>
 
@@ -175,31 +155,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                       </span>
                       <span className="text-[10px] text-[#64748B]">
                         Stüdyoda girişte nakit öde
-                      </span>
-                    </div>
-                  </button>
-
-                  {/* 3. Kasada POS / Kredi Kartı */}
-                  <button
-                    type="button"
-                    onClick={() => setMethod("pos_register")}
-                    className={`p-3 rounded-xl border text-left flex items-start gap-2.5 transition-all ${
-                      method === "pos_register"
-                        ? "border-[#0F172A] bg-[#F1F5F9] text-[#0F172A] shadow-xs ring-1 ring-[#0F172A]"
-                        : "border-black/[0.06] bg-white text-[#64748B] hover:border-black/[0.15]"
-                    }`}
-                  >
-                    <CreditCard
-                      className={`w-4 h-4 shrink-0 mt-0.5 ${
-                        method === "pos_register" ? "text-[#0F172A]" : "text-[#94A3B8]"
-                      }`}
-                    />
-                    <div>
-                      <span className="text-xs font-bold block text-[#0F172A]">
-                        Kasada POS / Taksit
-                      </span>
-                      <span className="text-[10px] text-[#64748B]">
-                        Stüdyoda tek çekim veya taksit
                       </span>
                     </div>
                   </button>
@@ -233,75 +188,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
               {/* Dynamic Method Form Body */}
               <div>
-                {method === "online_card" && (
-                  <div className="space-y-3 bg-[#F8FAFC] p-3.5 sm:p-4 rounded-2xl border border-black/[0.06]">
-                    <div>
-                      <label className="text-[10px] font-bold text-[#64748B] uppercase block mb-1">
-                        KART NUMARASI
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        maxLength={19}
-                        placeholder="4543 2100 8921 5432"
-                        value={cardNumber}
-                        onChange={(e) => setCardNumber(e.target.value)}
-                        className="w-full bg-white border border-black/[0.12] rounded-xl px-3.5 py-2.5 text-xs font-sans text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#0F172A]"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-[10px] font-bold text-[#64748B] uppercase block mb-1">
-                        KART ÜZERİNDEKİ İSİM
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="EGE MERT"
-                        value={cardHolder}
-                        onChange={(e) => setCardHolder(e.target.value.toUpperCase())}
-                        className="w-full bg-white border border-black/[0.12] rounded-xl px-3.5 py-2.5 text-xs font-sans text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#0F172A]"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2.5">
-                      <div>
-                        <label className="text-[10px] font-bold text-[#64748B] uppercase block mb-1">
-                          SON KULLANMA (AA/YY)
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          maxLength={5}
-                          placeholder="12/28"
-                          value={expiry}
-                          onChange={(e) => setExpiry(e.target.value)}
-                          className="w-full bg-white border border-black/[0.12] rounded-xl px-3.5 py-2.5 text-xs font-sans text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#0F172A]"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-bold text-[#64748B] uppercase block mb-1">
-                          GÜVENLİK KODU (CVC)
-                        </label>
-                        <input
-                          type="password"
-                          required
-                          maxLength={3}
-                          placeholder="•••"
-                          value={cvv}
-                          onChange={(e) => setCvv(e.target.value)}
-                          className="w-full bg-white border border-black/[0.12] rounded-xl px-3.5 py-2.5 text-xs font-sans text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#0F172A]"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 text-[10px] text-[#64748B] pt-0.5">
-                      <ShieldCheck className="w-3.5 h-3.5 text-[#10B981] shrink-0" />
-                      <span>256-Bit SSL ve 3D Secure güvencesi</span>
-                    </div>
-                  </div>
-                )}
-
                 {method === "cash_register" && (
                   <div className="bg-[#F8FAFC] p-3.5 sm:p-4 rounded-2xl border border-black/[0.06] space-y-2.5">
                     <div className="flex items-start gap-2.5">
@@ -311,31 +197,12 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                           KASADA NAKİT ÖDEME TAAHHÜDÜ
                         </h5>
                         <p className="text-xs text-[#64748B] leading-relaxed mt-1">
-                          Siparişiniz anında oluşturulur. Ödemenizi ilk antrenmanınızda Nişantaşı stüdyo resepsiyonuna nakit olarak yapabilirsiniz.
+                          Siparişiniz anında oluşturulur. Ödemenizi ilk antrenmanınızda stüdyoda nakit olarak yapabilirsiniz.
                         </p>
                       </div>
                     </div>
                     <div className="p-2.5 bg-white rounded-xl border border-black/[0.06] text-xs text-[#059669] font-medium">
                       ✓ Seanslar hemen tanımlanır, randevu almaya başlayabilirsiniz.
-                    </div>
-                  </div>
-                )}
-
-                {method === "pos_register" && (
-                  <div className="bg-[#F8FAFC] p-3.5 sm:p-4 rounded-2xl border border-black/[0.06] space-y-2.5">
-                    <div className="flex items-start gap-2.5">
-                      <CreditCard className="w-5 h-5 text-[#2563EB] shrink-0 mt-0.5" />
-                      <div>
-                        <h5 className="text-xs font-bold text-[#0F172A] uppercase">
-                          STÜDYO KASASINDA POS İLE ÖDEME
-                        </h5>
-                        <p className="text-xs text-[#64748B] leading-relaxed mt-1">
-                          Stüdyoya geldiğinizde resepsiyondan banka/kredi kartınızla tek çekim veya 3/6 taksitle ödeme yapabilirsiniz.
-                        </p>
-                      </div>
-                    </div>
-                    <div className="p-2.5 bg-white rounded-xl border border-black/[0.06] text-xs text-[#059669] font-medium">
-                      ✓ Rezervasyon onaylanır, ödeme girişte tahsil edilir.
                     </div>
                   </div>
                 )}
@@ -346,7 +213,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                       Aşağıdaki stüdyo banka hesaplarımıza FAST/EFT yapabilirsiniz:
                     </p>
                     <div className="space-y-2">
-                      {STUDIO_BANK_ACCOUNTS.map((acc, i) => (
+                      {bankAccounts.map((acc, i) => (
                         <div
                           key={i}
                           className="p-3 bg-white rounded-xl border border-black/[0.06] flex items-center justify-between shadow-2xs"
@@ -380,6 +247,10 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               </div>
             </div>
 
+            {error && (
+              <p className="mx-5 sm:mx-7 mb-2 p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs font-medium">{error}</p>
+            )}
+
             {/* Sticky Bottom Action Bar (Always visible on mobile & desktop!) */}
             <div className="p-4 sm:px-7 bg-white/95 backdrop-blur-md border-t border-black/[0.06] shrink-0 pb-6 sm:pb-4 shadow-lg">
               <button
@@ -395,13 +266,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 ) : (
                   <>
                     <span>
-                      {method === "online_card"
-                        ? `${pkg.formattedPrice} İle Ödemeyi Tamamla`
-                        : method === "cash_register"
-                        ? "Kasada Nakit Ödeme Emri Oluştur"
-                        : method === "pos_register"
-                        ? "Kasada POS ile Ödeme Emri Oluştur"
-                        : "Havale Siparişini Onayla"}
+                      {method === "cash_register" ? "Stüdyoda Nakit Ödeme Emri Oluştur" : "Havale Siparişini Onayla"}
                     </span>
                     <ArrowRight className="w-4 h-4" />
                   </>
@@ -432,7 +297,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               <div className="flex justify-between border-b border-black/[0.06] pb-2">
                 <span className="text-[#64748B]">Yüklenen Seans:</span>
                 <span className="text-[#10B981] font-bold">
-                  +{completedOrder.sessionCount} Seans
+                  +{completedOrder.sessionCount} Ders
                 </span>
               </div>
               <div className="flex justify-between border-b border-black/[0.06] pb-2">
@@ -445,11 +310,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   }
                 >
                   {completedOrder.paymentStatus === "completed"
-                    ? "✓ Ödendi (Online Kart)"
+                    ? "✓ Ödendi"
                     : completedOrder.paymentMethod === "cash_register"
-                    ? "Kasada Nakit Ödenecek"
-                    : completedOrder.paymentMethod === "pos_register"
-                    ? "Kasada POS ile Ödenecek"
+                    ? "Stüdyoda Nakit Ödenecek"
                     : "Havale Bekleniyor"}
                 </span>
               </div>
@@ -462,7 +325,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             </div>
 
             <p className="text-xs text-[#64748B] max-w-sm mx-auto leading-relaxed">
-              Seanslarınız üye profilinize anında yansıtılmıştır. Dilerseniz hemen randevu planlayabilirsiniz.
+              Dersleriniz hesabınıza yüklendi. Dilerseniz hemen randevu planlayabilirsiniz.
             </p>
 
             <button

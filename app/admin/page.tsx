@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import { AdminPortal } from "@/components/portal/admin/AdminPortal";
+import { AdminGate } from "@/components/portal/admin/AdminGate";
 
 export default function AdminPage() {
-  return <AdminPortal />;
+  return <AdminGate />;
 }

@@ -1,32 +1,25 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { motion } from "motion/react";
-import {
-  Calendar,
-  Plus,
-  Clock,
-  MapPin,
-  ChevronRight,
-  Flame,
-  CheckCircle2,
-  AlertCircle,
-  Zap,
-  Droplets,
-  Trophy,
-  ShieldCheck,
-  Sparkles,
-  MessageSquare,
-  QrCode,
-  ArrowRight,
-  Share2,
-  Dumbbell,
-  Quote,
-} from "lucide-react";
+import React, { useState } from "react";
+import { Calendar, Plus, Clock, MapPin, ChevronRight, AlertCircle, MessageSquare, QrCode, Gift, Scale } from "lucide-react";
 import { useMember } from "@/context/MemberContext";
 import { DigitalPassCard } from "@/components/portal/DigitalPassCard";
 import { SessionRingGauge } from "@/components/portal/SessionRingGauge";
-import { downloadIcsFile, generateGoogleCalendarUrl } from "@/lib/calendar";
+import { ReferralCard } from "@/components/portal/ReferralCard";
+import { downloadIcsFile } from "@/lib/calendar";
+import { formatDateLong, formatDateMedium } from "@/lib/format";
+import { firstVsLatest, signed, formatNumber } from "@/lib/measurements";
+import { todayIso } from "@/lib/slots";
+import {
+  ACTIVE_BOOKING_STATUSES,
+  BOOKING_STATUS_LABEL,
+  BOOKING_STATUS_STYLE,
+  HEAD_COACH_NAME,
+  STUDIO_AREA,
+  workoutLabel,
+} from "@/lib/training";
+
+const COACH_AVATAR = "https://images.unsplash.com/photo-1567013127542-490d757e51fc?auto=format&fit=crop&w=400&q=80";
 
 export const DashboardTab: React.FC = () => {
   const {
@@ -35,30 +28,31 @@ export const DashboardTab: React.FC = () => {
     totalSessions,
     packageExpiry,
     bookedSessions,
+    bodyMeasurements,
+    gifts,
+    referral,
     setActiveTab,
     cancelSession,
-    waterIntakeMl,
-    addWater,
-    resetWater,
-    userBadges,
-    streakWeeks,
     setIsQuickQrOpen,
   } = useMember();
+  const [message, setMessage] = useState<string | null>(null);
 
   if (!user) return null;
 
-  const upcomingSession = bookedSessions[0];
+  const today = todayIso();
+  const upcomingSession = bookedSessions
+    .filter((s) => ACTIVE_BOOKING_STATUSES.includes(s.status) && s.date >= today)
+    .sort((a, b) => (a.date + a.timeSlot).localeCompare(b.date + b.timeSlot))[0];
 
-  // Daily Water Goal: 2500 ml
-  const waterTargetMl = 2500;
-  const waterPercent = Math.min(100, Math.round((waterIntakeMl / waterTargetMl) * 100));
+  const weight = firstVsLatest(bodyMeasurements, "weightKg");
+  const activeGifts = gifts.filter((g) => g.status === "available");
 
   const handleAddToCalendar = () => {
     if (!upcomingSession) return;
     downloadIcsFile({
-      title: `Core & Fit: ${upcomingSession.focusArea}`,
-      description: `Kurucu & Baş Antrenör ${upcomingSession.coachName} ile 1:1 Kişisel Antrenman Seansı.\nİstasyon: ${upcomingSession.station}\nNotlar: ${upcomingSession.notes || "Biyomekanik çalışma."}`,
-      location: "Core & Fit Nişantaşı Studio, Abdi İpekçi Cad., İstanbul",
+      title: `Core & Fit: ${workoutLabel(upcomingSession.workoutType)}`,
+      description: `${HEAD_COACH_NAME} ile birebir antrenman. Lütfen seanstan 10 dakika önce stüdyoda olun.`,
+      location: `${STUDIO_AREA}, Nişantaşı, İstanbul`,
       startDate: upcomingSession.date,
       timeSlot: upcomingSession.timeSlot,
     });
@@ -67,52 +61,41 @@ export const DashboardTab: React.FC = () => {
   const handleOpenWhatsAppCoach = () => {
     if (!upcomingSession) return;
     const text = encodeURIComponent(
-      `Merhaba İlker Hocam, ${upcomingSession.date} saat ${upcomingSession.timeSlot} seansım hakkında bilgi almak istiyorum.`
+      `Merhaba İlker Hocam, ${formatDateMedium(upcomingSession.date)} saat ${upcomingSession.timeSlot} seansım hakkında bilgi almak istiyorum.`
     );
-    window.open(`https://wa.me/905325550124?text=${text}`, "_blank");
+    window.open(`https://wa.me/905318477882?text=${text}`, "_blank");
   };
 
-  const weekDays = [
-    { day: "Pzt", date: "14 Eyl", visited: true },
-    { day: "Sal", date: "15 Eyl", visited: false },
-    { day: "Çar", date: "16 Eyl", visited: true },
-    { day: "Per", date: "17 Eyl", visited: false },
-    { day: "Cum", date: "18 Eyl", visited: false },
-    { day: "Cts", date: "19 Eyl", visited: true, isUpcoming: true },
-  ];
+  const handleCancel = async () => {
+    if (!upcomingSession) return;
+    if (!confirm("Bu seansı iptal etmek istediğinize emin misiniz? Ders hakkınız iade edilecek.")) return;
+    const res = await cancelSession(upcomingSession.id);
+    setMessage(res.ok ? res.message ?? null : res.error);
+  };
 
   return (
     <div className="space-y-6 pb-28">
-      {/* Welcome & Quick App Actions Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-sans text-emerald-600 uppercase tracking-wider font-bold">
-              KİŞİSEL ANTRENMAN PANELİ
-            </span>
-            <span className="text-[#CBD5E1]">•</span>
-            <span className="text-[11px] font-sans text-[#64748B]">Nişantaşı Private Studio</span>
-          </div>
+          <span className="text-[11px] text-emerald-600 uppercase tracking-wider font-bold">Kişisel Antrenman Paneli</span>
           <h2 className="text-2xl sm:text-3xl font-extrabold uppercase font-display text-[#0F172A] tracking-tight mt-0.5">
-            Hoş Geldin, {(user?.fullName || "Ege Mert").split(" ")[0]}
+            Hoş Geldin, {user.fullName.split(" ")[0]}
           </h2>
         </div>
 
-        {/* Header Quick Buttons: Turnstile Pass & New Booking */}
-        <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
           <button
             type="button"
             onClick={() => setIsQuickQrOpen(true)}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300/80 font-bold text-xs uppercase tracking-wider rounded-full transition-all shadow-xs active:scale-95"
+            className="inline-flex items-center justify-center gap-2 min-h-11 px-4 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300/80 font-bold text-xs uppercase tracking-wider rounded-full transition-all active:scale-95"
           >
             <QrCode className="w-4 h-4 text-emerald-600" />
-            <span>Turnike QR Aç</span>
+            <span>Turnike QR</span>
           </button>
-
           <button
             type="button"
             onClick={() => setActiveTab("sessions")}
-            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#0F172A] text-white font-bold text-xs uppercase tracking-wider rounded-full hover:bg-black transition-all shadow-xs active:scale-95 shrink-0"
+            className="inline-flex items-center justify-center gap-2 min-h-11 px-5 bg-[#0F172A] text-white font-bold text-xs uppercase tracking-wider rounded-full hover:bg-black transition-all active:scale-95"
           >
             <Calendar className="w-4 h-4 text-emerald-400" />
             <span>Yeni Seans</span>
@@ -120,34 +103,19 @@ export const DashboardTab: React.FC = () => {
         </div>
       </div>
 
-      {/* 2-Column Grid: Digital Pass & Session Gauge */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <DigitalPassCard user={user} remainingSessions={remainingSessions} />
-        <SessionRingGauge
-          remaining={remainingSessions}
-          total={totalSessions}
-          expiryDate={packageExpiry}
-          onAddSessions={() => setActiveTab("store")}
-        />
-      </div>
+      {message && (
+        <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-2xl text-xs font-medium">{message}</div>
+      )}
 
-      {/* Upcoming Session Card with Native App Actions (Calendar, WhatsApp, QR) */}
-      <div className="bg-white border border-black/[0.06] rounded-3xl p-5 sm:p-6 shadow-[0_4px_24px_rgba(0,0,0,0.02)]">
+      {/* Sonraki seans */}
+      <section className="bg-white border border-black/[0.06] rounded-3xl p-5 sm:p-6 shadow-[0_4px_24px_rgba(0,0,0,0.02)]">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-2xl bg-[#EFF6FF] text-[#2563EB]">
               <Clock className="w-4 h-4" />
             </div>
-            <div>
-              <h4 className="text-sm font-bold uppercase font-display text-[#0F172A] tracking-tight">
-                YAKLAŞAN İLK SEANSINIZ
-              </h4>
-              <span className="text-[10px] font-sans text-[#64748B] uppercase">
-                BİREBİR REZERVE EDİLMİŞ ANTRENMAN
-              </span>
-            </div>
+            <h4 className="text-sm font-bold uppercase font-display text-[#0F172A] tracking-tight">Yaklaşan İlk Seansınız</h4>
           </div>
-
           <button
             onClick={() => setActiveTab("sessions")}
             className="text-xs font-semibold text-[#2563EB] hover:underline flex items-center gap-1"
@@ -160,69 +128,51 @@ export const DashboardTab: React.FC = () => {
         {upcomingSession ? (
           <div className="bg-[#F8FAFC] border border-black/[0.04] rounded-2xl p-4 sm:p-5 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="relative w-16 h-16 rounded-2xl overflow-hidden border border-black/10 shrink-0 shadow-xs">
-                <img
-                  src={upcomingSession.coachAvatar}
-                  alt={upcomingSession.coachName}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold font-sans text-[#2563EB]">
-                    📅 {upcomingSession.date} • ⏰ {upcomingSession.timeSlot}
+              <img
+                src={COACH_AVATAR}
+                alt={HEAD_COACH_NAME}
+                className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl object-cover border border-black/10 shrink-0"
+              />
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-bold text-[#2563EB]">
+                    {formatDateLong(upcomingSession.date)} • {upcomingSession.timeSlot}
                   </span>
-                  <span className="px-2.5 py-0.5 bg-[#ECFDF5] text-[#059669] text-[10px] font-bold rounded-full uppercase">
-                    ONAYLANDI
+                  <span className={`px-2.5 py-0.5 text-[10px] font-bold rounded-full ${BOOKING_STATUS_STYLE[upcomingSession.status]}`}>
+                    {BOOKING_STATUS_LABEL[upcomingSession.status]}
                   </span>
                 </div>
-
-                <h5 className="text-base font-bold text-[#0F172A] uppercase font-display mt-1">
-                  {upcomingSession.coachName} ile {upcomingSession.focusArea}
+                <h5 className="text-base font-bold text-[#0F172A] mt-1">
+                  {HEAD_COACH_NAME} ile {workoutLabel(upcomingSession.workoutType)}
                 </h5>
-
-                <p className="text-xs text-[#64748B] font-sans flex items-center gap-1.5 mt-1">
+                <p className="text-xs text-[#64748B] flex items-center gap-1.5 mt-1">
                   <MapPin className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>{upcomingSession.station}</span>
+                  <span>{STUDIO_AREA}</span>
                 </p>
               </div>
             </div>
 
-            {/* Smart Actions: Add to Calendar, QR, WhatsApp, Cancel */}
             <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-end pt-3 lg:pt-0 border-t lg:border-t-0 border-black/[0.06]">
               <button
                 type="button"
                 onClick={handleAddToCalendar}
-                className="px-3 py-2 bg-white hover:bg-slate-50 border border-black/[0.08] text-[#0F172A] rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-2xs"
-                title="Apple veya Google Takviminize Ekleyin"
+                className="min-h-10 px-3 bg-white hover:bg-slate-50 border border-black/[0.08] text-[#0F172A] rounded-xl text-xs font-semibold flex items-center gap-1.5"
               >
                 <Calendar className="w-3.5 h-3.5 text-blue-600" />
                 <span>Takvime Ekle</span>
               </button>
-
               <button
                 type="button"
                 onClick={handleOpenWhatsAppCoach}
-                className="px-3 py-2 bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#128C7E] rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5"
-                title="Koça WhatsApp'tan Yaz"
+                className="min-h-10 px-3 bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#128C7E] rounded-xl text-xs font-bold flex items-center gap-1.5"
               >
-                <MessageSquare className="w-3.5 h-3.5 fill-current" />
+                <MessageSquare className="w-3.5 h-3.5" />
                 <span>Koça Yaz</span>
               </button>
-
               <button
                 type="button"
-                onClick={() => {
-                  if (
-                    confirm(
-                      "Bu seansı iptal etmek istediğinize emin misiniz? 1 seans krediniz iade edilecektir."
-                    )
-                  ) {
-                    cancelSession(upcomingSession.id);
-                  }
-                }}
-                className="px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-xl transition-colors"
+                onClick={handleCancel}
+                className="min-h-10 px-3 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-xl"
               >
                 İptal Et
               </button>
@@ -231,211 +181,96 @@ export const DashboardTab: React.FC = () => {
         ) : (
           <div className="text-center py-8 bg-[#F8FAFC] rounded-2xl border border-dashed border-black/[0.08] space-y-3">
             <AlertCircle className="w-8 h-8 text-[#94A3B8] mx-auto" />
-            <p className="text-xs text-[#64748B]">
-              Şu anda planlanmış bir seansınız bulunmuyor.
-            </p>
+            <p className="text-xs text-[#64748B]">Şu anda planlanmış bir seansınız bulunmuyor.</p>
             <button
               onClick={() => setActiveTab("sessions")}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0F172A] text-white font-bold text-xs uppercase font-sans rounded-full hover:bg-[#1E293B]"
+              className="inline-flex items-center gap-1.5 min-h-10 px-4 bg-[#0F172A] text-white font-bold text-xs uppercase rounded-full hover:bg-[#1E293B]"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Hemen Seans Ayırt</span>
             </button>
           </div>
         )}
+      </section>
+
+      {/* Dijital kart ve ders hakkı */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <DigitalPassCard user={user} remainingSessions={remainingSessions} />
+        <SessionRingGauge
+          remaining={remainingSessions}
+          total={totalSessions}
+          packageName={totalSessions > 0 ? user.membershipTier : "Henüz paket yok"}
+          expiryDate={packageExpiry ? formatDateMedium(packageExpiry) : "—"}
+          onAddSessions={() => setActiveTab("store")}
+        />
       </div>
 
-      {/* 2-Column Row: Daily Water (Hydration) & Program Shortcut */}
+      {/* Vücut ağırlığı özeti ve hediye */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Apple Health Daily Water Tracker */}
-        <div className="bg-white border border-black/[0.06] rounded-3xl p-5 sm:p-6 shadow-[0_4px_24px_rgba(0,0,0,0.02)] flex flex-col justify-between space-y-4">
-          <div className="flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() => setActiveTab("history")}
+          className="text-left bg-white border border-black/[0.06] rounded-3xl p-5 sm:p-6 shadow-[0_4px_24px_rgba(0,0,0,0.02)] hover:border-black/[0.14] transition-colors"
+        >
+          <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-                <Droplets className="w-4 h-4" />
+              <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                <Scale className="w-4 h-4" />
+              </div>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-[#0F172A]">Vücut Ağırlığı</h4>
+            </div>
+            <ChevronRight className="w-4 h-4 text-[#94A3B8]" />
+          </div>
+          {weight ? (
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div>
+                <span className="text-[10px] text-[#64748B] block">İlk</span>
+                <span className="text-base font-black text-[#0F172A]">{formatNumber(weight.first)} kg</span>
               </div>
               <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] font-display">
-                  GÜNLÜK SU TÜKETİMİ
-                </h4>
-                <span className="text-[10px] text-[#64748B]">Hedef: 2.5 Litre (2500 ml)</span>
+                <span className="text-[10px] text-[#64748B] block">Güncel</span>
+                <span className="text-base font-black text-[#0F172A]">{formatNumber(weight.latest)} kg</span>
+              </div>
+              <div>
+                <span className="text-[10px] text-[#64748B] block">Değişim</span>
+                <span className={`text-base font-black ${weight.diff <= 0 ? "text-emerald-600" : "text-amber-600"}`}>
+                  {signed(weight.diff)} kg
+                </span>
               </div>
             </div>
+          ) : (
+            <p className="text-xs text-[#64748B]">Henüz ölçüm yok. İlk ölçümünüz stüdyoda alınacak.</p>
+          )}
+        </button>
 
-            <span className="text-xs font-black text-blue-700 bg-blue-50 px-2.5 py-1 rounded-full">
-              %{waterPercent}
-            </span>
+        <section className="bg-gradient-to-br from-emerald-600 to-teal-700 text-white rounded-3xl p-5 sm:p-6 shadow-lg" data-keep-white>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-8 h-8 rounded-xl bg-white/15 flex items-center justify-center">
+              <Gift className="w-4 h-4" />
+            </div>
+            <h4 className="text-xs font-bold uppercase tracking-wider">Hediye</h4>
           </div>
-
-          {/* Progress Bar & Numbers */}
-          <div>
-            <div className="flex items-baseline justify-between mb-1.5 text-xs font-mono">
-              <span className="text-lg font-black text-[#0F172A]">{waterIntakeMl} ml</span>
-              <span className="text-[11px] text-[#64748B]">/ {waterTargetMl} ml</span>
-            </div>
-            <div className="w-full h-3 bg-[#F1F5F9] rounded-full overflow-hidden p-0.5 border border-black/[0.04]">
-              <motion.div
-                className="h-full bg-gradient-to-r from-blue-400 to-indigo-500 rounded-full"
-                animate={{ width: `${waterPercent}%` }}
-                transition={{ duration: 0.3 }}
-              />
-            </div>
-          </div>
-
-          {/* Quick Buttons */}
-          <div className="flex items-center justify-between pt-1 text-xs">
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => addWater(250)}
-                className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-800 rounded-xl font-bold transition-all active:scale-95"
-              >
-                +250 ml (1 Bardak)
-              </button>
-              <button
-                type="button"
-                onClick={() => addWater(500)}
-                className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-800 rounded-xl font-bold transition-all active:scale-95"
-              >
-                +500 ml (Şişe)
-              </button>
-            </div>
-
-            {waterIntakeMl > 0 && (
-              <button
-                type="button"
-                onClick={resetWater}
-                className="text-[10px] text-[#94A3B8] hover:text-[#0F172A] font-semibold"
-              >
-                Sıfırla
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Personalized Workout Routine Shortcut Banner */}
-        <div className="bg-gradient-to-br from-slate-900 via-slate-950 to-black text-white rounded-3xl p-5 sm:p-6 border border-white/10 shadow-lg flex flex-col justify-between space-y-4 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none -mr-12 -mt-12" />
-
-          <div className="relative z-10 space-y-2">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-emerald-500/20 text-emerald-300 rounded-full text-[10px] font-bold uppercase tracking-wider">
-              <Dumbbell className="w-3 h-3" />
-              <span>GÜNCEL ANTRENMAN PLANI</span>
-            </div>
-            <h4 className="text-base font-bold font-display uppercase tracking-tight text-white">
-              Posterior Chain & Core Hipertrofi
-            </h4>
-            <p className="text-xs text-slate-400 leading-relaxed line-clamp-2">
-              İlker Hoca tarafından hazırlanan trap bar deadlift ve tek bacak stabilizasyon protokolü.
+          {activeGifts.length > 0 ? (
+            <ul className="space-y-3">
+              {activeGifts.map((g) => (
+                <li key={g.id}>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold">{g.title}</span>
+                    <span className="px-2 py-0.5 bg-white/20 rounded-full text-[10px] font-bold">Kullanılabilir</span>
+                  </div>
+                  {g.description && <p className="text-xs text-white/80 mt-1 leading-relaxed">{g.description}</p>}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-xs text-white/80 leading-relaxed">
+              Şu an tanımlı bir hediyen yok. Ücretsiz ders, kampanya ve üyelik avantajları burada görünecek.
             </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab("workout")}
-            className="relative z-10 w-full py-2.5 bg-white hover:bg-slate-100 text-slate-950 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-md active:scale-98"
-          >
-            <span>Egzersizleri & Formu İncele</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
+          )}
+        </section>
       </div>
 
-      {/* Gamification Badges Shelf */}
-      <div className="bg-white border border-black/[0.06] rounded-3xl p-5 sm:p-6 shadow-[0_4px_24px_rgba(0,0,0,0.02)] space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
-              <Trophy className="w-4 h-4" />
-            </div>
-            <div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] font-display">
-                BAŞARI ROZETLERİ & KULÜP SEVİYESİ
-              </h4>
-              <span className="text-[10px] text-[#64748B]">Stüdyo disiplini ve kaldırış başarıları</span>
-            </div>
-          </div>
-
-          <span className="px-3 py-1 bg-amber-50 text-amber-800 text-[10px] font-bold rounded-full uppercase">
-            {userBadges.filter((b) => b.isUnlocked).length} / {userBadges.length} KAZANILDI
-          </span>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {userBadges.slice(0, 4).map((badge) => (
-            <div
-              key={badge.id}
-              className={`p-3.5 rounded-2xl border text-center transition-all ${
-                badge.isUnlocked
-                  ? "bg-[#F8FAFC] border-black/[0.06] shadow-2xs"
-                  : "bg-slate-50/50 border-dashed border-slate-200 opacity-60"
-              }`}
-            >
-              <div
-                className={`w-9 h-9 rounded-2xl mx-auto flex items-center justify-center mb-2 ${
-                  badge.isUnlocked
-                    ? "bg-amber-100 text-amber-700"
-                    : "bg-slate-200 text-slate-400"
-                }`}
-              >
-                <Trophy className="w-4 h-4" />
-              </div>
-              <h5 className="text-xs font-bold text-[#0F172A] truncate">{badge.title}</h5>
-              <p className="text-[10px] text-[#64748B] truncate mt-0.5">{badge.subtitle}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Weekly Attendance Matrix (Apple Health Style) */}
-      <div className="bg-white border border-black/[0.06] rounded-3xl p-5 sm:p-6 shadow-[0_4px_24px_rgba(0,0,0,0.02)]">
-        <div className="flex items-center justify-between mb-5">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-2xl bg-[#FEF2F2] text-[#EF4444]">
-              <Flame className="w-4 h-4" />
-            </div>
-            <div>
-              <h4 className="text-sm font-bold uppercase font-display text-[#0F172A] tracking-tight">
-                HAFTALIK ANTRENMAN DİSİPLİNİ
-              </h4>
-              <span className="text-[10px] font-sans text-[#64748B] uppercase">
-                BU HAFTA 2 SEANS TAMAMLANDI • 1 SEANS BEKLİYOR
-              </span>
-            </div>
-          </div>
-
-          <span className="px-3 py-1 bg-[#FEF3C7] text-[#D97706] text-[10px] font-bold rounded-full uppercase">
-            {streakWeeks} HAFTALIK SERİ 🔥
-          </span>
-        </div>
-
-        <div className="grid grid-cols-6 gap-2 sm:gap-3.5">
-          {weekDays.map((w, idx) => (
-            <div
-              key={idx}
-              className={`p-3 sm:p-3.5 rounded-2xl border text-center transition-all ${
-                w.visited && !w.isUpcoming
-                  ? "bg-[#ECFDF5] border-[#10B981]/30 text-[#0F172A]"
-                  : w.isUpcoming
-                  ? "bg-[#EFF6FF] border-[#2563EB]/40 text-[#0F172A]"
-                  : "bg-[#F8FAFC] border-black/[0.04] text-[#94A3B8]"
-              }`}
-            >
-              <span className="text-xs font-bold block">{w.day}</span>
-              <span className="text-[10px] text-[#64748B] block mt-0.5">{w.date}</span>
-              <div className="mt-2.5 flex justify-center">
-                {w.visited && !w.isUpcoming ? (
-                  <CheckCircle2 className="w-4 h-4 text-[#10B981]" />
-                ) : w.isUpcoming ? (
-                  <Clock className="w-4 h-4 text-[#2563EB] animate-pulse" />
-                ) : (
-                  <span className="w-2 h-2 rounded-full bg-[#E2E8F0]" />
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      {referral && <ReferralCard referral={referral} />}
     </div>
   );
 };
