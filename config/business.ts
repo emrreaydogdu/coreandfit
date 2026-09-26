@@ -18,7 +18,7 @@ export const BUSINESS_CONFIG = {
   whatsappUrl: "https://wa.me/905318477882",
   instagramHandle: "@coreandfit",
   instagramUrl: "https://instagram.com/coreandfit",
-  email: "info@coreandfit.com",
+  email: "info@coreandfit.com.tr",
   rating: {
     score: 4.2,
     maxScore: 5,
@@ -31,7 +31,7 @@ export const BUSINESS_CONFIG = {
     sunday: "Ön Randevu ile",
   },
   meta: {
-    siteUrl: "https://coreandfit.com",
+    siteUrl: "https://coreandfit.com.tr",
     titleTemplate: "%s | Core & Fit Private Sport Studio Nişantaşı",
     defaultTitle: "Core & Fit | Personal Training & Private Sport Studio Nişantaşı",
     defaultDescription:

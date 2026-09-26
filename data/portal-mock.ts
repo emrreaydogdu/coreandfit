@@ -26,7 +26,7 @@ export const DEFAULT_STUDIO_SETTINGS: StudioSettings = {
   address: "Abdi İpekçi Cad. No: 42/A, Nişantaşı, Şişli / İstanbul",
   phone: "+90 212 234 56 78",
   whatsapp: "+90 531 847 78 82",
-  email: "info@coreandfit.com",
+  email: "info@coreandfit.com.tr",
   maxCapacity: 20,
   turnstileRelayDelay: 5,
   qrRefreshSeconds: 60,

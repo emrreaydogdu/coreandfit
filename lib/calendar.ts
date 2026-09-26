@@ -65,7 +65,7 @@ export function downloadIcsFile(event: CalendarEventData) {
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
     "BEGIN:VEVENT",
-    `UID:cf-sess-${Date.now()}@coreandfit.com`,
+    `UID:cf-sess-${Date.now()}@coreandfit.com.tr`,
     `DTSTAMP:${startIcs}`,
     `DTSTART:${startIcs}`,
     `DTEND:${endIcs}`,

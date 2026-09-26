@@ -54,7 +54,7 @@ export default function KvkkPage() {
             4. İlgili Kişi Olarak Haklarınız
           </h2>
           <p>
-            KVKK’nın 11. maddesi uyarınca; verilerinizin işlenip işlenmediğini öğrenme, işlenmişse bilgi talep etme, silinmesini veya düzeltilmesini talep etme haklarına sahipsiniz. Başvurularınızı info@coreandfit.com adresi üzerinden stüdyomuza iletebilirsiniz.
+            KVKK’nın 11. maddesi uyarınca; verilerinizin işlenip işlenmediğini öğrenme, işlenmişse bilgi talep etme, silinmesini veya düzeltilmesini talep etme haklarına sahipsiniz. Başvurularınızı info@coreandfit.com.tr adresi üzerinden stüdyomuza iletebilirsiniz.
           </p>
 
           <div className="pt-6 border-t border-[#191B20] text-xs font-mono text-[#72757C]">
