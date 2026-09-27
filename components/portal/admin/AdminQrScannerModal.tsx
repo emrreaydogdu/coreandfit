@@ -86,18 +86,12 @@ export const AdminQrScannerModal: React.FC<AdminQrScannerModalProps> = ({
     processingRef.current = true;
     setIsProcessingScan(true);
 
-    // Biçim: CF-PASS|<üye no>|<ad>|<dakika>|<özet> veya yalnızca üye numarası
-    let memberNo = "";
-    let memberName = "";
-    if (decodedString.includes("|")) {
-      const parts = decodedString.split("|");
-      memberNo = parts[1] || "";
-      memberName = parts[2] || "";
-    } else {
-      memberNo = decodedString.match(/CF-\d+/)?.[0] ?? "";
-    }
+    // Biçim: CFP1.<üye no>.<son geçerlilik>.<imza>. İmza, süre ve tek kullanım sunucuda doğrulanır.
+    const token = decodedString.trim();
+    const memberNo = /^CFP1\.(CF-\d{5})\./.exec(token)?.[1] ?? "";
+    const memberName = "";
 
-    const res = memberNo ? await adminCheckIn(memberNo) : { ok: false as const, error: "QR kodu okunamadı." };
+    const res = memberNo ? await adminCheckIn({ passToken: token }) : { ok: false as const, error: "Bu QR kod Core & Fit giriş kartı değil." };
     playTurnstileSound(res.ok ? "success" : "error");
     setScanResult({
       status: res.ok ? "success" : "error",
@@ -343,7 +337,7 @@ export const AdminQrScannerModal: React.FC<AdminQrScannerModalProps> = ({
                 <div className="mt-3 p-3 bg-black/40 rounded-xl border border-white/10 w-full space-y-1 text-xs text-left">
                   <div className="flex justify-between">
                     <span className="text-slate-400">Üye:</span>
-                    <span className="font-bold">{scanResult.memberName} ({scanResult.memberNo})</span>
+                    <span className="font-bold">{scanResult.memberName || scanResult.memberNo}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-400">Giriş Saati:</span>

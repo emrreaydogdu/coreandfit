@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   X,
@@ -10,6 +10,7 @@ import {
   MapPin,
 } from "lucide-react";
 import { useMember } from "@/context/MemberContext";
+import { useMemberPass } from "@/components/portal/useMemberPass";
 import { todayIso } from "@/lib/slots";
 import { ACTIVE_BOOKING_STATUSES, workoutLabel } from "@/lib/training";
 
@@ -20,36 +21,12 @@ interface QuickQrModalProps {
 
 export const QuickQrModal: React.FC<QuickQrModalProps> = ({ isOpen, onClose }) => {
   const { user, remainingSessions, bookedSessions } = useMember();
-  const [countdown, setCountdown] = useState<number>(60);
-  const [tokenSeed, setTokenSeed] = useState<string>("8921-9941");
-  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  // Sunucunun imzaladığı kısa ömürlü QR; pencere açıkken otomatik yenilenir.
+  const { qrDataUrl, code, secondsLeft, refresh } = useMemberPass(isOpen);
 
   const upcomingSession = bookedSessions.find(
     (s) => s.date === todayIso() && ACTIVE_BOOKING_STATUSES.includes(s.status)
   );
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const timer = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          handleManualRefresh();
-          return 60;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [isOpen]);
-
-  const handleManualRefresh = () => {
-    setIsRefreshing(true);
-    setTokenSeed(Math.floor(1000 + Math.random() * 9000) + "-" + Math.floor(1000 + Math.random() * 9000));
-    setCountdown(60);
-    setTimeout(() => setIsRefreshing(false), 400);
-  };
 
   if (!isOpen || !user) return null;
 
@@ -111,19 +88,17 @@ export const QuickQrModal: React.FC<QuickQrModalProps> = ({ isOpen, onClose }) =
 
           {/* High-Contrast Dynamic QR Code Box */}
           <div className="relative p-4 bg-white rounded-3xl shadow-xl flex flex-col items-center justify-center z-10 w-60 h-60">
-            {/* SVG Optical QR representation */}
             <div className="w-full h-full flex flex-col items-center justify-center relative">
-              <QrCode className="w-44 h-44 text-slate-900" />
-
-              {/* Center Logo Badge */}
-              <div className="absolute w-11 h-11 rounded-xl bg-slate-950 text-emerald-400 border-2 border-white flex items-center justify-center font-black text-xs shadow-md">
-                CF
-              </div>
+              {qrDataUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={qrDataUrl} alt="Giriş QR kodu" className="w-44 h-44 object-contain" />
+              ) : (
+                <QrCode className="w-44 h-44 text-slate-300 animate-pulse" />
+              )}
             </div>
 
-            {/* Simulated Digital Security Code */}
             <div className="mt-1 font-mono text-[10px] font-bold text-slate-700 tracking-[0.25em]">
-              {tokenSeed}
+              {code}
             </div>
           </div>
 
@@ -136,11 +111,11 @@ export const QuickQrModal: React.FC<QuickQrModalProps> = ({ isOpen, onClose }) =
 
             <button
               type="button"
-              onClick={handleManualRefresh}
+              onClick={refresh}
               className="flex items-center gap-1 text-[11px] text-emerald-400 hover:text-emerald-300 font-semibold transition-colors"
             >
-              <RefreshCw className={`w-3 h-3 ${isRefreshing ? "animate-spin" : ""}`} />
-              <span>{countdown}s Yenileniyor</span>
+              <RefreshCw className="w-3 h-3" />
+              <span>{secondsLeft}s Yenileniyor</span>
             </button>
           </div>
 

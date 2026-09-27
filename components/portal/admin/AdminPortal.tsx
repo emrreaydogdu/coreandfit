@@ -29,6 +29,7 @@ import {
   Menu,
   LogOut,
   Hourglass,
+  KeyRound,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useMember } from "@/context/MemberContext";
@@ -38,6 +39,8 @@ import { AdminFloatingNav, ADMIN_TABS, type AdminTab } from "@/components/portal
 import { AdminCreateSessionModal } from "@/components/portal/admin/AdminCreateSessionModal";
 import { AdminScheduleCalendarTable } from "@/components/portal/admin/AdminScheduleCalendarTable";
 import { AdminStudioSettingsTab } from "@/components/portal/admin/AdminStudioSettingsTab";
+import { AdminPaymentsTab } from "@/components/portal/admin/AdminPaymentsTab";
+import { AdminPasswordModal } from "@/components/portal/admin/AdminPasswordModal";
 import { AdminCoachSlotsTab } from "@/components/portal/admin/AdminCoachSlotsTab";
 import { AdminQuickSaleModal } from "@/components/portal/admin/AdminQuickSaleModal";
 import { AdminWhatsAppModal } from "@/components/portal/admin/AdminWhatsAppModal";
@@ -45,7 +48,7 @@ import { AdminSessionActionModal } from "@/components/portal/admin/AdminSessionA
 import { AdminMemberDetailModal } from "@/components/portal/admin/AdminMemberDetailModal";
 import { AdminCreateMemberModal } from "@/components/portal/admin/AdminCreateMemberModal";
 import { formatTL } from "@/lib/pricing";
-import { formatDateLong, formatDateShort, formatDateMedium } from "@/lib/format";
+import { APPROVABLE_PAYMENT_STATUSES, PAYMENT_STATUS_INFO, formatDateLong, formatDateShort, formatDateMedium } from "@/lib/format";
 import { todayIso } from "@/lib/slots";
 import {
   BOOKING_STATUS_LABEL,
@@ -106,6 +109,7 @@ export const AdminPortal: React.FC = () => {
   const [orderFilter, setOrderFilter] = useState<"all" | "pending" | "completed">("all");
   const [memberSearch, setMemberSearch] = useState("");
   const [checkInMemberId, setCheckInMemberId] = useState("");
+  const [isPasswordOpen, setIsPasswordOpen] = useState(false);
 
   const showResult = (res: { ok: true; message?: string } | { ok: false; error: string }) => {
     setToast(res.ok ? { ok: true, text: res.message ?? "Kaydedildi." } : { ok: false, text: res.error });
@@ -126,7 +130,7 @@ export const AdminPortal: React.FC = () => {
     .filter((s) => s.status === "CONFIRMED" && s.date >= today)
     .sort((a, b) => (a.date + a.timeSlot).localeCompare(b.date + b.timeSlot));
   const todaysSessions = bookedSessions.filter((s) => s.date === today && s.status !== "CANCELLED");
-  const pendingOrders = adminOrders.filter((o) => o.paymentStatus !== "completed");
+  const pendingOrders = adminOrders.filter((o) => APPROVABLE_PAYMENT_STATUSES.includes(o.paymentStatus));
   const monthRevenue = adminOrders
     .filter((o) => o.paymentStatus === "completed" && (o.paidAt ?? o.createdAt).startsWith(monthPrefix))
     .reduce((sum, o) => sum + o.amount, 0);
@@ -148,7 +152,7 @@ export const AdminPortal: React.FC = () => {
   const handleManualCheckIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!checkInMemberId) return;
-    showResult(await adminCheckIn(checkInMemberId));
+    showResult(await adminCheckIn({ memberId: checkInMemberId }));
   };
 
   const handleExportOrdersCSV = () => {
@@ -367,6 +371,9 @@ export const AdminPortal: React.FC = () => {
       case "coach_slots":
         return <AdminCoachSlotsTab />;
 
+      case "payments":
+        return <AdminPaymentsTab />;
+
       case "settings":
         return <AdminStudioSettingsTab />;
 
@@ -446,7 +453,11 @@ export const AdminPortal: React.FC = () => {
         const totalFor = (method: keyof typeof PAYMENT_LABEL) =>
           adminOrders.filter((o) => o.paymentMethod === method && o.paymentStatus === "completed").reduce((acc, o) => acc + o.amount, 0);
         const visibleOrders = adminOrders.filter((o) =>
-          orderFilter === "pending" ? o.paymentStatus !== "completed" : orderFilter === "completed" ? o.paymentStatus === "completed" : true
+          orderFilter === "pending"
+            ? APPROVABLE_PAYMENT_STATUSES.includes(o.paymentStatus)
+            : orderFilter === "completed"
+            ? o.paymentStatus === "completed"
+            : true
         );
         return (
           <div className="bg-white border border-black/[0.06] rounded-3xl p-4 sm:p-6 space-y-5">
@@ -505,11 +516,9 @@ export const AdminPortal: React.FC = () => {
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-bold text-sm">{ord.packageName}</span>
                       <span
-                        className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                          ord.paymentStatus === "completed" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
-                        }`}
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${PAYMENT_STATUS_INFO[ord.paymentStatus].className}`}
                       >
-                        {ord.paymentStatus === "completed" ? "Tahsil Edildi" : ord.paymentMethod === "bank_transfer" ? "Havale Bekliyor" : "Stüdyoda Ödenecek"}
+                        {PAYMENT_STATUS_INFO[ord.paymentStatus].label}
                       </span>
                       {ord.discountRate > 0 && (
                         <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700">
@@ -520,19 +529,23 @@ export const AdminPortal: React.FC = () => {
                     <p className="text-xs text-[#64748B] mt-1">
                       {ord.memberName} • {ord.orderNumber} • {formatDateMedium(ord.createdAt)} • {PAYMENT_LABEL[ord.paymentMethod]}
                     </p>
+                    {ord.failureReason && <p className="text-[11px] text-rose-700 mt-1">{ord.failureReason}</p>}
                   </div>
                   <div className="flex items-center gap-3 justify-between md:justify-end">
                     <span className="text-base font-black">{formatTL(ord.amount)}</span>
-                    {ord.paymentStatus !== "completed" ? (
+                    {APPROVABLE_PAYMENT_STATUSES.includes(ord.paymentStatus) ? (
                       <button
-                        onClick={async () => showResult(await approveOrder(ord.id))}
+                        onClick={async () => {
+                          if (ord.paymentStatus === "review" && !window.confirm("Bu ödemeyi PayTR mağaza panelinde gördünüz mü? Onaylarsanız ders hakkı üyeye tanımlanır.")) return;
+                          showResult(await approveOrder(ord.id));
+                        }}
                         className="min-h-10 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl"
                       >
-                        Tahsil Edildi
+                        {ord.paymentStatus === "review" ? "İncelendi, Onayla" : "Tahsil Edildi"}
                       </button>
-                    ) : (
+                    ) : ord.paymentStatus === "completed" ? (
                       <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                    )}
+                    ) : null}
                   </div>
                 </div>
               ))}
@@ -628,7 +641,7 @@ export const AdminPortal: React.FC = () => {
             <div>
               <h3 className="font-bold text-lg">Referanslar</h3>
               <p className="text-xs text-[#64748B] mt-0.5">
-                Arkadaşını Getir – %10 İndirim. En az 1 başarılı referansı olan üyede indirim kalıcı olarak açılır.
+                Arkadaşını Getir – %10 İndirim. Başarılı referans: kodla kayıt olan ve ödemesi tamamlanmış en az bir paketi olan üye. En az 1 başarılı referansı olan üyede indirim kalıcı olarak açılır.
               </p>
             </div>
             <div className="overflow-x-auto rounded-2xl border border-black/[0.06]">
@@ -735,6 +748,9 @@ export const AdminPortal: React.FC = () => {
             <div className="hidden sm:flex items-center gap-2 pl-2 border-l border-black/[0.08]">
               <img src={COACH_AVATAR} alt={user?.fullName ?? HEAD_COACH_NAME} className="w-8 h-8 rounded-full object-cover" />
               <span className="hidden md:block text-xs font-bold">{user?.fullName}</span>
+              <button onClick={() => setIsPasswordOpen(true)} className="p-2 rounded-full hover:bg-slate-100" aria-label="Parolayı değiştir" title="Parolayı değiştir">
+                <KeyRound className="w-4 h-4 text-[#64748B]" />
+              </button>
               <button onClick={logout} className="p-2 rounded-full hover:bg-slate-100" aria-label="Çıkış yap" title="Çıkış yap">
                 <LogOut className="w-4 h-4 text-[#64748B]" />
               </button>
@@ -810,6 +826,7 @@ export const AdminPortal: React.FC = () => {
       </div>
 
       <AdminQrScannerModal isOpen={isScannerOpen} onClose={() => setIsScannerOpen(false)} />
+      {isPasswordOpen && <AdminPasswordModal onClose={() => setIsPasswordOpen(false)} />}
 
       {createSession && (
         <AdminCreateSessionModal
@@ -942,6 +959,16 @@ export const AdminPortal: React.FC = () => {
                 })}
               </div>
               <div className="p-4 border-t border-black/[0.06] space-y-2">
+                <button
+                  onClick={() => {
+                    setIsMobileDrawerOpen(false);
+                    setIsPasswordOpen(true);
+                  }}
+                  className="w-full min-h-11 flex items-center justify-center gap-2 bg-white border border-black/[0.08] rounded-xl text-xs font-bold"
+                >
+                  <KeyRound className="w-3.5 h-3.5" />
+                  Parolayı Değiştir
+                </button>
                 <button
                   onClick={logout}
                   className="w-full min-h-11 flex items-center justify-center gap-2 bg-white border border-black/[0.08] rounded-xl text-xs font-bold"

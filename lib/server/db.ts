@@ -2,7 +2,7 @@ import { DatabaseSync } from "node:sqlite";
 import fs from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
-import { hashPassword } from "./password";
+import { hashPasswordSync } from "./password";
 import {
   DEFAULT_STUDIO_SETTINGS,
   DEFAULT_COACH_SCHEDULES,
@@ -14,6 +14,29 @@ import {
 } from "@/data/portal-mock";
 
 const DB_PATH = process.env.DATABASE_PATH || path.join(process.cwd(), ".data", "coreandfit.sqlite");
+
+// awaiting_payment: PayTR ödeme sayfası açıldı, bildirim bekleniyor (ders hakkı verilmedi)
+// failed: PayTR başarısız bildirdi · review: imzalı bildirim geldi ama tutar/mod uyuşmadı, admin inceler
+const ORDERS_TABLE = `CREATE TABLE IF NOT EXISTS orders (
+  id TEXT PRIMARY KEY,
+  order_number TEXT NOT NULL UNIQUE,
+  member_id TEXT NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+  package_id TEXT NOT NULL,
+  package_name TEXT NOT NULL,
+  session_count INTEGER NOT NULL,
+  base_price INTEGER NOT NULL,
+  discount_rate REAL NOT NULL DEFAULT 0,
+  amount INTEGER NOT NULL,
+  payment_method TEXT NOT NULL CHECK (payment_method IN ('online_card', 'cash_register', 'bank_transfer')),
+  payment_status TEXT NOT NULL CHECK (payment_status IN ('completed', 'pending_cashier', 'pending_transfer', 'cancelled', 'awaiting_payment', 'failed', 'review')),
+  receipt_code TEXT NOT NULL,
+  merchant_oid TEXT UNIQUE,
+  provider_total_amount INTEGER,
+  failure_reason TEXT,
+  created_at TEXT NOT NULL,
+  paid_at TEXT,
+  updated_at TEXT
+)`;
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS members (
@@ -38,6 +61,8 @@ CREATE TABLE IF NOT EXISTS members (
   referral_code TEXT UNIQUE,
   referred_by_id TEXT REFERENCES members(id) ON DELETE SET NULL,
   referral_code_disabled INTEGER NOT NULL DEFAULT 0,
+  kvkk_notice_at TEXT,
+  health_consent_at TEXT,
   created_at TEXT NOT NULL
 );
 
@@ -87,24 +112,26 @@ CREATE TABLE IF NOT EXISTS measurements (
 
 CREATE INDEX IF NOT EXISTS idx_measurements_member ON measurements(member_id, date);
 
-CREATE TABLE IF NOT EXISTS orders (
-  id TEXT PRIMARY KEY,
-  order_number TEXT NOT NULL UNIQUE,
-  member_id TEXT NOT NULL REFERENCES members(id) ON DELETE CASCADE,
-  package_id TEXT NOT NULL,
-  package_name TEXT NOT NULL,
-  session_count INTEGER NOT NULL,
-  base_price INTEGER NOT NULL,
-  discount_rate REAL NOT NULL DEFAULT 0,
-  amount INTEGER NOT NULL,
-  payment_method TEXT NOT NULL CHECK (payment_method IN ('online_card', 'cash_register', 'bank_transfer')),
-  payment_status TEXT NOT NULL CHECK (payment_status IN ('completed', 'pending_cashier', 'pending_transfer', 'cancelled')),
-  receipt_code TEXT NOT NULL,
-  created_at TEXT NOT NULL,
-  paid_at TEXT
-);
+${ORDERS_TABLE};
 
 CREATE INDEX IF NOT EXISTS idx_orders_member ON orders(member_id);
+
+-- PayTR bildirimlerinin değiştirilemez denetim kaydı (imzası geçersiz olanlar dahil)
+CREATE TABLE IF NOT EXISTS payment_events (
+  id TEXT PRIMARY KEY,
+  merchant_oid TEXT,
+  event TEXT NOT NULL,
+  status TEXT,
+  total_amount INTEGER,
+  payment_amount INTEGER,
+  hash_valid INTEGER NOT NULL DEFAULT 0,
+  reason TEXT,
+  test_mode INTEGER,
+  ip TEXT,
+  created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_payment_events_oid ON payment_events(merchant_oid);
 
 CREATE TABLE IF NOT EXISTS gifts (
   id TEXT PRIMARY KEY,
@@ -143,7 +170,7 @@ function seed(db: DatabaseSync) {
     db.prepare(
       `INSERT INTO members (id, member_no, role, full_name, email, password_hash, avatar_url, membership_tier, join_date, created_at)
        VALUES (?, 'CF-00001', 'admin', 'İlker Yüksel', ?, ?, ?, 'Yönetici', ?, ?)`
-    ).run(randomUUID(), adminEmail, hashPassword(adminPassword), DEFAULT_AVATAR, nowIso().slice(0, 10), nowIso());
+    ).run(randomUUID(), adminEmail, hashPasswordSync(adminPassword), DEFAULT_AVATAR, nowIso().slice(0, 10), nowIso());
   }
 
   const demoPassword = process.env.DEMO_MEMBER_PASSWORD;
@@ -151,7 +178,7 @@ function seed(db: DatabaseSync) {
   if (process.env.SEED_DEMO !== "1" || !demoPassword || hasMembers) return;
 
   const ids = new Map<string, string>();
-  const passwordHash = hashPassword(demoPassword);
+  const passwordHash = hashPasswordSync(demoPassword);
   const insertMember = db.prepare(
     `INSERT INTO members (id, member_no, full_name, email, phone, password_hash, avatar_url, membership_tier, join_date,
        remaining_sessions, total_sessions, package_expiry, status, injury_alert, target_goal, program_json,
@@ -211,6 +238,35 @@ function seed(db: DatabaseSync) {
   }
 }
 
+// İlk sürümde oluşturulan orders tablosu yeni durumları ve PayTR alanlarını içermez. SQLite CHECK kısıtını
+// değiştiremediği için tablo yeniden kurulur ve veriler kopyalanır. İşlem atomiktir, tekrar çalışmaz.
+function migrate(db: DatabaseSync) {
+  const row = db.prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'orders'").get() as { sql: string } | undefined;
+  if (!row || row.sql.includes("awaiting_payment")) return;
+  db.exec("BEGIN IMMEDIATE");
+  try {
+    db.exec("ALTER TABLE orders RENAME TO orders_v1");
+    db.exec(ORDERS_TABLE);
+    db.exec(`INSERT INTO orders (id, order_number, member_id, package_id, package_name, session_count, base_price, discount_rate,
+               amount, payment_method, payment_status, receipt_code, created_at, paid_at)
+             SELECT id, order_number, member_id, package_id, package_name, session_count, base_price, discount_rate,
+               amount, payment_method, payment_status, receipt_code, created_at, paid_at FROM orders_v1`);
+    db.exec("DROP TABLE orders_v1");
+    db.exec("CREATE INDEX IF NOT EXISTS idx_orders_member ON orders(member_id)");
+    db.exec("COMMIT");
+  } catch (error) {
+    db.exec("ROLLBACK");
+    throw error;
+  }
+}
+
+// Sonradan eklenen sütunlar (KVKK aydınlatma ve sağlık verisi açık rızası kayıtları).
+function ensureColumns(db: DatabaseSync) {
+  const columns = new Set((db.prepare("PRAGMA table_info(members)").all() as { name: string }[]).map((c) => c.name));
+  if (!columns.has("kvkk_notice_at")) db.exec("ALTER TABLE members ADD COLUMN kvkk_notice_at TEXT");
+  if (!columns.has("health_consent_at")) db.exec("ALTER TABLE members ADD COLUMN health_consent_at TEXT");
+}
+
 // Geliştirme ortamında modül yeniden yüklenince bağlantı çoğalmasın diye tek örnek globalde tutulur.
 const globalForDb = globalThis as unknown as { __cfDb?: DatabaseSync };
 
@@ -219,7 +275,9 @@ export function getDb(): DatabaseSync {
     fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
     const db = new DatabaseSync(DB_PATH);
     db.exec("PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000;");
+    migrate(db);
     db.exec(SCHEMA);
+    ensureColumns(db);
     seed(db);
     globalForDb.__cfDb = db;
   }

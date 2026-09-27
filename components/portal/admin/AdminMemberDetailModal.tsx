@@ -81,7 +81,7 @@ export const AdminMemberDetailModal: React.FC<AdminMemberDetailModalProps> = ({ 
 
   const handleSaveNotes = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = await updateMemberDetails(current.id, { injuryAlert, healthNotes, targetGoal });
+    const res = await updateMemberDetails(current.id, current.healthConsent ? { injuryAlert, healthNotes, targetGoal } : { targetGoal });
     report(res);
     if (res.ok) setIsEditingNotes(false);
   };
@@ -263,15 +263,35 @@ export const AdminMemberDetailModal: React.FC<AdminMemberDetailModalProps> = ({ 
             title="Vücut Ölçümleri"
             icon={Ruler}
             action={
-              <button
-                type="button"
-                onClick={() => setShowMeasurementForm((v) => !v)}
-                className="text-xs font-semibold text-emerald-700 hover:underline"
-              >
-                {showMeasurementForm ? "Vazgeç" : "+ Yeni ölçüm"}
-              </button>
+              current.healthConsent ? (
+                <button
+                  type="button"
+                  onClick={() => setShowMeasurementForm((v) => !v)}
+                  className="text-xs font-semibold text-emerald-700 hover:underline"
+                >
+                  {showMeasurementForm ? "Vazgeç" : "+ Yeni ölçüm"}
+                </button>
+              ) : null
             }
           >
+            {!current.healthConsent && (
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-900 leading-relaxed space-y-2">
+                <p>
+                  Üyenin sağlık verisi için açık rızası kayıtlı değil. Vücut ölçümü, sakatlık uyarısı ve sağlık notu girmek için üye
+                  rızasını panelinden verebilir ya da rızayı stüdyoda aldıysanız aşağıdan işaretleyebilirsiniz.
+                </p>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!window.confirm("Üyenin sağlık verisi için açık rızasını stüdyoda aldığınızı onaylıyor musunuz? Rızanın alındığı an kayda geçer.")) return;
+                    report(await updateMemberDetails(current.id, { healthConsentGiven: true }));
+                  }}
+                  className="min-h-9 px-3 rounded-lg bg-[#0F172A] text-white text-[11px] font-bold"
+                >
+                  Açık rıza stüdyoda alındı
+                </button>
+              </div>
+            )}
             {lastMeasurementDate && (
               <p className="text-[11px] text-[#64748B]">Son ölçüm tarihi: {formatDateShort(lastMeasurementDate)}</p>
             )}
@@ -442,15 +462,21 @@ export const AdminMemberDetailModal: React.FC<AdminMemberDetailModalProps> = ({ 
           >
             {isEditingNotes ? (
               <form onSubmit={handleSaveNotes} className="space-y-2 text-xs">
-                <input placeholder="Sakatlık / hassasiyet uyarısı" value={injuryAlert} onChange={(e) => setInjuryAlert(e.target.value)} className={inputClass} />
+                {current.healthConsent && (
+                  <input placeholder="Sakatlık / hassasiyet uyarısı" value={injuryAlert} onChange={(e) => setInjuryAlert(e.target.value)} className={inputClass} />
+                )}
                 <input placeholder="Hedef" value={targetGoal} onChange={(e) => setTargetGoal(e.target.value)} className={inputClass} />
-                <textarea
-                  rows={2}
-                  placeholder="Sağlık notları"
-                  value={healthNotes}
-                  onChange={(e) => setHealthNotes(e.target.value)}
-                  className="w-full p-2 bg-white border border-black/[0.08] rounded-xl text-xs"
-                />
+                {current.healthConsent ? (
+                  <textarea
+                    rows={2}
+                    placeholder="Sağlık notları"
+                    value={healthNotes}
+                    onChange={(e) => setHealthNotes(e.target.value)}
+                    className="w-full p-2 bg-white border border-black/[0.08] rounded-xl text-xs"
+                  />
+                ) : (
+                  <p className="text-[11px] text-[#64748B]">Sakatlık ve sağlık notu alanları üyenin açık rızasından sonra açılır.</p>
+                )}
                 <button type="submit" className="min-h-10 px-4 rounded-xl bg-[#0F172A] text-white font-bold flex items-center gap-1">
                   <Save className="w-3.5 h-3.5" />
                   Kaydet

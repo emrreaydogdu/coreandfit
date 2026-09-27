@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import QRCode from "qrcode";
 import {
   QrCode as QrIcon,
   X,
@@ -14,6 +13,7 @@ import {
   Lock,
 } from "lucide-react";
 import { MemberUser } from "@/types/portal";
+import { useMemberPass } from "@/components/portal/useMemberPass";
 
 interface DigitalPassCardProps {
   user: MemberUser;
@@ -26,71 +26,13 @@ export const DigitalPassCard: React.FC<DigitalPassCardProps> = ({
 }) => {
   const [showQrModal, setShowQrModal] = useState(false);
 
-  // 60-Second Rolling TOTP QR Engine
-  const [secondsLeft, setSecondsLeft] = useState(60);
-  const [refreshToken, setRefreshToken] = useState<string>("");
-  const [dynamicOtp, setDynamicOtp] = useState<string>("842 190");
-  const [qrDataUrl, setQrDataUrl] = useState<string>("");
-
-  const generateToken = async () => {
-    const memberNo = user.memberNo;
-    const fullName = user.fullName;
-    const currentMinute = Math.floor(Date.now() / 60000);
-    const hash = Math.abs(
-      (memberNo.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0) * 31 + currentMinute) % 900000
-    ) + 100000;
-    const otpStr = `${String(hash).slice(0, 3)} ${String(hash).slice(3, 6)}`;
-    const fullToken = `CF-PASS|${memberNo}|${fullName}|${currentMinute}|${hash}`;
-    setDynamicOtp(otpStr);
-    setRefreshToken(fullToken);
-
-    try {
-      // Generate genuine ISO/IEC 18004 compliant QR Code Data URL
-      const dataUrl = await QRCode.toDataURL(fullToken, {
-        width: 360,
-        margin: 1,
-        color: {
-          dark: "#0F172A",
-          light: "#FFFFFF",
-        },
-        errorCorrectionLevel: "M",
-      });
-      setQrDataUrl(dataUrl);
-    } catch (err) {
-      console.error("QR Code generation error:", err);
-    }
-  };
-
-  useEffect(() => {
-    const syncTime = () => {
-      const now = new Date();
-      const rem = 60 - now.getSeconds();
-      setSecondsLeft(rem);
-      if (rem === 60) {
-        generateToken();
-      }
-    };
-
-    // İlk kod bir sonraki tick'te üretilir, sonra her saniye senkronize edilir.
-    const first = setTimeout(() => {
-      generateToken();
-      syncTime();
-    }, 0);
-    const interval = setInterval(syncTime, 1000);
-    return () => {
-      clearTimeout(first);
-      clearInterval(interval);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.memberNo, user?.fullName]);
+  // Sunucunun imzaladığı kısa ömürlü QR (turnikede tek kullanımlık doğrulanır)
+  const { qrDataUrl, code: dynamicOtp, secondsLeft, progressPercent, refresh } = useMemberPass(true);
 
   const handleManualRefresh = (e: React.MouseEvent) => {
     e.stopPropagation();
-    generateToken();
-    setSecondsLeft(60);
+    refresh();
   };
-
-  const progressPercent = (secondsLeft / 60) * 100;
 
   return (
     <>
@@ -269,8 +211,8 @@ export const DigitalPassCard: React.FC<DigitalPassCardProps> = ({
                 <p className="text-emerald-700 font-bold text-xs">
                   Aktif Bakiye: {remainingSessions} Seans
                 </p>
-                <span className="text-[10px] text-[#94A3B8] block truncate max-w-xs mx-auto font-mono">
-                  {refreshToken}
+                <span className="text-[10px] text-[#94A3B8] block max-w-xs mx-auto">
+                  İmzalı giriş kodu · tek kullanımlık · 90 saniye geçerli
                 </span>
               </div>
             </motion.div>

@@ -1,13 +1,23 @@
-import { randomUUID, randomInt } from "node:crypto";
+import { randomUUID, randomInt, randomBytes, createHmac, timingSafeEqual } from "node:crypto";
 import type { DatabaseSync } from "node:sqlite";
 import { getDb, transaction } from "./db";
-import { HttpError } from "./auth";
-import { hashPassword, verifyPassword } from "./password";
-import { findPackage } from "@/data/packages";
+import { HttpError, revokeMemberSessions } from "./auth";
+import { burnPasswordTime, hashPassword, verifyPassword, PASSWORD_MAX, PASSWORD_MIN } from "./password";
+import { EMAIL_RE, PHONE_RE, integer, isIsoDate, optionalText, text } from "./security";
+import {
+  PAYTR_IFRAME_BASE,
+  maskMerchantId,
+  paytrConfig,
+  readCallbackFields,
+  requestIframeToken,
+  verifyCallbackHash,
+} from "./paytr";
+import { findPackage, type PackageItem } from "@/data/packages";
 import { discountRateFor, REFERRAL_DISCOUNT_RATE } from "@/lib/pricing";
-import { slotStatus, SLOT_REASON_TEXT, todayIso, type SlotContext } from "@/lib/slots";
+import { istanbulTime, slotStatus, SLOT_REASON_TEXT, todayIso, type SlotContext } from "@/lib/slots";
 import {
   ACTIVE_BOOKING_STATUSES,
+  DAY_KEYS,
   dayKeyFromDate,
   isWorkoutType,
   type BookingStatus,
@@ -22,11 +32,13 @@ import type {
   BookedSession,
   CoachScheduleProfile,
   MemberGift,
+  MemberRole,
   MemberSnapshot,
   MemberStatus,
   MemberUser,
   OrderItem,
   PaymentMethod,
+  PaymentStatus,
   ReferralSummary,
   StudioMemberCRM,
   StudioSettings,
@@ -58,6 +70,8 @@ interface MemberRow {
   referral_code: string | null;
   referred_by_id: string | null;
   referral_code_disabled: number;
+  kvkk_notice_at: string | null;
+  health_consent_at: string | null;
 }
 
 interface BookingRow {
@@ -107,6 +121,9 @@ interface OrderRow {
   payment_method: PaymentMethod;
   payment_status: OrderItem["paymentStatus"];
   receipt_code: string;
+  merchant_oid: string | null;
+  provider_total_amount: number | null;
+  failure_reason: string | null;
   created_at: string;
   paid_at: string | null;
   member_name?: string;
@@ -148,7 +165,15 @@ const toUser = (row: MemberRow): MemberUser => {
     healthNotes: profile.healthNotes,
     address: profile.address,
     savedCards: profile.savedCards ?? [],
+    kvkkNoticeAt: row.kvkk_notice_at ?? undefined,
+    healthConsentAt: row.health_consent_at ?? undefined,
   };
+};
+
+// KVKK m.6: sağlık verisi (sağlık notu, sakatlık uyarısı, vücut ölçüleri) yalnızca açık rızayla işlenir.
+const HEALTH_CONSENT_REQUIRED = "Bu bilgi sağlık verisi sayılır. Üye açık rıza vermeden kaydedilemez.";
+const assertHealthConsent = (row: MemberRow) => {
+  if (!row.health_consent_at) throw new HttpError(409, HEALTH_CONSENT_REQUIRED);
 };
 
 // Müşteri tarafı internal_note alanını hiçbir zaman almaz.
@@ -203,6 +228,9 @@ const toOrder = (row: OrderRow): OrderItem => ({
   createdAt: row.created_at,
   receiptCode: row.receipt_code,
   paidAt: row.paid_at ?? undefined,
+  merchantOid: row.merchant_oid ?? undefined,
+  providerTotalAmount: row.provider_total_amount ?? undefined,
+  failureReason: row.failure_reason ?? undefined,
 });
 
 const toGift = (row: GiftRow): MemberGift => ({
@@ -255,12 +283,16 @@ const generateMemberNo = (db: DatabaseSync) => {
 
 const normalizeCode = (code: string) => code.trim().toUpperCase();
 
-// Başarılı referans: bu kodla kayıt olmuş ve hesabı pasife alınmamış üye.
+// Başarılı referans: bu kodla kayıt olmuş, hesabı aktif ve en az bir siparişinin ödemesi tamamlanmış üye.
+// Ödeme şartı, sahte hesap açıp kendi koduyla kayıt olarak indirim açmayı engeller.
 const referralStats = (db: DatabaseSync, memberId: string) => {
   const row = db
     .prepare(
-      `SELECT COUNT(*) AS uses, SUM(CASE WHEN status != 'Pasif' THEN 1 ELSE 0 END) AS successful
-       FROM members WHERE referred_by_id = ?`
+      `SELECT COUNT(*) AS uses,
+         SUM(CASE WHEN m.status != 'Pasif' AND EXISTS (
+           SELECT 1 FROM orders o WHERE o.member_id = m.id AND o.payment_status = 'completed'
+         ) THEN 1 ELSE 0 END) AS successful
+       FROM members m WHERE m.referred_by_id = ?`
     )
     .get(memberId) as { uses: number; successful: number | null };
   return { uses: row.uses, successful: row.successful ?? 0 };
@@ -285,6 +317,7 @@ const buildReferral = (db: DatabaseSync, row: MemberRow): ReferralSummary => {
 };
 
 export function checkReferralCode(code: string, email?: string) {
+  if (code.length > 24) throw new HttpError(404, "Referans kodu bulunamadı.");
   const row = getDb()
     .prepare("SELECT id, email, referral_code_disabled FROM members WHERE referral_code = ? AND role = 'member'")
     .get(normalizeCode(code)) as { id: string; email: string; referral_code_disabled: number } | undefined;
@@ -301,72 +334,112 @@ export function checkReferralCode(code: string, email?: string) {
 // Kimlik
 // ---------------------------------------------------------------------------
 
-export function registerMember(input: {
-  fullName: string;
-  email: string;
-  phone: string;
+const assertPasswordPolicy = (password: string, label = "Şifre") => {
+  if (password.length < PASSWORD_MIN) throw new HttpError(400, `${label} en az ${PASSWORD_MIN} karakter olmalı.`);
+  if (password.length > PASSWORD_MAX) throw new HttpError(400, `${label} en fazla ${PASSWORD_MAX} karakter olabilir.`);
+};
+
+const cleanEmail = (value: unknown) => {
+  const email = text(value, "E-posta", 254).toLowerCase();
+  if (!EMAIL_RE.test(email)) throw new HttpError(400, "Geçerli bir e-posta adresi girin.");
+  return email;
+};
+
+const cleanPhone = (value: unknown) => {
+  const phone = text(value, "Telefon", 20);
+  if (!PHONE_RE.test(phone)) throw new HttpError(400, "Geçerli bir telefon numarası girin.");
+  return phone;
+};
+
+export async function registerMember(input: {
+  fullName: unknown;
+  email: unknown;
+  phone: unknown;
   password: string;
-  referralCode?: string;
+  referralCode?: unknown;
+  // Üye kendi kaydolurken aydınlatma metnini görmüş olmalı; admin stüdyoda kayıt açarken null kalır.
+  kvkkNotice?: boolean;
+  healthConsent?: boolean;
+  requireNotice?: boolean;
 }) {
-  const fullName = input.fullName.trim();
-  const email = input.email.trim().toLowerCase();
+  if (input.requireNotice !== false && input.kvkkNotice !== true) {
+    throw new HttpError(400, "Devam etmek için KVKK Aydınlatma Metni'ni okuduğunuzu onaylayın.");
+  }
+  const fullName = text(input.fullName, "Ad soyad", 80);
   if (fullName.length < 3) throw new HttpError(400, "Lütfen adınızı ve soyadınızı girin.");
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new HttpError(400, "Geçerli bir e-posta adresi girin.");
-  if (input.password.length < 8) throw new HttpError(400, "Şifre en az 8 karakter olmalı.");
+  const email = cleanEmail(input.email);
+  const phone = cleanPhone(input.phone);
+  assertPasswordPolicy(input.password);
+  const referralCode = optionalText(input.referralCode, "Referans kodu", 24);
+  // Parola özeti işlem dışında hesaplanır; yazma kilidi scrypt süresince tutulmaz.
+  const passwordHash = await hashPassword(input.password);
 
   return transaction((db) => {
     if (db.prepare("SELECT 1 FROM members WHERE email = ?").get(email)) {
       throw new HttpError(409, "Bu e-posta adresiyle kayıtlı bir hesap zaten var.");
     }
     let referredById: string | null = null;
-    if (input.referralCode?.trim()) {
-      checkReferralCode(input.referralCode, email);
+    if (referralCode) {
+      checkReferralCode(referralCode, email);
       const owner = db
         .prepare("SELECT id FROM members WHERE referral_code = ?")
-        .get(normalizeCode(input.referralCode)) as { id: string };
+        .get(normalizeCode(referralCode)) as { id: string };
       referredById = owner.id;
     }
     const id = randomUUID();
     db.prepare(
       `INSERT INTO members (id, member_no, full_name, email, phone, password_hash, avatar_url, join_date,
-         referral_code, referred_by_id, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+         referral_code, referred_by_id, kvkk_notice_at, health_consent_at, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       id,
       generateMemberNo(db),
       fullName,
       email,
-      input.phone.trim(),
-      hashPassword(input.password),
+      phone,
+      passwordHash,
       DEFAULT_AVATAR,
       todayIso(),
       generateReferralCode(db, fullName),
       referredById,
+      input.kvkkNotice === true ? nowIso() : null,
+      input.kvkkNotice === true && input.healthConsent === true ? nowIso() : null,
       nowIso()
     );
     return { id, referralApplied: referredById !== null };
   });
 }
 
-export function authenticate(email: string, password: string) {
+const LOGIN_FAILED = "E-posta veya şifre hatalı.";
+
+export async function authenticate(emailInput: string, password: string) {
+  const email = emailInput.trim().toLowerCase();
+  if (!email || email.length > 254 || !password || password.length > PASSWORD_MAX) {
+    await burnPasswordTime(password);
+    throw new HttpError(401, LOGIN_FAILED);
+  }
   const row = getDb()
     .prepare("SELECT id, role, password_hash, status FROM members WHERE email = ?")
-    .get(email.trim().toLowerCase()) as
-    | { id: string; role: string; password_hash: string; status: MemberStatus }
-    | undefined;
-  if (!row || !verifyPassword(password, row.password_hash)) {
-    throw new HttpError(401, "E-posta veya şifre hatalı.");
+    .get(email) as { id: string; role: MemberRole; password_hash: string; status: MemberStatus } | undefined;
+  if (!row) {
+    await burnPasswordTime(password);
+    throw new HttpError(401, LOGIN_FAILED);
   }
+  if (!(await verifyPassword(password, row.password_hash))) throw new HttpError(401, LOGIN_FAILED);
   if (row.status === "Pasif") throw new HttpError(403, "Hesabınız pasif durumda. Lütfen stüdyo ile iletişime geçin.");
   return { id: row.id, role: row.role };
 }
 
-export function changePassword(memberId: string, currentPassword: string, nextPassword: string) {
-  const db = getDb();
-  const row = getMemberRow(db, memberId);
-  if (!verifyPassword(currentPassword, row.password_hash)) throw new HttpError(400, "Mevcut şifre hatalı.");
-  if (nextPassword.length < 8) throw new HttpError(400, "Yeni şifre en az 8 karakter olmalı.");
-  db.prepare("UPDATE members SET password_hash = ? WHERE id = ?").run(hashPassword(nextPassword), memberId);
+// Başarılı değişiklikte üyenin tüm oturumları kapanır; çağıran yeni oturum açar.
+export async function changePassword(memberId: string, currentPassword: string, nextPassword: string) {
+  const row = getMemberRow(getDb(), memberId);
+  if (!(await verifyPassword(currentPassword, row.password_hash))) throw new HttpError(400, "Mevcut şifre hatalı.");
+  assertPasswordPolicy(nextPassword, "Yeni şifre");
+  if (currentPassword === nextPassword) throw new HttpError(400, "Yeni şifre mevcut şifreden farklı olmalı.");
+  const hash = await hashPassword(nextPassword);
+  getDb().prepare("UPDATE members SET password_hash = ? WHERE id = ?").run(hash, memberId);
+  revokeMemberSessions(memberId);
+  return { role: row.role };
 }
 
 // ---------------------------------------------------------------------------
@@ -404,9 +477,16 @@ export function getAvailability(): AvailabilityData {
   };
 }
 
+const TIME_SLOT_RE = /^([01]\d|2[0-3]):[0-5]\d( - ([01]\d|2[0-3]):[0-5]\d)?$/;
+const MAX_BOOKING_DAYS_AHEAD = 90;
+
 const assertSlotBookable = (db: DatabaseSync, date: string, timeSlot: string, ignoreBookingId?: string) => {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new HttpError(400, "Geçersiz tarih.");
+  if (!isIsoDate(date)) throw new HttpError(400, "Geçersiz tarih.");
+  if (!TIME_SLOT_RE.test(timeSlot)) throw new HttpError(400, "Geçersiz saat.");
   if (date < todayIso()) throw new HttpError(400, SLOT_REASON_TEXT.past);
+  const limit = new Date();
+  limit.setDate(limit.getDate() + MAX_BOOKING_DAYS_AHEAD);
+  if (date > limit.toISOString().slice(0, 10)) throw new HttpError(400, `En fazla ${MAX_BOOKING_DAYS_AHEAD} gün sonrasına randevu alınabilir.`);
   const status = slotStatus(slotContext(db), date, timeSlot, ignoreBookingId);
   if (!status.isAvailable) throw new HttpError(409, SLOT_REASON_TEXT[status.reason]);
 };
@@ -443,44 +523,126 @@ export function getMemberSnapshot(memberId: string): MemberSnapshot {
     orders,
     referral: buildReferral(db, row),
     bankAccounts: settings?.bankAccounts ?? [],
+    onlinePayment: onlinePaymentAvailable(db),
   };
 }
 
 type ProfilePatch = Partial<Pick<MemberUser, "fullName" | "phone" | "birthDate" | "emergencyContact" | "healthNotes" | "address" | "savedCards">>;
 
-export function updateProfile(memberId: string, patch: ProfilePatch) {
+// Profil alanları tek tek doğrulanır; bilinmeyen alanlar yok sayılır. Kart için yalnızca son 4 hane saklanır.
+const cleanProfilePatch = (raw: unknown): ProfilePatch => {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw new HttpError(400, "Geçersiz profil bilgisi.");
+  const input = raw as Record<string, unknown>;
+  const out: ProfilePatch = {};
+  if (input.fullName !== undefined) {
+    out.fullName = text(input.fullName, "Ad soyad", 80);
+    if (out.fullName.length < 3) throw new HttpError(400, "Lütfen adınızı ve soyadınızı girin.");
+  }
+  if (input.phone !== undefined) out.phone = cleanPhone(input.phone);
+  if (input.birthDate !== undefined) {
+    const birth = text(input.birthDate, "Doğum tarihi", 10);
+    if (birth && !isIsoDate(birth)) throw new HttpError(400, "Doğum tarihi geçersiz.");
+    out.birthDate = birth || undefined;
+  }
+  if (input.emergencyContact !== undefined) out.emergencyContact = text(input.emergencyContact, "Acil durum kişisi", 120);
+  if (input.healthNotes !== undefined) out.healthNotes = text(input.healthNotes, "Sağlık notu", 1000);
+  if (input.address !== undefined) {
+    const a = input.address as Record<string, unknown> | null;
+    if (!a || typeof a !== "object" || Array.isArray(a)) throw new HttpError(400, "Adres geçersiz.");
+    out.address = {
+      title: text(a.title, "Adres başlığı", 40),
+      street: text(a.street, "Adres", 200),
+      district: text(a.district, "İlçe", 60),
+      city: text(a.city, "Şehir", 60),
+      postalCode: optionalText(a.postalCode, "Posta kodu", 10),
+    };
+  }
+  if (input.savedCards !== undefined) {
+    if (!Array.isArray(input.savedCards) || input.savedCards.length > 5) throw new HttpError(400, "Kart listesi geçersiz.");
+    out.savedCards = input.savedCards.map((c) => {
+      const card = (c ?? {}) as Record<string, unknown>;
+      const last4 = text(card.last4, "Kart", 4);
+      const expiry = text(card.expiry, "Son kullanma", 5);
+      if (!/^\d{4}$/.test(last4) || !/^(0[1-9]|1[0-2])\/\d{2}$/.test(expiry)) throw new HttpError(400, "Kart bilgisi geçersiz.");
+      return {
+        id: text(card.id, "Kart", 40, { required: true }),
+        last4,
+        expiry,
+        cardHolder: text(card.cardHolder, "Kart sahibi", 60),
+        brand: card.brand === "mastercard" ? "mastercard" : "visa",
+        isDefault: card.isDefault === true,
+      };
+    });
+  }
+  return out;
+};
+
+export function updateProfile(memberId: string, rawPatch: unknown) {
+  const patch = cleanProfilePatch(rawPatch);
   transaction((db) => {
     const row = getMemberRow(db, memberId);
+    if (patch.healthNotes) assertHealthConsent(row);
     const profile = parseJson<Record<string, unknown>>(row.profile_json, {});
     for (const key of ["birthDate", "emergencyContact", "healthNotes", "address", "savedCards"] as const) {
-      if (patch[key] !== undefined) profile[key] = patch[key];
+      if (key in patch) profile[key] = patch[key];
     }
     db.prepare("UPDATE members SET full_name = ?, phone = ?, profile_json = ? WHERE id = ?").run(
-      patch.fullName?.trim() || row.full_name,
-      patch.phone?.trim() ?? row.phone,
+      patch.fullName || row.full_name,
+      patch.phone ?? row.phone,
       JSON.stringify(profile),
       memberId
     );
   });
 }
 
+// Açık rıza verilir veya geri alınır. Geri alındığında sağlık verileri silinir (KVKK m.7).
+export function setHealthConsent(memberId: string, give: unknown) {
+  if (typeof give !== "boolean") throw new HttpError(400, "Geçersiz değer.");
+  transaction((db) => {
+    const row = getMemberRow(db, memberId);
+    if (give) {
+      if (!row.health_consent_at) db.prepare("UPDATE members SET health_consent_at = ? WHERE id = ?").run(nowIso(), memberId);
+      return;
+    }
+    const profile = parseJson<Record<string, unknown>>(row.profile_json, {});
+    delete profile.healthNotes;
+    db.prepare("UPDATE members SET health_consent_at = NULL, injury_alert = NULL, profile_json = ? WHERE id = ?").run(JSON.stringify(profile), memberId);
+    db.prepare("DELETE FROM measurements WHERE member_id = ?").run(memberId);
+  });
+}
+
+// Aydınlatma metninin sonradan (ör. admin kaydı açtıktan sonra ilk girişte) okunduğunu kaydeder.
+export function acknowledgeKvkkNotice(memberId: string) {
+  getDb().prepare("UPDATE members SET kvkk_notice_at = COALESCE(kvkk_notice_at, ?) WHERE id = ?").run(nowIso(), memberId);
+}
+
 export function createMemberBooking(
   memberId: string,
-  input: { date: string; timeSlot: string; workoutType: string; memberNote?: string }
+  input: { date: unknown; timeSlot: unknown; workoutType: unknown; memberNote?: unknown }
 ) {
-  if (!isWorkoutType(input.workoutType)) throw new HttpError(400, "Antrenman tipi seçin.");
+  const workoutType = String(input.workoutType ?? "");
+  if (!isWorkoutType(workoutType)) throw new HttpError(400, "Antrenman tipi seçin.");
+  const date = text(input.date, "Tarih", 10);
+  const timeSlot = text(input.timeSlot, "Saat", 13);
+  const memberNote = optionalText(input.memberNote, "Not", 500);
   return transaction((db) => {
     const row = getMemberRow(db, memberId);
     if (row.remaining_sessions <= 0) {
       throw new HttpError(409, "Ders hakkınız kalmadı. Yeni paket alarak randevu oluşturabilirsiniz.");
     }
-    assertSlotBookable(db, input.date, input.timeSlot);
+    assertSlotBookable(db, date, timeSlot);
+    // Üye yalnızca koç programında tanımlı ve açık saatleri seçebilir.
+    const schedule = readSetting<CoachScheduleProfile[]>(db, "coach_schedules", [])[0];
+    const day = schedule?.weeklySchedule.find((d) => d.dayKey === dayKeyFromDate(date));
+    if (!day?.isWorkingDay || !day.slots.some((s) => s.isAvailable && s.time === timeSlot)) {
+      throw new HttpError(409, "Bu saat randevuya açık değil.");
+    }
     const id = randomUUID();
     // Yeni randevu her zaman onay bekler; ders hakkı rezerve edilir, iptalde iade edilir.
     db.prepare(
       `INSERT INTO bookings (id, member_id, date, time_slot, workout_type, status, member_note, credit_deducted, created_by, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, 'PENDING', ?, 1, 'member', ?, ?)`
-    ).run(id, memberId, input.date, input.timeSlot, input.workoutType, input.memberNote?.trim() || null, nowIso(), nowIso());
+    ).run(id, memberId, date, timeSlot, workoutType, memberNote ?? null, nowIso(), nowIso());
     db.prepare("UPDATE members SET remaining_sessions = remaining_sessions - 1 WHERE id = ?").run(memberId);
     return id;
   });
@@ -510,75 +672,355 @@ export function cancelMemberBooking(memberId: string, bookingId: string) {
   });
 }
 
-const PAYMENT_METHODS: PaymentMethod[] = ["online_card", "cash_register", "bank_transfer"];
+const OFFLINE_METHODS: PaymentMethod[] = ["cash_register", "bank_transfer"];
 
-const createOrderTx = (
-  db: DatabaseSync,
-  memberId: string,
-  packageId: string,
-  paymentMethod: PaymentMethod,
-  options: { extraDiscountRate?: number; paidImmediately: boolean }
-) => {
-  const pkg = findPackage(packageId);
-  if (!pkg) throw new HttpError(400, "Paket bulunamadı.");
-  if (!PAYMENT_METHODS.includes(paymentMethod)) throw new HttpError(400, "Geçersiz ödeme yöntemi.");
-
-  const member = getMemberRow(db, memberId);
+// Fiyat istemciden alınmaz; paket kataloğu ve referans durumundan sunucuda hesaplanır.
+const priceFor = (db: DatabaseSync, member: MemberRow, pkg: PackageItem, extraDiscountRate = 0) => {
   const referral = buildReferral(db, member);
-  // Fiyat istemciden alınmaz; paket kataloğu ve referans durumundan sunucuda hesaplanır.
-  const rate = Math.max(discountRateFor(pkg, referral.discountActive), options.extraDiscountRate ?? 0);
-  const amount = Math.round(pkg.basePrice * (1 - rate));
-  const status: OrderItem["paymentStatus"] = options.paidImmediately
-    ? "completed"
-    : paymentMethod === "bank_transfer"
-    ? "pending_transfer"
-    : "pending_cashier";
-  const orderNo = `CF-ORD-${new Date().getFullYear()}-${randomInt(100000, 1000000)}`;
-  const id = randomUUID();
-  const created = nowIso();
+  const rate = Math.max(discountRateFor(pkg, referral.discountActive), extraDiscountRate);
+  return { rate, amount: Math.round(pkg.basePrice * (1 - rate)) };
+};
 
-  db.prepare(
-    `INSERT INTO orders (id, order_number, member_id, package_id, package_name, session_count, base_price, discount_rate,
-       amount, payment_method, payment_status, receipt_code, created_at, paid_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(
-    id,
-    orderNo,
-    memberId,
-    pkg.id,
-    pkg.name,
-    pkg.sessionCount,
-    pkg.basePrice,
-    rate,
-    amount,
-    paymentMethod,
-    status,
-    `REC-${orderNo.slice(-6)}`,
-    created,
-    status === "completed" ? created : null
-  );
+const newOrderNumber = () => `CF-ORD-${new Date().getFullYear()}-${randomInt(100000, 1000000)}`;
 
+// Paketin ders hakkını ve geçerlilik süresini üyeye işler.
+const grantPackageTx = (db: DatabaseSync, memberId: string, packageId: string, packageName: string, sessionCount: number) => {
+  const validityDays = findPackage(packageId)?.validityDays ?? 60;
   const expiry = new Date();
-  expiry.setDate(expiry.getDate() + pkg.validityDays);
+  expiry.setDate(expiry.getDate() + validityDays);
   db.prepare(
     `UPDATE members SET remaining_sessions = remaining_sessions + ?, total_sessions = total_sessions + ?,
        package_expiry = ?, membership_tier = ?, status = CASE WHEN status = 'Pasif' THEN status ELSE 'Aktif' END
      WHERE id = ?`
-  ).run(pkg.sessionCount, pkg.sessionCount, expiry.toISOString().slice(0, 10), pkg.name, memberId);
-
-  return toOrder(db.prepare("SELECT * FROM orders WHERE id = ?").get(id) as unknown as OrderRow);
+  ).run(sessionCount, sessionCount, expiry.toISOString().slice(0, 10), packageName, memberId);
 };
 
-// Online kart için ödeme sağlayıcısı entegre edilene kadar sipariş alınmaz; aksi halde tahsilat olmadan
-// "ödendi" kaydı oluşurdu. Nakit ve havale siparişleri admin onayına kadar bekleyen ödeme olarak kalır.
-const ONLINE_CARD_ENABLED = false;
+const getOrderRow = (db: DatabaseSync, id: string) => db.prepare("SELECT * FROM orders WHERE id = ?").get(id) as unknown as OrderRow;
 
-export function purchasePackage(memberId: string, packageId: string, paymentMethod: PaymentMethod) {
-  if (paymentMethod === "online_card" && !ONLINE_CARD_ENABLED) {
-    throw new HttpError(400, "Online kart ödemesi henüz aktif değil. Stüdyoda nakit veya havale ile ödeyebilirsiniz.");
+// Nakit / havale siparişi: ders hakkı hemen tanımlanır, tahsilat admin onayına kadar bekler.
+// Admin hızlı satışında tahsilat o an yapıldığı için sipariş doğrudan "completed" olur.
+const createOfflineOrderTx = (
+  db: DatabaseSync,
+  memberId: string,
+  packageId: string,
+  paymentMethod: PaymentMethod,
+  options: { extraDiscountRate?: number; collectedNow: boolean }
+) => {
+  const pkg = findPackage(packageId);
+  if (!pkg) throw new HttpError(400, "Paket bulunamadı.");
+  if (!OFFLINE_METHODS.includes(paymentMethod)) throw new HttpError(400, "Geçersiz ödeme yöntemi.");
+  const member = getMemberRow(db, memberId);
+  if (member.role !== "member") throw new HttpError(400, "Paket yalnızca üyelere satılabilir.");
+  const { rate, amount } = priceFor(db, member, pkg, options.extraDiscountRate);
+  const status: PaymentStatus = options.collectedNow ? "completed" : paymentMethod === "bank_transfer" ? "pending_transfer" : "pending_cashier";
+  const orderNo = newOrderNumber();
+  const id = randomUUID();
+  const created = nowIso();
+  db.prepare(
+    `INSERT INTO orders (id, order_number, member_id, package_id, package_name, session_count, base_price, discount_rate,
+       amount, payment_method, payment_status, receipt_code, created_at, paid_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run(id, orderNo, memberId, pkg.id, pkg.name, pkg.sessionCount, pkg.basePrice, rate, amount, paymentMethod, status,
+    `REC-${orderNo.slice(-6)}`, created, status === "completed" ? created : null, created);
+  grantPackageTx(db, memberId, pkg.id, pkg.name, pkg.sessionCount);
+  return toOrder(getOrderRow(db, id));
+};
+
+// Online kart ödemesi yalnızca PayTR akışıyla (startOnlinePayment) yapılır.
+export function purchasePackage(memberId: string, packageId: unknown, paymentMethod: unknown) {
+  if (paymentMethod === "online_card") {
+    throw new HttpError(400, "Online kart ödemesi için ödeme ekranındaki kart seçeneğini kullanın.");
   }
-  return transaction((db) => createOrderTx(db, memberId, packageId, paymentMethod, { paidImmediately: false }));
+  return transaction((db) =>
+    createOfflineOrderTx(db, memberId, String(packageId ?? ""), paymentMethod as PaymentMethod, { collectedNow: false })
+  );
 }
+
+// ---------------------------------------------------------------------------
+// Online ödeme (PayTR)
+// ---------------------------------------------------------------------------
+
+const ONLINE_PAYMENT_SETTING = "online_payment_enabled";
+const PAYMENT_WINDOW_MINUTES = 40;
+
+const logPaymentEvent = (
+  db: DatabaseSync,
+  event: {
+    merchantOid?: string;
+    event: string;
+    status?: string;
+    totalAmount?: number | null;
+    paymentAmount?: number | null;
+    hashValid: boolean;
+    reason?: string;
+    testMode?: boolean | null;
+    ip?: string;
+  }
+) =>
+  db
+    .prepare(
+      `INSERT INTO payment_events (id, merchant_oid, event, status, total_amount, payment_amount, hash_valid, reason, test_mode, ip, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      randomUUID(),
+      event.merchantOid?.slice(0, 64) ?? null,
+      event.event,
+      event.status?.slice(0, 20) ?? null,
+      event.totalAmount ?? null,
+      event.paymentAmount ?? null,
+      event.hashValid ? 1 : 0,
+      event.reason?.slice(0, 300) ?? null,
+      event.testMode === undefined || event.testMode === null ? null : event.testMode ? 1 : 0,
+      event.ip?.slice(0, 45) ?? null,
+      nowIso()
+    );
+
+export function onlinePaymentAvailable(db: DatabaseSync = getDb()) {
+  return paytrConfig() !== null && readSetting<boolean>(db, ONLINE_PAYMENT_SETTING, false) === true;
+}
+
+// Süresi dolan ödeme oturumları iptal sayılır (PayTR timeout_limit 30 dk; pay bırakılır).
+const expireStalePayments = (db: DatabaseSync) => {
+  const cutoff = new Date(Date.now() - PAYMENT_WINDOW_MINUTES * 60_000).toISOString();
+  db.prepare(
+    `UPDATE orders SET payment_status = 'cancelled', failure_reason = COALESCE(failure_reason, 'Ödeme süresi doldu'), updated_at = ?
+     WHERE payment_status = 'awaiting_payment' AND created_at < ?`
+  ).run(nowIso(), cutoff);
+};
+
+export async function startOnlinePayment(memberId: string, packageIdInput: unknown, userIp: string) {
+  const config = paytrConfig();
+  if (!config || !onlinePaymentAvailable()) throw new HttpError(503, "Online kart ödemesi şu an aktif değil.");
+  const packageId = text(packageIdInput, "Paket", 40);
+
+  const pending = transaction((db) => {
+    expireStalePayments(db);
+    const member = getMemberRow(db, memberId);
+    if (member.role !== "member") throw new HttpError(400, "Paket yalnızca üyelere satılabilir.");
+    const open = db
+      .prepare("SELECT COUNT(*) AS c FROM orders WHERE member_id = ? AND payment_status = 'awaiting_payment'")
+      .get(memberId) as { c: number };
+    if (open.c >= 3) throw new HttpError(429, "Tamamlanmamış ödemeleriniz var. Lütfen birkaç dakika sonra tekrar deneyin.");
+    const pkg = findPackage(packageId);
+    if (!pkg) throw new HttpError(400, "Paket bulunamadı.");
+    const { rate, amount } = priceFor(db, member, pkg);
+    // PayTR sipariş numarası yalnızca harf ve rakam içerebilir; tahmin edilemez olması için rastgele üretilir.
+    const merchantOid = `CF${Date.now().toString(36).toUpperCase()}${randomBytes(8).toString("hex").toUpperCase()}`;
+    const orderNo = newOrderNumber();
+    const id = randomUUID();
+    const created = nowIso();
+    db.prepare(
+      `INSERT INTO orders (id, order_number, member_id, package_id, package_name, session_count, base_price, discount_rate,
+         amount, payment_method, payment_status, receipt_code, merchant_oid, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'online_card', 'awaiting_payment', ?, ?, ?, ?)`
+    ).run(id, orderNo, memberId, pkg.id, pkg.name, pkg.sessionCount, pkg.basePrice, rate, amount, `REC-${orderNo.slice(-6)}`, merchantOid, created, created);
+    const profile = parseJson<{ address?: { street?: string; district?: string; city?: string } }>(member.profile_json, {});
+    const address = [profile.address?.street, profile.address?.district, profile.address?.city].filter(Boolean).join(", ");
+    return { id, merchantOid, amount, pkgName: pkg.name, member, address };
+  });
+
+  try {
+    const token = await requestIframeToken(config, {
+      merchantOid: pending.merchantOid,
+      userIp,
+      email: pending.member.email,
+      amountTl: pending.amount,
+      basketItemName: `Core & Fit ${pending.pkgName}`,
+      userName: pending.member.full_name,
+      userPhone: pending.member.phone,
+      userAddress: pending.address,
+    });
+    return { merchantOid: pending.merchantOid, iframeUrl: PAYTR_IFRAME_BASE + token, amount: pending.amount };
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : "Bilinmeyen hata";
+    const db = getDb();
+    db.prepare("UPDATE orders SET payment_status = 'failed', failure_reason = ?, updated_at = ? WHERE id = ? AND payment_status = 'awaiting_payment'").run(
+      reason.slice(0, 300),
+      nowIso(),
+      pending.id
+    );
+    logPaymentEvent(db, { merchantOid: pending.merchantOid, event: "token_error", hashValid: false, reason, ip: userIp });
+    console.error("[paytr] token", reason);
+    throw new HttpError(502, "Ödeme sayfası açılamadı. Lütfen biraz sonra tekrar deneyin.");
+  }
+}
+
+export function getMemberPaymentStatus(memberId: string, merchantOid: string) {
+  if (!/^[A-Z0-9]{10,64}$/.test(merchantOid)) throw new HttpError(404, "Ödeme bulunamadı.");
+  const row = getDb()
+    .prepare("SELECT payment_status, failure_reason FROM orders WHERE merchant_oid = ? AND member_id = ?")
+    .get(merchantOid, memberId) as { payment_status: PaymentStatus; failure_reason: string | null } | undefined;
+  if (!row) throw new HttpError(404, "Ödeme bulunamadı.");
+  return { status: row.payment_status, reason: row.payment_status === "failed" ? row.failure_reason ?? undefined : undefined };
+}
+
+// PayTR bildirimi. Yalnızca imzası doğrulanan bildirim sipariş durumunu değiştirir. Aynı sipariş için
+// tekrar gelen bildirimler yalnızca "OK" ile kapatılır (PayTR 2. Adım uyarısı).
+export function handlePaytrCallback(form: FormData, ip: string): { status: number; body: string } {
+  const config = paytrConfig();
+  const fields = readCallbackFields(form);
+  const db = getDb();
+  if (!config) {
+    logPaymentEvent(db, { merchantOid: fields.merchantOid, event: "callback_unconfigured", hashValid: false, ip });
+    return { status: 503, body: "PAYTR notification failed: not configured" };
+  }
+  const toInt = (v: string) => (/^\d{1,12}$/.test(v) ? Number(v) : null);
+  const totalAmount = toInt(fields.totalAmount);
+  const paymentAmount = toInt(fields.paymentAmount);
+  const hashValid = verifyCallbackHash(config, fields);
+  if (!hashValid) {
+    logPaymentEvent(db, { merchantOid: fields.merchantOid, event: "callback_bad_hash", status: fields.status, totalAmount, paymentAmount, hashValid: false, ip });
+    console.warn("[paytr] bad hash", fields.merchantOid, ip);
+    return { status: 400, body: "PAYTR notification failed: bad hash" };
+  }
+
+  transaction((tx) => {
+    const order = tx.prepare("SELECT * FROM orders WHERE merchant_oid = ?").get(fields.merchantOid) as OrderRow | undefined;
+    const testMode = fields.testMode === "1";
+    const base = { merchantOid: fields.merchantOid, status: fields.status, totalAmount, paymentAmount, hashValid: true, testMode, ip };
+    if (!order) {
+      logPaymentEvent(tx, { ...base, event: "callback_unknown_order" });
+      return;
+    }
+    if (order.payment_status !== "awaiting_payment" && order.payment_status !== "cancelled") {
+      logPaymentEvent(tx, { ...base, event: "callback_duplicate", reason: `Mevcut durum: ${order.payment_status}` });
+      return;
+    }
+    const now = nowIso();
+    if (fields.status !== "success") {
+      const reason = `${fields.failedReasonCode} ${fields.failedReasonMsg}`.trim() || "Ödeme başarısız";
+      tx.prepare("UPDATE orders SET payment_status = 'failed', failure_reason = ?, updated_at = ? WHERE id = ?").run(reason.slice(0, 300), now, order.id);
+      logPaymentEvent(tx, { ...base, event: "callback_failed", reason });
+      return;
+    }
+    // İmza geçerli olsa da tutar, para birimi ve mod siparişle birebir uyuşmalı; uyuşmazsa ders hakkı verilmez.
+    const problems: string[] = [];
+    if (paymentAmount !== order.amount * 100) problems.push(`tutar uyuşmuyor (${paymentAmount} ≠ ${order.amount * 100})`);
+    if (totalAmount === null || totalAmount < order.amount * 100) problems.push("tahsil edilen tutar eksik");
+    if (fields.currency && fields.currency !== "TL" && fields.currency !== "TRY") problems.push(`para birimi ${fields.currency}`);
+    if (testMode && !config.testMode) problems.push("canlı mağazada test işlemi");
+    if (problems.length > 0) {
+      const reason = `İnceleme gerekli: ${problems.join(", ")}`;
+      tx.prepare("UPDATE orders SET payment_status = 'review', provider_total_amount = ?, failure_reason = ?, updated_at = ? WHERE id = ?").run(
+        totalAmount,
+        reason,
+        now,
+        order.id
+      );
+      logPaymentEvent(tx, { ...base, event: "callback_review", reason });
+      console.warn("[paytr] review", fields.merchantOid, reason);
+      return;
+    }
+    tx.prepare("UPDATE orders SET payment_status = 'completed', provider_total_amount = ?, failure_reason = NULL, paid_at = ?, updated_at = ? WHERE id = ?").run(
+      totalAmount,
+      now,
+      now,
+      order.id
+    );
+    grantPackageTx(tx, order.member_id, order.package_id, order.package_name, order.session_count);
+    logPaymentEvent(tx, { ...base, event: "callback_success" });
+  });
+  return { status: 200, body: "OK" };
+}
+
+export function adminPaymentOverview() {
+  const db = getDb();
+  expireStalePayments(db);
+  const config = paytrConfig();
+  const events = db
+    .prepare("SELECT id, merchant_oid, event, status, total_amount, payment_amount, hash_valid, reason, test_mode, created_at FROM payment_events ORDER BY created_at DESC LIMIT 50")
+    .all() as {
+    id: string;
+    merchant_oid: string | null;
+    event: string;
+    status: string | null;
+    total_amount: number | null;
+    payment_amount: number | null;
+    hash_valid: number;
+    reason: string | null;
+    test_mode: number | null;
+    created_at: string;
+  }[];
+  return {
+    configured: config !== null,
+    enabled: readSetting<boolean>(db, ONLINE_PAYMENT_SETTING, false) === true,
+    testMode: config?.testMode ?? true,
+    merchantIdMasked: config ? maskMerchantId(config.merchantId) : null,
+    noInstallment: config?.noInstallment ?? true,
+    callbackUrl: config ? `${config.baseUrl}/api/payments/paytr/callback` : null,
+    okUrl: config ? `${config.baseUrl}/portal/odeme?durum=basarili` : null,
+    failUrl: config ? `${config.baseUrl}/portal/odeme?durum=basarisiz` : null,
+    events: events.map((e) => ({
+      id: e.id,
+      merchantOid: e.merchant_oid,
+      event: e.event,
+      status: e.status,
+      totalAmount: e.total_amount,
+      paymentAmount: e.payment_amount,
+      hashValid: e.hash_valid === 1,
+      reason: e.reason,
+      testMode: e.test_mode === null ? null : e.test_mode === 1,
+      createdAt: e.created_at,
+    })),
+  };
+}
+
+export function adminSetOnlinePayment(enabled: unknown) {
+  if (typeof enabled !== "boolean") throw new HttpError(400, "Geçersiz değer.");
+  if (enabled && !paytrConfig()) throw new HttpError(409, "PayTR mağaza bilgileri sunucuda tanımlı değil.");
+  writeSetting(getDb(), ONLINE_PAYMENT_SETTING, enabled);
+}
+
+// ---------------------------------------------------------------------------
+// Dijital giriş kartı (imzalı, kısa ömürlü QR)
+// ---------------------------------------------------------------------------
+
+const PASS_TTL_SECONDS = 90;
+const PASS_PREFIX = "CFP1";
+
+// İmza anahtarı ilk kullanımda rastgele üretilir ve yalnızca sunucudaki veritabanında durur.
+const passSecret = (db: DatabaseSync) => {
+  let secret = readSetting<string | null>(db, "pass_secret", null);
+  if (!secret) {
+    secret = randomBytes(32).toString("hex");
+    db.prepare("INSERT OR IGNORE INTO settings (key, value_json) VALUES ('pass_secret', ?)").run(JSON.stringify(secret));
+    secret = readSetting<string>(db, "pass_secret", secret);
+  }
+  return secret;
+};
+
+const signPass = (secret: string, payload: string) => createHmac("sha256", secret).update(payload).digest("base64url").slice(0, 32);
+
+export function issueMemberPass(memberId: string) {
+  const db = getDb();
+  const member = getMemberRow(db, memberId);
+  const expires = Math.floor(Date.now() / 1000) + PASS_TTL_SECONDS;
+  const payload = `${PASS_PREFIX}.${member.member_no}.${expires}`;
+  const signature = signPass(passSecret(db), payload);
+  return { token: `${payload}.${signature}`, expiresAt: expires * 1000, code: signature.replace(/[^0-9]/g, "").padEnd(6, "0").slice(0, 6) };
+}
+
+const globalForPass = globalThis as unknown as { __cfUsedPasses?: Map<string, number> };
+const usedPasses = (globalForPass.__cfUsedPasses ??= new Map<string, number>());
+
+// İmza, süre ve tek kullanım kontrolü; geçerliyse üye numarasını döndürür.
+const verifyMemberPass = (db: DatabaseSync, token: string): string => {
+  const match = /^CFP1\.(CF-\d{5})\.(\d{10})\.([A-Za-z0-9_-]{32})$/.exec(token);
+  if (!match) throw new HttpError(400, "QR kod tanınmadı.");
+  const [, memberNo, expiresRaw, signature] = match;
+  const expected = Buffer.from(signPass(passSecret(db), `${PASS_PREFIX}.${memberNo}.${expiresRaw}`));
+  const received = Buffer.from(signature);
+  if (expected.length !== received.length || !timingSafeEqual(expected, received)) throw new HttpError(400, "QR kod geçersiz.");
+  const expires = Number(expiresRaw) * 1000;
+  const now = Date.now();
+  if (expires < now) throw new HttpError(400, "QR kodun süresi dolmuş. Üyeden kartını yenilemesini isteyin.");
+  if (expires > now + (PASS_TTL_SECONDS + 30) * 1000) throw new HttpError(400, "QR kod geçersiz.");
+  for (const [key, exp] of usedPasses) if (exp < now) usedPasses.delete(key);
+  if (usedPasses.has(signature)) throw new HttpError(409, "Bu QR kod zaten kullanıldı.");
+  usedPasses.set(signature, expires);
+  return memberNo;
+};
 
 type MeasurementInput = Omit<BodyMeasurementRecord, "id" | "memberId">;
 
@@ -595,20 +1037,25 @@ const MEASUREMENT_FIELDS: [keyof MeasurementInput, string][] = [
   ["legLeftCm", "leg_left_cm"],
 ];
 
-export function addMeasurement(memberId: string, input: MeasurementInput) {
-  const date = input.date && /^\d{4}-\d{2}-\d{2}$/.test(input.date) ? input.date : todayIso();
+export function addMeasurement(memberId: string, raw: Record<string, unknown>) {
+  const input = raw as Partial<Record<keyof MeasurementInput, unknown>>;
+  const dateText = typeof input.date === "string" ? input.date : "";
+  const date = isIsoDate(dateText) && dateText <= todayIso() ? dateText : todayIso();
   const values = MEASUREMENT_FIELDS.map(([key]) => {
-    const raw = input[key];
-    const num = typeof raw === "number" ? raw : raw === undefined || raw === "" ? NaN : Number(raw);
-    return Number.isFinite(num) && num > 0 ? num : null;
+    const value = input[key];
+    const num = typeof value === "number" ? value : value === undefined || value === "" || value === null ? NaN : Number(value);
+    if (Number.isNaN(num)) return null;
+    if (!Number.isFinite(num) || num <= 0 || num >= 500) throw new HttpError(400, "Ölçüm değerleri 0 ile 500 arasında olmalı.");
+    return Math.round(num * 10) / 10;
   });
+  const note = optionalText(input.note, "Not", 500);
   if (values.every((v) => v === null)) throw new HttpError(400, "En az bir ölçüm değeri girin.");
   const db = getDb();
-  getMemberRow(db, memberId);
+  assertHealthConsent(getMemberRow(db, memberId));
   db.prepare(
     `INSERT INTO measurements (id, member_id, date, ${MEASUREMENT_FIELDS.map(([, col]) => col).join(", ")}, note, created_at)
      VALUES (?, ?, ?, ${MEASUREMENT_FIELDS.map(() => "?").join(", ")}, ?, ?)`
-  ).run(randomUUID(), memberId, date, ...values, input.note?.trim() || null, nowIso());
+  ).run(randomUUID(), memberId, date, ...values, note ?? null, nowIso());
 }
 
 // ---------------------------------------------------------------------------
@@ -632,6 +1079,7 @@ export function getAdminSnapshot(): AdminSnapshot {
     joinDate: row.join_date,
     injuryAlert: row.injury_alert ?? undefined,
     healthNotes: parseJson<{ healthNotes?: string }>(row.profile_json, {}).healthNotes,
+    healthConsent: Boolean(row.health_consent_at),
     targetGoal: row.target_goal ?? undefined,
     program: parseJson<ProgramDay[]>(row.program_json, []),
     referral: buildReferral(db, row),
@@ -659,12 +1107,14 @@ export function adminCreateBooking(input: {
   date: string;
   timeSlot: string;
   workoutType: string;
-  internalNote?: string;
+  internalNote?: unknown;
   deductCredit: boolean;
 }) {
   if (!isWorkoutType(input.workoutType)) throw new HttpError(400, "Antrenman tipi seçin.");
+  const internalNote = optionalText(input.internalNote, "İç not", 1000);
   return transaction((db) => {
     const member = getMemberRow(db, input.memberId);
+    if (member.role !== "member") throw new HttpError(400, "Randevu yalnızca üyeler için oluşturulabilir.");
     assertSlotBookable(db, input.date, input.timeSlot);
     const deduct = input.deductCredit && member.remaining_sessions > 0;
     const id = randomUUID();
@@ -672,7 +1122,7 @@ export function adminCreateBooking(input: {
     db.prepare(
       `INSERT INTO bookings (id, member_id, date, time_slot, workout_type, status, internal_note, credit_deducted, created_by, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, 'CONFIRMED', ?, ?, 'admin', ?, ?)`
-    ).run(id, input.memberId, input.date, input.timeSlot, input.workoutType, input.internalNote?.trim() || null, deduct ? 1 : 0, nowIso(), nowIso());
+    ).run(id, input.memberId, input.date, input.timeSlot, input.workoutType, internalNote ?? null, deduct ? 1 : 0, nowIso(), nowIso());
     if (deduct) db.prepare("UPDATE members SET remaining_sessions = remaining_sessions - 1 WHERE id = ?").run(input.memberId);
     return { id, creditDeducted: deduct };
   });
@@ -684,7 +1134,23 @@ export type AdminBookingAction =
   | { action: "complete"; internalNote?: string }
   | { action: "reschedule"; date: string; timeSlot: string };
 
-export function adminUpdateBooking(bookingId: string, payload: AdminBookingAction) {
+const cleanBookingAction = (raw: Record<string, unknown>): AdminBookingAction => {
+  switch (raw.action) {
+    case "confirm":
+      return { action: "confirm" };
+    case "cancel":
+      return { action: "cancel", refund: raw.refund === true, reason: optionalText(raw.reason, "İptal nedeni", 500) };
+    case "complete":
+      return { action: "complete", internalNote: optionalText(raw.internalNote, "İç not", 1000) };
+    case "reschedule":
+      return { action: "reschedule", date: text(raw.date, "Tarih", 10, { required: true }), timeSlot: text(raw.timeSlot, "Saat", 13, { required: true }) };
+    default:
+      throw new HttpError(400, "Geçersiz işlem.");
+  }
+};
+
+export function adminUpdateBooking(bookingId: string, raw: Record<string, unknown>) {
+  const payload = cleanBookingAction(raw);
   transaction((db) => {
     const booking = db.prepare("SELECT * FROM bookings WHERE id = ?").get(bookingId) as BookingRow | undefined;
     if (!booking) throw new HttpError(404, "Randevu bulunamadı.");
@@ -721,12 +1187,19 @@ export function adminUpdateBooking(bookingId: string, payload: AdminBookingActio
 }
 
 // Turnike girişi: bugünkü onaylı randevu varsa tamamlanır, yoksa 1 ders düşülüp tamamlanmış kayıt açılır.
-export function adminCheckIn(memberRef: string) {
+// QR ile girişte yalnızca sunucunun imzaladığı, süresi dolmamış ve daha önce kullanılmamış kart kabul edilir.
+// Manuel girişte admin üyeyi listeden seçer (üye id'si).
+export function adminCheckIn(input: { passToken?: unknown; memberId?: unknown }) {
   return transaction((db) => {
-    const member = db
-      .prepare("SELECT * FROM members WHERE (id = ? OR member_no = ?) AND role = 'member'")
-      .get(memberRef, memberRef) as MemberRow | undefined;
+    let member: MemberRow | undefined;
+    if (typeof input.passToken === "string" && input.passToken) {
+      const memberNo = verifyMemberPass(db, input.passToken.trim().slice(0, 80));
+      member = db.prepare("SELECT * FROM members WHERE member_no = ? AND role = 'member'").get(memberNo) as MemberRow | undefined;
+    } else if (typeof input.memberId === "string" && input.memberId) {
+      member = db.prepare("SELECT * FROM members WHERE id = ? AND role = 'member'").get(input.memberId.slice(0, 64)) as MemberRow | undefined;
+    }
     if (!member) throw new HttpError(404, "Üye bulunamadı.");
+    if (member.status === "Pasif") throw new HttpError(409, `${member.full_name} hesabı pasif durumda.`);
     const today = todayIso();
     const booking = db
       .prepare("SELECT * FROM bookings WHERE member_id = ? AND date = ? AND status = 'CONFIRMED' ORDER BY time_slot LIMIT 1")
@@ -738,8 +1211,7 @@ export function adminCheckIn(memberRef: string) {
     if (member.remaining_sessions <= 0) throw new HttpError(409, `${member.full_name} için kalan ders hakkı yok.`);
     const program = parseJson<ProgramDay[]>(member.program_json, []);
     const todayType = program.find((p) => p.dayKey === dayKeyFromDate(today))?.type ?? "FULL";
-    const now = new Date();
-    const hour = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+    const hour = istanbulTime();
     db.prepare(
       `INSERT INTO bookings (id, member_id, date, time_slot, workout_type, status, credit_deducted, created_by, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, 'COMPLETED', 1, 'admin', ?, ?)`
@@ -749,97 +1221,145 @@ export function adminCheckIn(memberRef: string) {
   });
 }
 
-export function adminCreateMember(input: {
-  fullName: string;
-  email: string;
-  phone: string;
-  initialSessions: number;
-  injuryAlert?: string;
-  targetGoal?: string;
+export async function adminCreateMember(input: {
+  fullName: unknown;
+  email: unknown;
+  phone: unknown;
+  initialSessions: unknown;
+  injuryAlert?: unknown;
+  targetGoal?: unknown;
+  // Hoca, üyenin sağlık verisi için açık rızasını stüdyoda aldığını beyan eder (sakatlık notu için gerekli).
+  healthConsentGiven?: unknown;
 }) {
-  const tempPassword = `CF-${randomInt(100000, 1000000)}`;
-  const { id } = registerMember({
+  // Tahmin edilemez geçici şifre (12 karakter, ~72 bit)
+  const tempPassword = randomBytes(9).toString("base64url");
+  const sessions = integer(input.initialSessions ?? 0, "Başlangıç ders sayısı", 0, 200);
+  const injuryAlert = optionalText(input.injuryAlert, "Sakatlık notu", 500);
+  const targetGoal = optionalText(input.targetGoal, "Hedef", 200);
+  const consentGiven = input.healthConsentGiven === true;
+  if (injuryAlert && !consentGiven) {
+    throw new HttpError(409, "Sakatlık bilgisi için üyenin açık rızasını aldığınızı işaretleyin.");
+  }
+  const { id } = await registerMember({
+    requireNotice: false,
     fullName: input.fullName,
     email: input.email,
     phone: input.phone,
     password: tempPassword,
   });
-  const sessions = Math.max(0, Math.floor(input.initialSessions || 0));
   getDb()
     .prepare(
-      "UPDATE members SET remaining_sessions = ?, total_sessions = ?, injury_alert = ?, target_goal = ? WHERE id = ?"
+      "UPDATE members SET remaining_sessions = ?, total_sessions = ?, injury_alert = ?, target_goal = ?, health_consent_at = ? WHERE id = ?"
     )
-    .run(sessions, sessions, input.injuryAlert?.trim() || null, input.targetGoal?.trim() || null, id);
+    .run(sessions, sessions, injuryAlert ?? null, targetGoal ?? null, consentGiven ? nowIso() : null, id);
   const row = getMemberRow(getDb(), id);
   // Geçici şifre yalnızca bu yanıtta döner; admin üyeye iletir, üye profilinden değiştirir.
   return { id, memberNo: row.member_no, tempPassword };
 }
 
-export function adminUpdateMember(
-  memberId: string,
-  patch: {
-    sessionsDelta?: number;
-    status?: MemberStatus;
-    injuryAlert?: string;
-    targetGoal?: string;
-    healthNotes?: string;
-    program?: ProgramDay[];
-    referralCodeDisabled?: boolean;
-  }
-) {
+export function adminUpdateMember(memberId: string, raw: Record<string, unknown>) {
+  const patch = {
+    sessionsDelta: raw.sessionsDelta === undefined ? undefined : integer(raw.sessionsDelta, "Ders değişimi", -200, 200),
+    status: raw.status as MemberStatus | undefined,
+    injuryAlert: raw.injuryAlert === undefined ? undefined : text(raw.injuryAlert, "Sakatlık notu", 500),
+    targetGoal: raw.targetGoal === undefined ? undefined : text(raw.targetGoal, "Hedef", 200),
+    healthNotes: raw.healthNotes === undefined ? undefined : text(raw.healthNotes, "Sağlık notu", 1000),
+    program: raw.program === undefined ? undefined : cleanProgram(raw.program),
+    referralCodeDisabled: typeof raw.referralCodeDisabled === "boolean" ? raw.referralCodeDisabled : undefined,
+    // Hoca, açık rızayı stüdyoda aldığını beyan ederek sağlık alanlarını açar (zaman damgası kaydedilir).
+    healthConsentGiven: raw.healthConsentGiven === true,
+  };
+  let revoke = false;
   transaction((db) => {
     const row = getMemberRow(db, memberId);
+    if (row.role !== "member") throw new HttpError(400, "Yönetici hesabı bu ekrandan düzenlenemez.");
+    if (patch.healthConsentGiven && !row.health_consent_at) {
+      db.prepare("UPDATE members SET health_consent_at = ? WHERE id = ?").run(nowIso(), memberId);
+      row.health_consent_at = nowIso();
+    }
+    if (patch.injuryAlert || patch.healthNotes) assertHealthConsent(row);
     if (patch.sessionsDelta) {
-      const delta = Math.trunc(patch.sessionsDelta);
+      const delta = patch.sessionsDelta;
       db.prepare(
         "UPDATE members SET remaining_sessions = MAX(0, remaining_sessions + ?), total_sessions = total_sessions + ? WHERE id = ?"
       ).run(delta, delta > 0 ? delta : 0, memberId);
     }
-    if (patch.status && ["Aktif", "Yenileme Bekliyor", "Pasif"].includes(patch.status)) {
+    if (patch.status !== undefined) {
+      if (!["Aktif", "Yenileme Bekliyor", "Pasif"].includes(patch.status)) throw new HttpError(400, "Geçersiz durum.");
       db.prepare("UPDATE members SET status = ? WHERE id = ?").run(patch.status, memberId);
+      revoke = patch.status === "Pasif";
     }
     if (patch.injuryAlert !== undefined || patch.targetGoal !== undefined) {
       db.prepare("UPDATE members SET injury_alert = ?, target_goal = ? WHERE id = ?").run(
-        patch.injuryAlert?.trim() ?? row.injury_alert,
-        patch.targetGoal?.trim() ?? row.target_goal,
+        patch.injuryAlert ?? row.injury_alert,
+        patch.targetGoal ?? row.target_goal,
         memberId
       );
     }
     if (patch.healthNotes !== undefined) {
       const profile = parseJson<Record<string, unknown>>(row.profile_json, {});
-      profile.healthNotes = patch.healthNotes.trim();
+      profile.healthNotes = patch.healthNotes;
       db.prepare("UPDATE members SET profile_json = ? WHERE id = ?").run(JSON.stringify(profile), memberId);
     }
     if (patch.program) {
-      const clean = patch.program.filter((p) => isWorkoutType(p.type));
-      db.prepare("UPDATE members SET program_json = ? WHERE id = ?").run(JSON.stringify(clean), memberId);
+      db.prepare("UPDATE members SET program_json = ? WHERE id = ?").run(JSON.stringify(patch.program), memberId);
     }
     if (patch.referralCodeDisabled !== undefined) {
       db.prepare("UPDATE members SET referral_code_disabled = ? WHERE id = ?").run(patch.referralCodeDisabled ? 1 : 0, memberId);
     }
   });
+  // Pasife alınan üyenin açık oturumları hemen kapanır.
+  if (revoke) revokeMemberSessions(memberId);
 }
 
+// Program: en fazla 7 gün, her gün bir kez, yalnızca üç antrenman tipi.
+const cleanProgram = (value: unknown): ProgramDay[] => {
+  if (!Array.isArray(value) || value.length > 7) throw new HttpError(400, "Program geçersiz.");
+  const seen = new Set<string>();
+  return value.map((item) => {
+    const day = (item ?? {}) as Record<string, unknown>;
+    if (!DAY_KEYS.some((d) => d.key === day.dayKey) || !isWorkoutType(String(day.type)) || seen.has(String(day.dayKey))) {
+      throw new HttpError(400, "Program geçersiz.");
+    }
+    seen.add(String(day.dayKey));
+    return { dayKey: day.dayKey as ProgramDay["dayKey"], type: day.type as WorkoutType };
+  });
+};
+
+// Kasada anında tahsil edilen satış (yalnızca nakit veya havale).
 export function adminQuickSale(input: {
   memberId: string;
   packageId: string;
-  paymentMethod: PaymentMethod;
-  extraDiscountPercent?: number;
+  paymentMethod: unknown;
+  extraDiscountPercent?: unknown;
 }) {
-  const extra = Math.min(Math.max(input.extraDiscountPercent ?? 0, 0), 50) / 100;
+  const extra = integer(input.extraDiscountPercent ?? 0, "Ek indirim", 0, 50) / 100;
   return transaction((db) =>
-    createOrderTx(db, input.memberId, input.packageId, input.paymentMethod, {
+    createOfflineOrderTx(db, input.memberId, input.packageId, input.paymentMethod as PaymentMethod, {
       extraDiscountRate: extra,
-      paidImmediately: true,
+      collectedNow: true,
     })
   );
 }
 
+// Nakit / havale tahsilatını onaylar. PayTR'da inceleme bekleyen sipariş, admin parayı mağaza panelinde
+// gördükten sonra onaylarsa ders hakkı o an tanımlanır. Başarısız, iptal veya süren online ödemeler onaylanamaz.
 export function adminApproveOrder(orderId: string) {
-  const result = getDb()
-    .prepare("UPDATE orders SET payment_status = 'completed', paid_at = ? WHERE id = ? AND payment_status != 'completed'")
-    .run(nowIso(), orderId);
-  if (result.changes === 0) throw new HttpError(404, "Onay bekleyen sipariş bulunamadı.");
+  transaction((db) => {
+    const order = db.prepare("SELECT * FROM orders WHERE id = ?").get(orderId) as OrderRow | undefined;
+    if (!order) throw new HttpError(404, "Sipariş bulunamadı.");
+    const now = nowIso();
+    if (order.payment_status === "pending_cashier" || order.payment_status === "pending_transfer") {
+      db.prepare("UPDATE orders SET payment_status = 'completed', paid_at = ?, updated_at = ? WHERE id = ?").run(now, now, orderId);
+      return;
+    }
+    if (order.payment_status === "review" && order.payment_method === "online_card") {
+      db.prepare("UPDATE orders SET payment_status = 'completed', paid_at = ?, updated_at = ? WHERE id = ?").run(now, now, orderId);
+      grantPackageTx(db, order.member_id, order.package_id, order.package_name, order.session_count);
+      return;
+    }
+    throw new HttpError(409, "Bu sipariş onaylanamaz.");
+  });
 }
 
 export function adminSaveSettings(input: {
@@ -854,15 +1374,16 @@ export function adminSaveSettings(input: {
   });
 }
 
-export function adminCreateGift(input: { memberId: string | null; title: string; description: string }) {
-  if (!input.title.trim()) throw new HttpError(400, "Hediye başlığı gerekli.");
+export function adminCreateGift(input: { memberId: string | null; title: unknown; description: unknown }) {
+  const title = text(input.title, "Hediye başlığı", 120, { required: true });
+  const description = text(input.description, "Açıklama", 500);
   const db = getDb();
   if (input.memberId) getMemberRow(db, input.memberId);
   db.prepare("INSERT INTO gifts (id, member_id, title, description, status, created_at) VALUES (?, ?, ?, ?, 'available', ?)").run(
     randomUUID(),
     input.memberId,
-    input.title.trim(),
-    input.description.trim(),
+    title,
+    description,
     nowIso()
   );
 }

@@ -60,8 +60,13 @@ export const SLOT_REASON_TEXT: Record<SlotUnavailableReason, string> = {
   past: "Geçmiş bir saate randevu alınamaz.",
 };
 
-// Yerel saat diliminde bugünün YYYY-MM-DD karşılığı
-export const todayIso = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-};
+// Stüdyo İstanbul saatiyle çalışır; sunucu UTC'de olsa da "bugün" ve turnike saati İstanbul'a göre hesaplanır.
+const STUDIO_TZ = "Europe/Istanbul";
+
+// Bugünün YYYY-MM-DD karşılığı (İstanbul)
+export const todayIso = () =>
+  new Intl.DateTimeFormat("en-CA", { timeZone: STUDIO_TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+
+// Şu anki saat SS:DD (İstanbul)
+export const istanbulTime = () =>
+  new Intl.DateTimeFormat("en-GB", { timeZone: STUDIO_TZ, hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date());

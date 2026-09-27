@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import {
   X,
@@ -12,6 +12,9 @@ import {
   Check,
   Loader2,
   ArrowRight,
+  ShieldCheck,
+  XCircle,
+  Clock,
 } from "lucide-react";
 import type { PaymentMethod, OrderItem } from "@/types/portal";
 import type { PackageItem } from "@/data/packages";
@@ -27,12 +30,28 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   pkg,
   onClose,
 }) => {
-  const { purchasePackage, referral, bankAccounts } = useMember();
-  const [method, setMethod] = useState<PaymentMethod>("bank_transfer");
+  const { purchasePackage, startOnlinePayment, checkPaymentStatus, onlinePaymentEnabled, referral, bankAccounts } = useMember();
+  const [method, setMethod] = useState<PaymentMethod>(onlinePaymentEnabled ? "online_card" : "bank_transfer");
   const [processing, setProcessing] = useState(false);
   const [completedOrder, setCompletedOrder] = useState<OrderItem | null>(null);
   const [copiedIban, setCopiedIban] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // PayTR ödeme penceresi ve sonucu
+  const [online, setOnline] = useState<{ iframeUrl: string; merchantOid: string } | null>(null);
+  const [onlineResult, setOnlineResult] = useState<{ status: "completed" | "failed" | "review"; reason?: string } | null>(null);
+
+  // Sonuç yalnızca sunucudan okunur: PayTR'ın imzalı bildirimi gelene kadar ödeme "bekliyor" sayılır.
+  useEffect(() => {
+    if (!online || onlineResult) return;
+    const timer = setInterval(async () => {
+      const res = await checkPaymentStatus(online.merchantOid);
+      if (!res || res.status === "awaiting_payment") return;
+      if (res.status === "completed") setOnlineResult({ status: "completed" });
+      else if (res.status === "review") setOnlineResult({ status: "review" });
+      else setOnlineResult({ status: "failed", reason: res.reason });
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [online, onlineResult, checkPaymentStatus]);
 
   if (!pkg) return null;
 
@@ -50,6 +69,13 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     e.preventDefault();
     setProcessing(true);
     setError(null);
+    if (method === "online_card") {
+      const started = await startOnlinePayment(pkg.id);
+      setProcessing(false);
+      if (started.ok) setOnline({ iframeUrl: started.iframeUrl, merchantOid: started.merchantOid });
+      else setError(started.error);
+      return;
+    }
     const result = await purchasePackage({ packageId: pkg.id, paymentMethod: method });
     setProcessing(false);
     if (result.ok) setCompletedOrder(result.order);
@@ -75,7 +101,70 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           <X className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
 
-        {!completedOrder ? (
+        {online && onlineResult ? (
+          <div className="p-6 sm:p-8 text-center space-y-4 overflow-y-auto">
+            <div
+              className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-2 ${
+                onlineResult.status === "completed"
+                  ? "bg-[#ECFDF5] text-[#10B981]"
+                  : onlineResult.status === "review"
+                  ? "bg-amber-50 text-amber-600"
+                  : "bg-rose-50 text-rose-600"
+              }`}
+            >
+              {onlineResult.status === "completed" ? (
+                <CheckCircle2 className="w-8 h-8" />
+              ) : onlineResult.status === "review" ? (
+                <Clock className="w-8 h-8" />
+              ) : (
+                <XCircle className="w-8 h-8" />
+              )}
+            </div>
+            <h4 className="text-xl sm:text-2xl font-bold font-display uppercase tracking-tight text-[#0F172A]">
+              {onlineResult.status === "completed"
+                ? "Ödemeniz Alındı"
+                : onlineResult.status === "review"
+                ? "Ödemeniz İnceleniyor"
+                : "Ödeme Tamamlanamadı"}
+            </h4>
+            <p className="text-xs text-[#64748B] max-w-sm mx-auto leading-relaxed">
+              {onlineResult.status === "completed"
+                ? `${pkg.name} hesabınıza yüklendi. Dilerseniz hemen randevu planlayabilirsiniz.`
+                : onlineResult.status === "review"
+                ? "Ödemeniz stüdyo tarafından kontrol ediliyor. Onaylandığında dersleriniz hesabınıza yüklenecek."
+                : onlineResult.reason || "Kartınızdan çekim yapılmadı. Bilgilerinizi kontrol edip tekrar deneyebilirsiniz."}
+            </p>
+            <button
+              onClick={onClose}
+              className="px-8 py-3 bg-[#0F172A] text-white font-bold text-xs uppercase tracking-wider rounded-full hover:bg-[#1E293B] transition-colors shadow-sm"
+            >
+              Panele Dön
+            </button>
+          </div>
+        ) : online ? (
+          <div className="flex flex-col flex-1 overflow-hidden">
+            <div className="px-5 sm:px-7 pt-2 sm:pt-6 pb-3 border-b border-black/[0.05] shrink-0">
+              <span className="text-[10px] font-sans text-[#10B981] uppercase tracking-widest block font-bold">PAYTR GÜVENLİ ÖDEME</span>
+              <h3 className="text-xl sm:text-2xl font-bold font-display uppercase text-[#0F172A] mt-0.5">Kart ile Ödeme</h3>
+              <p className="text-xs text-[#64748B] mt-0.5">
+                {pkg.name} • {priceText}
+              </p>
+            </div>
+            <div className="flex-1 overflow-y-auto overscroll-contain bg-white">
+              <iframe
+                src={online.iframeUrl}
+                title="PayTR güvenli ödeme"
+                allow="payment"
+                referrerPolicy="strict-origin-when-cross-origin"
+                className="w-full min-h-[600px] border-0"
+              />
+            </div>
+            <div className="px-5 sm:px-7 py-3 border-t border-black/[0.06] text-[11px] text-[#64748B] flex items-center gap-2 shrink-0">
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-[#10B981] shrink-0" />
+              <span>Ödeme sonucu bekleniyor. Bu pencereyi ödeme bitene kadar kapatmayın.</span>
+            </div>
+          </div>
+        ) : !completedOrder ? (
           <form onSubmit={handlePay} className="flex flex-col flex-1 overflow-hidden">
             {/* Fixed Header */}
             <div className="px-5 sm:px-7 pt-2 sm:pt-6 pb-3 border-b border-black/[0.05] shrink-0">
@@ -118,19 +207,26 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 </label>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {/* 1. Online Kart: ödeme sağlayıcısı bağlanana kadar kapalı */}
+                  {/* 1. Online Kart (PayTR). Admin kapattıysa veya mağaza bilgileri tanımlı değilse pasif görünür. */}
                   <button
                     type="button"
-                    disabled
-                    aria-disabled="true"
-                    className="p-3 rounded-xl border border-dashed border-black/[0.08] bg-[#F8FAFC] text-left flex items-start gap-2.5 opacity-60 cursor-not-allowed"
+                    disabled={!onlinePaymentEnabled}
+                    aria-disabled={!onlinePaymentEnabled}
+                    onClick={() => setMethod("online_card")}
+                    className={`p-3 rounded-xl border text-left flex items-start gap-2.5 transition-all ${
+                      !onlinePaymentEnabled
+                        ? "border-dashed border-black/[0.08] bg-[#F8FAFC] opacity-60 cursor-not-allowed"
+                        : method === "online_card"
+                        ? "border-[#0F172A] bg-[#F1F5F9] text-[#0F172A] shadow-xs ring-1 ring-[#0F172A]"
+                        : "border-black/[0.06] bg-white text-[#64748B] hover:border-black/[0.15]"
+                    }`}
                   >
-                    <CreditCard className="w-4 h-4 shrink-0 mt-0.5 text-[#94A3B8]" />
+                    <CreditCard className={`w-4 h-4 shrink-0 mt-0.5 ${method === "online_card" ? "text-[#0F172A]" : "text-[#94A3B8]"}`} />
                     <div>
                       <span className="text-xs font-bold block text-[#0F172A]">
                         Online Kart ile Öde
                       </span>
-                      <span className="text-[10px] text-[#64748B]">Yakında</span>
+                      <span className="text-[10px] text-[#64748B]">{onlinePaymentEnabled ? "PayTR güvenli ödeme, 3D Secure" : "Şu an kullanılamıyor"}</span>
                     </div>
                   </button>
 
@@ -188,6 +284,16 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
               {/* Dynamic Method Form Body */}
               <div>
+                {method === "online_card" && (
+                  <div className="bg-[#F8FAFC] p-3.5 sm:p-4 rounded-2xl border border-black/[0.06] flex items-start gap-2.5">
+                    <ShieldCheck className="w-5 h-5 text-[#10B981] shrink-0 mt-0.5" />
+                    <p className="text-xs text-[#64748B] leading-relaxed">
+                      Kart bilgilerinizi PayTR&apos;ın güvenli ödeme sayfasına girersiniz. Core &amp; Fit kart bilginizi görmez ve saklamaz.
+                      Ödeme onaylandığında dersleriniz hesabınıza otomatik yüklenir.
+                    </p>
+                  </div>
+                )}
+
                 {method === "cash_register" && (
                   <div className="bg-[#F8FAFC] p-3.5 sm:p-4 rounded-2xl border border-black/[0.06] space-y-2.5">
                     <div className="flex items-start gap-2.5">
@@ -266,7 +372,11 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 ) : (
                   <>
                     <span>
-                      {method === "cash_register" ? "Stüdyoda Nakit Ödeme Emri Oluştur" : "Havale Siparişini Onayla"}
+                      {method === "online_card"
+                        ? `${priceText} Kartla Öde`
+                        : method === "cash_register"
+                        ? "Stüdyoda Nakit Ödeme Emri Oluştur"
+                        : "Havale Siparişini Onayla"}
                     </span>
                     <ArrowRight className="w-4 h-4" />
                   </>

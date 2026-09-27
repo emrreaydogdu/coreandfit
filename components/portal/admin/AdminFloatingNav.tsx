@@ -2,9 +2,9 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { TrendingUp, Calendar, CreditCard, Users, QrCode, Clock, Settings, Gift } from "lucide-react";
+import { TrendingUp, Calendar, CreditCard, Users, QrCode, Clock, Settings, Gift, ShieldCheck } from "lucide-react";
 
-export type AdminTab = "overview" | "schedule" | "coach_slots" | "turnstile" | "cashier" | "members" | "referrals" | "settings";
+export type AdminTab = "overview" | "schedule" | "coach_slots" | "turnstile" | "cashier" | "members" | "referrals" | "payments" | "settings";
 
 interface AdminFloatingNavProps {
   activeTab: AdminTab;
@@ -21,6 +21,7 @@ export const ADMIN_TABS: { id: AdminTab; label: string; fullLabel: string; icon:
   { id: "cashier", label: "Kasa", fullLabel: "Kasa & Ödemeler", icon: CreditCard },
   { id: "members", label: "Üyeler", fullLabel: "Üyeler", icon: Users },
   { id: "referrals", label: "Referans", fullLabel: "Referanslar", icon: Gift },
+  { id: "payments", label: "Online", fullLabel: "Online Ödeme", icon: ShieldCheck },
   { id: "settings", label: "Ayarlar", fullLabel: "İşletme Ayarları", icon: Settings },
 ];
 

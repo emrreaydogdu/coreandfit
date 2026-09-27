@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import { ArrowLeft, Lock, Mail, Phone, User, ShieldCheck, Gift, Loader2 } from "lucide-react";
 import { useMember } from "@/context/MemberContext";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 
 export default function MemberAuthPage() {
   const router = useRouter();
@@ -14,10 +15,14 @@ export default function MemberAuthPage() {
   const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordRepeat, setPasswordRepeat] = useState("");
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [referralCode, setReferralCode] = useState("");
   const [referralStatus, setReferralStatus] = useState<{ ok: boolean; text: string } | null>(null);
+  // KVKK: aydınlatma zorunlu, sağlık verisi açık rızası isteğe bağlı
+  const [kvkkNotice, setKvkkNotice] = useState(false);
+  const [healthConsent, setHealthConsent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -45,9 +50,16 @@ export default function MemberAuthPage() {
     );
   };
 
+  // Tekrar kutusu doldurulmaya başlandıktan sonra uyuşmazlık gösterilir.
+  const passwordMismatch = mode === "register" && passwordRepeat.length > 0 && passwordRepeat !== password;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (mode === "register" && password !== passwordRepeat) {
+      setError("Şifreler eşleşmiyor.");
+      return;
+    }
     setSubmitting(true);
     if (mode === "login") {
       const res = await login(email, password);
@@ -55,7 +67,15 @@ export default function MemberAuthPage() {
       if (!res.ok) return setError(res.error);
       router.push(res.role === "admin" ? "/admin" : "/portal");
     } else {
-      const res = await register({ fullName, email, phone, password, referralCode: referralCode.trim() || undefined });
+      const res = await register({
+        fullName,
+        email,
+        phone,
+        password,
+        referralCode: referralCode.trim() || undefined,
+        kvkkNotice,
+        healthConsent,
+      });
       setSubmitting(false);
       if (!res.ok) return setError(res.error);
       router.push("/portal");
@@ -203,10 +223,10 @@ export default function MemberAuthPage() {
               </label>
               <div className="relative">
                 <Lock className="w-4 h-4 text-[#94A3B8] absolute left-3 top-3" />
-                <input
-                  type="password"
+                <PasswordInput
                   required
                   minLength={mode === "register" ? 8 : undefined}
+                  maxLength={128}
                   autoComplete={mode === "login" ? "current-password" : "new-password"}
                   placeholder={mode === "register" ? "En az 8 karakter" : "••••••••"}
                   value={password}
@@ -215,6 +235,28 @@ export default function MemberAuthPage() {
                 />
               </div>
             </div>
+
+            {mode === "register" && (
+              <div>
+                <label className="text-[10px] font-sans text-[#64748B] uppercase block mb-1 font-semibold">
+                  ŞİFRE TEKRAR
+                </label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-[#94A3B8] absolute left-3 top-3" />
+                  <PasswordInput
+                    required
+                    maxLength={128}
+                    autoComplete="new-password"
+                    placeholder="Şifrenizi tekrar girin"
+                    value={passwordRepeat}
+                    onChange={(e) => setPasswordRepeat(e.target.value)}
+                    aria-invalid={passwordMismatch}
+                    className="w-full bg-[#F8FAFC] border border-black/[0.08] rounded-xl pl-9 pr-3 py-2.5 text-xs font-sans text-[#0F172A] placeholder:text-[#94A3B8] focus:bg-white focus:outline-none focus:border-[#10B981] focus:ring-2 focus:ring-[#10B981]/15 transition-all"
+                  />
+                </div>
+                {passwordMismatch && <p className="mt-1.5 text-[11px] font-medium text-rose-600">Şifreler eşleşmiyor.</p>}
+              </div>
+            )}
 
             {mode === "register" && (
               <div>
@@ -249,6 +291,45 @@ export default function MemberAuthPage() {
                     {referralStatus.text}
                   </p>
                 )}
+              </div>
+            )}
+
+            {mode === "register" && (
+              <div className="space-y-2.5 pt-1">
+                <label className="flex items-start gap-2.5 text-[11px] text-[#475569] leading-relaxed cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={kvkkNotice}
+                    onChange={(e) => setKvkkNotice(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 accent-[#10B981] shrink-0"
+                    required
+                  />
+                  <span>
+                    <Link href="/kvkk" target="_blank" className="font-semibold text-[#0F172A] underline underline-offset-2">
+                      KVKK Aydınlatma Metni
+                    </Link>
+                    &apos;ni ve{" "}
+                    <Link href="/gizlilik-politikasi" target="_blank" className="font-semibold text-[#0F172A] underline underline-offset-2">
+                      Gizlilik Politikası
+                    </Link>
+                    &apos;nı okudum.
+                  </span>
+                </label>
+                <label className="flex items-start gap-2.5 text-[11px] text-[#475569] leading-relaxed cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={healthConsent}
+                    onChange={(e) => setHealthConsent(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 accent-[#10B981] shrink-0"
+                  />
+                  <span>
+                    Sağlık notlarımın ve vücut ölçümlerimin antrenman planlaması amacıyla işlenmesine{" "}
+                    <Link href="/acik-riza-metni" target="_blank" className="font-semibold text-[#0F172A] underline underline-offset-2">
+                      Açık Rıza Metni
+                    </Link>{" "}
+                    kapsamında açık rıza veriyorum.
+                  </span>
+                </label>
               </div>
             )}
 

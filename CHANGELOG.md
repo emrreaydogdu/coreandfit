@@ -145,3 +145,83 @@ Ortam değişkenleri `.env.example` içinde: `ADMIN_EMAIL`, `ADMIN_PASSWORD` (il
 8. **Revizyon dışında kalan lint hataları**: `LanguageSwitcher`, `ConsultationFunnel`, `Header.apple`, `Header.classic`, `DesignModeProvider`, `ThemeProvider` dosyalarında önceden var olan `set-state-in-effect` hataları duruyor. Build'i engellemiyorlar.
 9. **QR giriş**: Kamera izni ve gerçek cihazda okuma stüdyoda denenmeli.
 10. **WhatsApp şablonları** gerçek numarayla bir kez gönderilip metin kontrol edilmeli.
+
+---
+
+# Güvenlik Denetimi ve PayTR Online Ödeme
+
+## Tespit Edilen Açıklar ve Düzeltmeler
+
+| # | Açık | Risk | Düzeltme |
+|---|---|---|---|
+| 1 | Giriş, kayıt ve referans kontrolünde deneme sınırı yoktu | Parola deneme saldırısı, referans kodu taraması | IP başına sınır, e-posta başına 5 hatalı denemede 15 dk kilit (`lib/server/security.ts`) |
+| 2 | QR giriş kartı tarayıcıda gizli anahtar olmadan üretiliyordu | Üye numarasını bilen biri başkasının dersini düşürebilirdi | Sunucu imzalı (HMAC), 90 sn geçerli, tek kullanımlık QR (`/api/me/pass`) |
+| 3 | "Başarılı referans" ödeme şartı aramıyordu | Sahte hesapla kendi koduna kayıt olup %10 indirim açılabiliyordu | Başarılı referans = ödemesi tamamlanmış en az bir paketi olan davetli |
+| 4 | Admin iptal edilmiş siparişi onaylayabiliyordu, hızlı satışta online kart "ödendi" oluyordu | Hatalı kasa kaydı, tahsilatsız ders hakkı | Onay yalnızca nakit/havale bekleyen ve incelemedeki siparişlerde; hızlı satış yalnızca nakit/havale |
+| 5 | Randevu saati koç programında olmasa da kabul ediliyordu | Takvime gece saatlerine randevu | Üye yalnızca programdaki açık saatleri seçebilir; saat biçimi ve 90 gün sınırı |
+| 6 | Metin alanlarında ve istek boyutunda sınır yoktu | Veritabanı şişirme, çok uzun parolayla sunucuyu yorma | Tüm alanlarda uzunluk/biçim doğrulama, JSON boyut sınırı, parola 8-128 karakter |
+| 7 | Güvenlik başlıkları yoktu | Clickjacking, dış kaynaklı script, protokol düşürme | CSP, HSTS, X-Frame-Options, nosniff, Referrer-Policy, Permissions-Policy (`next.config.ts`) |
+| 8 | CSRF için yalnızca SameSite=Lax vardı | Başka siteden istek tetikleme | Çerez SameSite=Strict, `__Host-` öneki; `proxy.ts` başka siteden gelen veri değiştiren API isteklerini reddeder |
+| 9 | Pasife alınan üyenin oturumu açık kalıyordu, parola değişince diğer oturumlar kapanmıyordu | Çalınan oturumun kullanılmaya devam etmesi | Pasife almada ve parola değişiminde tüm oturumlar kapanır |
+| 10 | Parola hash'i senkron çalışıyordu, kayıtlı olmayan e-postada yanıt hızlıydı | Sunucuyu kilitleme, hesap varlığı tespiti | Asenkron scrypt, kayıtlı olmayan e-postada eşit süre |
+| 11 | Profil güncellemesi alanları doğrulamıyordu | Kart numarası vb. keyfi veri saklama | Alan bazlı doğrulama; kartta yalnızca son 4 hane |
+| 12 | Admin parolasını değiştiremiyordu, oturum 30 gün açık kalıyordu | Sızan parola kalıcı risk | Admin panelinde "Parolayı Değiştir" (en az 12 karakter), admin oturumu 12 saat |
+| 13 | Admin geçici şifresi 6 haneli sayıydı | Tahmin edilebilir | 12 karakterlik rastgele şifre |
+
+## PayTR Online Ödeme
+
+- **Akış:** Üye paketi seçer → sunucu fiyatı hesaplar, siparişi "Ödeme Bekleniyor" olarak açar → PayTR token'ı alınır → kart bilgisi PayTR'ın güvenli sayfasında girilir → PayTR imzalı bildirim gönderir → ders hakkı yalnızca bu bildirimle tanımlanır.
+- **İmza:** Token ve bildirim imzaları PayTR 1. ve 2. Adım belgesindeki formülle birebir hesaplanır; karşılaştırma sabit sürelidir.
+- **Tutar kontrolü:** İmza geçerli olsa bile tutar, para birimi veya mod siparişle uyuşmazsa ders hakkı verilmez, sipariş "İncelemede" durumuna düşer.
+- **Tekrar eden bildirim:** Aynı sipariş için ikinci bildirim yalnızca "OK" ile kapatılır, ders hakkı iki kez verilmez.
+- **Başarılı dönüş sayfası** hiçbir işlem yapmaz (PayTR uyarısı gereği).
+- **Anahtarlar:** Mağaza no, anahtar ve gizli anahtar yalnızca sunucudaki ortam dosyasında durur. Admin paneli bunları göstermez ve değiştiremez; admin hesabı ele geçirilse bile ödemeler başka hesaba yönlendirilemez.
+- **Admin › Online Ödeme sekmesi:** bağlantı durumu (maskeli mağaza no), test/canlı mod, online ödemeyi açma/kapama, PayTR paneline girilecek Bildirim URL'si, online siparişler ve son 50 bildirim kaydı (imzası geçersiz olanlar dahil).
+- **Veritabanı:** `orders` tablosuna `awaiting_payment`, `failed`, `review` durumları ve `merchant_oid`, `provider_total_amount`, `failure_reason`, `updated_at` alanları eklendi; `payment_events` denetim tablosu. Mevcut veritabanı açılışta bir kez, veri kaybı olmadan taşınır.
+
+## Yeni Ortam Değişkenleri
+
+`PAYTR_MERCHANT_ID`, `PAYTR_MERCHANT_KEY`, `PAYTR_MERCHANT_SALT`, `PAYTR_TEST_MODE` (varsayılan test), `PAYTR_NO_INSTALLMENT`, `PAYTR_MAX_INSTALLMENT`, `APP_BASE_URL`. Ayrıntı `.env.example` içinde.
+
+## Test Sonuçları
+
+- Güvenlik ve ödeme testi: 59 / 59 (CSRF, istek biçimi ve boyutu, giriş kilidi, kayıt doğrulama ve sınırı, yetki ve IDOR, toplu alan atama, sahte/eski/tekrar kullanılan QR, geçersiz imzalı bildirim, tutar uyuşmazlığı, tekrar eden bildirim, başarısız ödeme, incelemedeki siparişin onayı, oturum kapatma).
+- Önceki uçtan uca API testi: 38 / 38.
+- TypeScript, ESLint (dokunulan dosyalar), `next build`: temiz. Tarayıcıda yeni CSP ile konsol hatası yok.
+
+## Kalan Riskler ve Öneriler
+
+1. Admin girişi için iki adımlı doğrulama (TOTP) önerilir.
+2. CSP, Next.js statik sayfaları nedeniyle satır içi script'e izin verir. React çıktıyı kaçırdığı ve kullanıcı verisiyle `dangerouslySetInnerHTML` kullanılmadığı için risk düşüktür.
+3. Deneme sınırları bellek içidir; uygulama yeniden başlayınca sıfırlanır.
+4. Sunucu: SSH parola girişi kapatılmalı (`PasswordAuthentication no`), güvenlik duvarında 3306 (MySQL), 3000 ve 3001 portları herkese açık; kullanılmıyorsa kapatılmalı. Veritabanı için düzenli yedek alınmalı.
+
+---
+
+# KVKK ve Gizlilik
+
+## Sayfalar
+- **/kvkk** yeniden yazıldı: veri sorumlusu, işlenen veri kategorileri, amaçlar, hukuki sebepler (m.5 ve m.6), toplama yöntemi, aktarım tablosu (PayTR, barındırma, kamu kurumları, WhatsApp, Google Translate), saklama süreleri, m.11 hakları, başvuru yöntemi.
+- **/acik-riza-metni** (yeni): sağlık notu, sakatlık bilgisi ve vücut ölçüleri için açık rıza; geri alma ve sonuçları.
+- **/gizlilik-politikasi** yeniden yazıldı: sitede gerçekten uygulanan güvenlik önlemleri, ödeme güvenliği, üçüncü taraf hizmetler, hesap kontrolü, 18 yaş altı.
+- **/cerez-politikasi** yeniden yazıldı: yalnızca gerçekten kullanılan çerez ve depolama alanları. Eski metindeki "analitik çerez" beyanı kaldırıldı; sitede analitik veya reklam çerezi yok.
+- Ortak şablon `components/legal/LegalPage.tsx`; veri sorumlusu unvanı, adresi ve KEP adresi `config/business.ts › legal` alanından okunur.
+- Footer ve site haritasına Açık Rıza Metni eklendi.
+
+## Rıza Akışı
+- Kayıtta "Aydınlatma Metni'ni okudum" zorunlu, sağlık verisi açık rızası isteğe bağlı. Her ikisinin zamanı `members.kvkk_notice_at` ve `members.health_consent_at` alanlarında saklanır.
+- Açık rıza yoksa sağlık notu, sakatlık uyarısı ve vücut ölçümü sunucuda reddedilir (üye ve admin için).
+- Hoca, üyenin rızasını stüdyoda aldıysa yeni üye formunda sakatlık notu girerken veya üye detayında "Açık rıza stüdyoda alındı" ile işaretleyebilir; rızanın zamanı kaydedilir.
+- Üye, Hesabım › Kişisel Verilerim bölümünden rızasını verir veya geri alır. Geri alındığında sağlık notu, sakatlık uyarısı ve tüm ölçümler silinir.
+
+## Saat Dilimi Düzeltmesi
+- Sunucu UTC'de çalıştığı için turnike giriş saati 3 saat geri kaydediliyordu ve gece yarısı civarında "bugün" yanlış hesaplanıyordu. `todayIso()` ve turnike saati artık İstanbul saatine göre hesaplanır.
+
+## Test
+- Güvenlik ve ödeme testi 73 / 73 (14 yeni KVKK senaryosu), API testi 38 / 38, TypeScript, ESLint ve `next build` temiz.
+
+## Yayın Öncesi Tamamlanması Gerekenler
+1. Veri sorumlusunun resmî unvanı ve açık adresi (`config/business.ts › legal`).
+2. Sunucu Almanya'da (Hetzner). KVKK m.9 uyarınca barındırma firmasıyla Kurul'un standart sözleşmesinin imzalanması ve 5 iş günü içinde Kurum'a bildirilmesi gerekir; alternatif olarak Türkiye'de barındırma.
+3. Metinlerin bir hukukçu tarafından gözden geçirilmesi önerilir.
+4. Üyeliği sona eren üyelerin sağlık verilerinin 6 ay içinde silinmesi şu an elle yapılır; otomatik imha eklenebilir.

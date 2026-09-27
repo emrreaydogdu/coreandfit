@@ -21,6 +21,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/blog",
     "/iletisim",
     "/kvkk",
+    "/acik-riza-metni",
     "/gizlilik-politikasi",
     "/cerez-politikasi",
   ].map((route) => ({

@@ -20,8 +20,10 @@ export const AdminCreateMemberModal: React.FC<AdminCreateMemberModalProps> = ({
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [sessionCount, setSessionCount] = useState<number>(0);
-  const [injuryAlert, setInjuryAlert] = useState("");
   const [targetGoal, setTargetGoal] = useState("");
+  const [injuryAlert, setInjuryAlert] = useState("");
+  // Sakatlık notu sağlık verisidir: hoca, üyenin açık rızasını stüdyoda aldığını işaretler.
+  const [consentGiven, setConsentGiven] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<{ memberNo: string; tempPassword: string } | null>(null);
 
@@ -33,8 +35,9 @@ export const AdminCreateMemberModal: React.FC<AdminCreateMemberModalProps> = ({
     setName("");
     setPhone("");
     setEmail("");
-    setInjuryAlert("");
     setTargetGoal("");
+    setInjuryAlert("");
+    setConsentGiven(false);
     onClose();
   };
 
@@ -46,8 +49,9 @@ export const AdminCreateMemberModal: React.FC<AdminCreateMemberModalProps> = ({
       phone,
       email,
       initialSessions: sessionCount,
-      injuryAlert,
       targetGoal,
+      injuryAlert: injuryAlert.trim() || undefined,
+      healthConsentGiven: injuryAlert.trim() ? consentGiven : undefined,
     });
     if (res.ok) setCreated({ memberNo: res.memberNo, tempPassword: res.tempPassword });
     else setError(res.error);
@@ -167,15 +171,31 @@ export const AdminCreateMemberModal: React.FC<AdminCreateMemberModalProps> = ({
 
               <div>
                 <label className="text-[10px] font-bold text-red-700 uppercase block mb-1">
-                  Sakatlık / Hassasiyet (Koç Notu)
+                  Sakatlık / Hassasiyet (Koç Notu, isteğe bağlı)
                 </label>
                 <input
                   type="text"
                   placeholder="Örn: Bel fıtığı L5-S1 başlangıcı / Sağ diz operasyon geçmişi"
                   value={injuryAlert}
                   onChange={(e) => setInjuryAlert(e.target.value)}
+                  maxLength={500}
                   className="w-full p-2.5 bg-red-50/50 border border-red-200 rounded-xl text-xs text-[#0F172A]"
                 />
+                {injuryAlert.trim() && (
+                  <label className="mt-2 flex items-start gap-2 text-[11px] text-[#475569] leading-relaxed cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={consentGiven}
+                      onChange={(e) => setConsentGiven(e.target.checked)}
+                      className="mt-0.5 w-4 h-4 accent-[#10B981] shrink-0"
+                      required
+                    />
+                    <span>
+                      Üyenin sağlık verisi için açık rızasını stüdyoda aldım (KVKK). Rızanın alındığı an kayda geçer; üye rızasını
+                      panelinden geri alabilir.
+                    </span>
+                  </label>
+                )}
               </div>
 
               <div>

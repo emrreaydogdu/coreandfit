@@ -3,8 +3,15 @@ import { randomBytes, createHash } from "node:crypto";
 import { getDb } from "./db";
 import type { MemberRole } from "@/types/portal";
 
-const SESSION_COOKIE = "cf_session";
-const SESSION_DAYS = 30;
+// Production'da __Host- öneki: yalnızca HTTPS, alan adı paylaşımı yok, path=/ zorunlu.
+const SECURE_COOKIES = process.env.NODE_ENV === "production" && process.env.COOKIE_SECURE !== "0";
+const SESSION_COOKIE = SECURE_COOKIES ? "__Host-cf_session" : "cf_session";
+
+// Yönetici oturumu kısa tutulur; üye oturumu 30 gün.
+const SESSION_TTL_MS: Record<MemberRole, number> = {
+  admin: 12 * 60 * 60 * 1000,
+  member: 30 * 24 * 60 * 60 * 1000,
+};
 
 const hashToken = (token: string) => createHash("sha256").update(token).digest("hex");
 
@@ -13,18 +20,23 @@ export interface SessionMember {
   role: MemberRole;
 }
 
-export async function createSession(memberId: string) {
+export async function createSession(memberId: string, role: MemberRole) {
   const token = randomBytes(32).toString("hex");
-  const expires = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000);
-  getDb()
-    .prepare("INSERT INTO auth_sessions (token_hash, member_id, expires_at) VALUES (?, ?, ?)")
-    .run(hashToken(token), memberId, expires.toISOString());
+  const expires = new Date(Date.now() + SESSION_TTL_MS[role]);
+  const db = getDb();
+  db.prepare("DELETE FROM auth_sessions WHERE expires_at < ?").run(new Date().toISOString());
+  db.prepare("INSERT INTO auth_sessions (token_hash, member_id, expires_at) VALUES (?, ?, ?)").run(
+    hashToken(token),
+    memberId,
+    expires.toISOString()
+  );
 
   const store = await cookies();
   store.set(SESSION_COOKIE, token, {
     httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production" && process.env.COOKIE_SECURE !== "0",
+    // Strict: başka sitelerden gelen isteklerde çerez hiç gönderilmez (CSRF'e karşı ilk savunma hattı).
+    sameSite: "strict",
+    secure: SECURE_COOKIES,
     path: "/",
     expires,
   });
@@ -39,20 +51,26 @@ export async function destroySession() {
   store.delete(SESSION_COOKIE);
 }
 
+// Parola değişikliği veya hesabın pasife alınması sonrası üyenin tüm oturumlarını kapatır.
+export function revokeMemberSessions(memberId: string) {
+  getDb().prepare("DELETE FROM auth_sessions WHERE member_id = ?").run(memberId);
+}
+
 export async function getSessionMember(): Promise<SessionMember | null> {
   const store = await cookies();
   const token = store.get(SESSION_COOKIE)?.value;
-  if (!token) return null;
-  const row = getDb()
+  if (!token || !/^[0-9a-f]{64}$/.test(token)) return null;
+  const db = getDb();
+  const row = db
     .prepare(
-      `SELECT m.id, m.role, s.expires_at FROM auth_sessions s
+      `SELECT m.id, m.role, m.status, s.expires_at FROM auth_sessions s
        JOIN members m ON m.id = s.member_id
        WHERE s.token_hash = ?`
     )
-    .get(hashToken(token)) as { id: string; role: MemberRole; expires_at: string } | undefined;
+    .get(hashToken(token)) as { id: string; role: MemberRole; status: string; expires_at: string } | undefined;
   if (!row) return null;
-  if (new Date(row.expires_at) < new Date()) {
-    getDb().prepare("DELETE FROM auth_sessions WHERE token_hash = ?").run(hashToken(token));
+  if (new Date(row.expires_at) < new Date() || row.status === "Pasif") {
+    db.prepare("DELETE FROM auth_sessions WHERE token_hash = ?").run(hashToken(token));
     return null;
   }
   return { id: row.id, role: row.role };

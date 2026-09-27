@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import { Scale, Ruler, Plus, X, ChevronRight, History, CheckCircle2, Clock } from "lucide-react";
 import { useMember } from "@/context/MemberContext";
@@ -24,7 +25,9 @@ const emptyForm = () => ({
 }) as Record<"weightKg" | BodyFieldKey, string>;
 
 export const HistoryTab: React.FC = () => {
-  const { bookedSessions, bodyMeasurements, addBodyMeasurement } = useMember();
+  const { user, bookedSessions, bodyMeasurements, addBodyMeasurement, setHealthConsent } = useMember();
+  // Vücut ölçüleri sağlık verisidir; açık rıza olmadan kaydedilmez (KVKK m.6).
+  const hasHealthConsent = Boolean(user?.healthConsentAt);
   const [subTab, setSubTab] = useState<"body" | "sessions">("body");
   const [isMeasuresOpen, setIsMeasuresOpen] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -85,6 +88,25 @@ export const HistoryTab: React.FC = () => {
 
       {subTab === "body" && (
         <div className="space-y-5">
+          {!hasHealthConsent && (
+            <section className="p-4 sm:p-5 bg-amber-50 border border-amber-200 rounded-3xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <p className="text-xs text-amber-900 leading-relaxed">
+                Vücut ölçüleri sağlık verisi sayılır. Ölçümlerinizin kaydedilip gelişiminizin takip edilebilmesi için{" "}
+                <Link href="/acik-riza-metni" target="_blank" className="font-bold underline underline-offset-2">Açık Rıza Metni</Link>{" "}
+                kapsamında rızanız gerekir.
+              </p>
+              <button
+                type="button"
+                onClick={async () => {
+                  const res = await setHealthConsent(true);
+                  if (!res.ok) setError(res.error);
+                }}
+                className="min-h-10 px-4 bg-[#0F172A] text-white rounded-xl text-xs font-bold shrink-0"
+              >
+                Açık Rıza Ver
+              </button>
+            </section>
+          )}
           {/* A. Vücut ağırlığı */}
           <section className="bg-white border border-black/[0.06] rounded-3xl p-5 sm:p-6">
             <div className="flex items-center justify-between gap-3 mb-4">
@@ -97,7 +119,8 @@ export const HistoryTab: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setIsAddOpen(true)}
-                className="min-h-10 px-3.5 bg-[#0F172A] hover:bg-black text-white rounded-xl text-xs font-bold flex items-center gap-1.5"
+                disabled={!hasHealthConsent}
+                className="min-h-10 px-3.5 bg-[#0F172A] hover:bg-black text-white rounded-xl text-xs font-bold flex items-center gap-1.5 disabled:opacity-40"
               >
                 <Plus className="w-3.5 h-3.5 text-emerald-400" />
                 <span>Ölçüm Ekle</span>

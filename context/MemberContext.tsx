@@ -14,6 +14,7 @@ import type {
   MemberUser,
   OrderItem,
   PaymentMethod,
+  PaymentStatus,
   PortalTab,
   ReferralSummary,
   SavedCard,
@@ -53,6 +54,7 @@ interface MemberContextType {
   orders: OrderItem[];
   referral: ReferralSummary | null;
   bankAccounts: StudioBankAccount[];
+  onlinePaymentEnabled: boolean;
 
   // Kimlik
   login: (email: string, password: string) => Promise<{ ok: true; role: string } | { ok: false; error: string }>;
@@ -62,6 +64,8 @@ interface MemberContextType {
     phone: string;
     password: string;
     referralCode?: string;
+    kvkkNotice: boolean;
+    healthConsent: boolean;
   }) => Promise<{ ok: true; referralApplied: boolean } | { ok: false; error: string }>;
   logout: () => Promise<void>;
 
@@ -71,9 +75,15 @@ interface MemberContextType {
   purchasePackage: (data: { packageId: string; paymentMethod: PaymentMethod }) => Promise<
     { ok: true; order: OrderItem } | { ok: false; error: string }
   >;
+  // PayTR: ödeme penceresini başlatır; ders hakkı yalnızca PayTR bildirimiyle tanımlanır
+  startOnlinePayment: (packageId: string) => Promise<{ ok: true; iframeUrl: string; merchantOid: string } | { ok: false; error: string }>;
+  checkPaymentStatus: (merchantOid: string) => Promise<{ status: PaymentStatus; reason?: string } | null>;
   addBodyMeasurement: (m: MeasurementInput) => Promise<ActionResult>;
   updateUserProfile: (data: Partial<MemberUser>) => Promise<ActionResult>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<ActionResult>;
+  // KVKK: sağlık verisi açık rızası (geri alınınca sağlık verileri silinir) ve aydınlatma onayı
+  setHealthConsent: (give: boolean) => Promise<ActionResult>;
+  acknowledgeKvkkNotice: () => Promise<ActionResult>;
   addSavedCard: (card: Omit<SavedCard, "id">) => Promise<ActionResult>;
   removeSavedCard: (cardId: string) => Promise<ActionResult>;
   setDefaultCard: (cardId: string) => Promise<ActionResult>;
@@ -122,6 +132,7 @@ interface MemberContextType {
     initialSessions: number;
     injuryAlert?: string;
     targetGoal?: string;
+    healthConsentGiven?: boolean;
   }) => Promise<{ ok: true; memberNo: string; tempPassword: string } | { ok: false; error: string }>;
   updateMemberDetails: (
     memberId: string,
@@ -130,6 +141,7 @@ interface MemberContextType {
       injuryAlert?: string;
       targetGoal?: string;
       healthNotes?: string;
+      healthConsentGiven?: boolean;
       program?: ProgramDay[];
       referralCodeDisabled?: boolean;
     }
@@ -138,7 +150,7 @@ interface MemberContextType {
   adminAddMeasurement: (memberId: string, m: MeasurementInput) => Promise<ActionResult>;
   createGift: (data: { memberId: string | null; title: string; description: string }) => Promise<ActionResult>;
   updateGiftStatus: (giftId: string, status: MemberGift["status"]) => Promise<ActionResult>;
-  adminCheckIn: (memberRef: string) => Promise<ActionResult>;
+  adminCheckIn: (input: { passToken?: string; memberId?: string }) => Promise<ActionResult>;
   updateStudioSettings: (newSettings: Partial<StudioSettings>) => Promise<ActionResult>;
   addStudioBankAccount: (account: Omit<StudioBankAccount, "id">) => Promise<ActionResult>;
   removeStudioBankAccount: (accountId: string) => Promise<ActionResult>;
@@ -314,11 +326,45 @@ export const MemberProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   };
 
+  const startOnlinePayment: MemberContextType["startOnlinePayment"] = async (packageId) => {
+    try {
+      const res = await api<{ iframeUrl: string; merchantOid: string }>("/api/me/payments/paytr", { method: "POST", body: { packageId } });
+      return { ok: true, iframeUrl: res.iframeUrl, merchantOid: res.merchantOid };
+    } catch (error) {
+      return failure(error);
+    }
+  };
+
+  // Ödeme tamamlandığında üye verisi (ders hakkı, sipariş geçmişi) yenilenir.
+  const checkPaymentStatus: MemberContextType["checkPaymentStatus"] = useCallback(
+    async (merchantOid: string) => {
+      try {
+        const res = await api<{ status: PaymentStatus; reason?: string }>(`/api/me/payments/${encodeURIComponent(merchantOid)}`);
+        if (res.status !== "awaiting_payment") await refresh();
+        return res;
+      } catch {
+        return null;
+      }
+    },
+    [refresh]
+  );
+
   const addBodyMeasurement: MemberContextType["addBodyMeasurement"] = (m) =>
     memberAction("/api/me/measurements", "POST", m, "Ölçüm kaydedildi.");
 
   const updateUserProfile: MemberContextType["updateUserProfile"] = (data) =>
     memberAction("/api/me", "PATCH", { profile: data }, "Bilgileriniz güncellendi.");
+
+  const setHealthConsent: MemberContextType["setHealthConsent"] = (give) =>
+    memberAction(
+      "/api/me",
+      "PATCH",
+      { healthConsent: give },
+      give ? "Açık rızanız kaydedildi." : "Açık rızanız geri alındı, sağlık verileriniz silindi."
+    );
+
+  const acknowledgeKvkkNotice: MemberContextType["acknowledgeKvkkNotice"] = () =>
+    memberAction("/api/me", "PATCH", { kvkkNotice: true }, "Teşekkürler.");
 
   const changePassword: MemberContextType["changePassword"] = (currentPassword, newPassword) =>
     memberAction("/api/me", "PATCH", { currentPassword, newPassword }, "Şifreniz güncellendi.");
@@ -406,11 +452,11 @@ export const MemberProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const updateGiftStatus: MemberContextType["updateGiftStatus"] = (id, status) =>
     adminAction(`/api/admin/gifts/${id}`, "PATCH", { status }, "Hediye durumu güncellendi.");
 
-  const adminCheckIn: MemberContextType["adminCheckIn"] = async (memberRef) => {
+  const adminCheckIn: MemberContextType["adminCheckIn"] = async (input) => {
     try {
       const res = await api<{ result: { memberName: string; remaining: number; usedBooking: boolean }; snapshot: AdminSnapshot }>(
         "/api/admin/checkin",
-        { method: "POST", body: { member: memberRef } }
+        { method: "POST", body: input }
       );
       setAdmin(res.snapshot);
       const { memberName, remaining, usedBooking } = res.result;
@@ -541,15 +587,20 @@ export const MemberProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         orders: snapshot?.orders ?? [],
         referral: snapshot?.referral ?? null,
         bankAccounts: snapshot?.bankAccounts ?? [],
+        onlinePaymentEnabled: snapshot?.onlinePayment ?? false,
         login,
         register,
         logout,
         bookSession,
         cancelSession,
         purchasePackage,
+        startOnlinePayment,
+        checkPaymentStatus,
         addBodyMeasurement,
         updateUserProfile,
         changePassword,
+        setHealthConsent,
+        acknowledgeKvkkNotice,
         addSavedCard,
         removeSavedCard,
         setDefaultCard,

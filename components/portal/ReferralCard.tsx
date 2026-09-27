@@ -77,7 +77,7 @@ export const ReferralCard: React.FC<{ referral: ReferralSummary }> = ({ referral
         <span>
           {referral.referredByCode
             ? "Referans koduyla katıldığın için paketlerde %10 avantajın kalıcı olarak aktif."
-            : "Kodunla en az 1 arkadaşın kayıt olduğunda paketlerde %10 indirim hesabında kalıcı olarak açılır. Arkadaşın da kayıt olurken %10 avantaj kazanır."}
+            : "Kodunla kayıt olan bir arkadaşın ilk paketini satın aldığında paketlerde %10 indirim hesabında kalıcı olarak açılır. Arkadaşın da kayıt olurken %10 avantaj kazanır."}
         </span>
       </p>
     </section>

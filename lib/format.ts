@@ -1,3 +1,5 @@
+import type { PaymentStatus } from "@/types/portal";
+
 const MONTHS = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 const DAYS = ["Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"];
 
@@ -26,3 +28,17 @@ export const formatDateMedium = (value: string) => {
   if (Number.isNaN(d.getTime())) return value;
   return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 };
+
+// Sipariş ödeme durumu etiketleri (admin kasası ve üye hesabı aynı listeyi kullanır)
+export const PAYMENT_STATUS_INFO: Record<PaymentStatus, { label: string; className: string }> = {
+  completed: { label: "Ödendi", className: "bg-emerald-100 text-emerald-800" },
+  pending_cashier: { label: "Stüdyoda Ödenecek", className: "bg-amber-100 text-amber-800" },
+  pending_transfer: { label: "Havale Bekleniyor", className: "bg-amber-100 text-amber-800" },
+  awaiting_payment: { label: "Ödeme Bekleniyor", className: "bg-slate-200 text-slate-700" },
+  review: { label: "İncelemede", className: "bg-orange-100 text-orange-800" },
+  failed: { label: "Başarısız", className: "bg-rose-100 text-rose-800" },
+  cancelled: { label: "İptal", className: "bg-slate-200 text-slate-600" },
+};
+
+// Admin onayı bekleyen tahsilatlar: nakit, havale ve incelemeye düşen online ödeme
+export const APPROVABLE_PAYMENT_STATUSES: PaymentStatus[] = ["pending_cashier", "pending_transfer", "review"];

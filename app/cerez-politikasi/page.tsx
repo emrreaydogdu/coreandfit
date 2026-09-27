@@ -1,48 +1,82 @@
 import React from "react";
 import type { Metadata } from "next";
-import { BUSINESS_CONFIG } from "@/config/business";
+import { H2, LegalPage, List, Table } from "@/components/legal/LegalPage";
 
 export const metadata: Metadata = {
-  title: "Çerez Politikası | Core & Fit",
-  description: "Core & Fit Private Sport Studio Çerez (Cookie) Politikası.",
+  title: "Çerez Politikası",
+  description: "Core & Fit web sitesinde kullanılan çerezler ve tarayıcı depolama alanları: türleri, amaçları ve süreleri.",
+  alternates: { canonical: "/cerez-politikasi" },
 };
 
 export default function CerezPolitikasiPage() {
   return (
-    <div className="pt-28 pb-20 bg-[#08090B] text-white">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <span className="text-xs font-mono uppercase tracking-[0.2em] text-[#E8FF36] block mb-3">
-          YASAL BİLGİLENDİRME
-        </span>
-        <h1 className="text-3xl sm:text-5xl font-extrabold uppercase font-display mb-8">
-          Çerez Politikası
-        </h1>
-
-        <div className="bg-[#0D0F12] border border-[#23272F] p-8 sm:p-12 space-y-6 text-xs sm:text-sm text-[#A5A7AD] leading-relaxed">
+    <LegalPage
+      title="Çerez Politikası"
+      current="/cerez-politikasi"
+      intro={
+        <>
           <p>
-            Bu Çerez Politikası, Core & Fit web sitesinde kullanılan çerezlerin (cookies) türlerini ve hangi amaçla kullanıldıklarını açıklamaktadır.
+            Çerezler, bir web sitesini ziyaret ettiğinizde tarayıcınıza kaydedilen küçük metin dosyalarıdır. Bu sayfa, Core &amp; Fit
+            web sitesinde ve üye panelinde kullanılan çerezleri ve tarayıcı depolama alanlarını listeler.
           </p>
-
-          <h2 className="text-base font-bold text-white uppercase font-display pt-4">
-            Çerez Nedir?
-          </h2>
           <p>
-            Çerezler, web sitemizi ziyaret ettiğinizde tarayıcınız aracılığıyla cihazınıza kaydedilen küçük metin dosyalarıdır. Sitenin düzgün çalışması, tercihlerin hatırlanması ve kullanıcı deneyiminin geliştirilmesi için kullanılır.
+            <strong className="text-white">Sitede analitik, reklam veya kullanıcı takibi amaçlı çerez kullanılmaz.</strong> Kullanılan
+            çerezler, sitenin çalışması veya sizin seçtiğiniz bir özelliğin (ör. dil tercihi) uygulanması için gereklidir.
           </p>
+        </>
+      }
+    >
+      <H2>1. Zorunlu Çerezler</H2>
+      <Table
+        head={["Ad", "Amaç", "Süre"]}
+        rows={[
+          [
+            "__Host-cf_session",
+            "Üye paneline giriş yaptığınızda oturumunuzu tanır. JavaScript ile okunamaz, yalnızca HTTPS üzerinden ve yalnızca bu siteye gönderilir.",
+            "Üyelerde 30 gün, yöneticilerde 12 saat veya çıkış yapana kadar",
+          ],
+        ]}
+      />
+      <p>Zorunlu çerezler olmadan üye paneline giriş yapılamaz; bu çerezler için ayrıca onay alınmaz.</p>
 
-          <h2 className="text-base font-bold text-white uppercase font-display pt-4">
-            Kullanılan Çerez Türleri
-          </h2>
-          <ul className="list-disc pl-5 space-y-1.5 text-[#72757C]">
-            <li><strong>Zorunlu Çerezler:</strong> Web sitesinin temel işlevlerinin (form adımları, oturum güvenliği) çalışması için gereklidir.</li>
-            <li><strong>Analitik Çerezler:</strong> Sitemizin nasıl kullanıldığını anlamamıza ve performansını artırmamıza yardımcı olur.</li>
-          </ul>
+      <H2>2. Tercih ve İşlev Çerezleri</H2>
+      <Table
+        head={["Ad", "Amaç", "Süre"]}
+        rows={[
+          ["googtrans", "Yalnızca sitede farklı bir dil seçtiğinizde kurulur ve seçtiğiniz dili hatırlar.", "Tarayıcı oturumu"],
+          [
+            "Google Translate çerezleri (üçüncü taraf)",
+            "Farklı bir dil seçtiğinizde çeviri hizmetini sunan Google tarafından kurulabilir.",
+            "Google'ın belirlediği süre",
+          ],
+        ]}
+      />
 
-          <div className="pt-6 border-t border-[#191B20] text-xs font-mono text-[#72757C]">
-            {BUSINESS_CONFIG.fullName} • Nişantaşı / İstanbul
-          </div>
-        </div>
-      </div>
-    </div>
+      <H2>3. Tarayıcı Depolama Alanı (localStorage)</H2>
+      <p>Aşağıdaki tercihler yalnızca cihazınızda tutulur ve sunucumuza gönderilmez:</p>
+      <Table
+        head={["Anahtar", "Amaç"]}
+        rows={[
+          ["coreandfit_theme", "Açık veya koyu tema tercihiniz"],
+          ["coreandfit_design_mode", "Seçtiğiniz site görünümü"],
+          ["cf_member_view_mode", "Üye panelinin görüntülenme biçimi"],
+        ]}
+      />
+
+      <H2>4. Ödeme Sayfası</H2>
+      <p>
+        Kart ile ödeme yaptığınızda açılan ödeme penceresi PayTR&apos;a aittir. Bu pencerede PayTR, ödeme güvenliği için kendi alan
+        adında çerez kullanabilir; bu çerezler PayTR&apos;ın politikalarına tabidir.
+      </p>
+
+      <H2>5. Çerezleri Yönetme</H2>
+      <List
+        items={[
+          "Tarayıcınızın ayarlarından çerezleri görüntüleyebilir, silebilir veya engelleyebilirsiniz.",
+          "Zorunlu oturum çerezini engellerseniz üye paneline giriş yapamazsınız.",
+          "Dil tercihini sıfırlamak için sitedeki dil seçiciden Türkçe'yi seçmeniz yeterlidir.",
+        ]}
+      />
+    </LegalPage>
   );
 }

@@ -19,6 +19,14 @@ export const BUSINESS_CONFIG = {
   instagramHandle: "@coreandfit",
   instagramUrl: "https://instagram.com/coreandfit",
   email: "info@coreandfit.com.tr",
+  // KVKK veri sorumlusu bilgileri. Resmî unvan ve adres girilene kadar yasal sayfalar marka adını ve bölgeyi gösterir.
+  legal: {
+    controllerTitle: null as string | null, // Örn: "Ad Soyad (şahıs işletmesi)" veya "Core & Fit Spor Hizmetleri Ltd. Şti."
+    address: null as string | null,
+    kepAddress: null as string | null,
+    hosting: "Hetzner Online GmbH (Nürnberg, Almanya)",
+    lastUpdated: "28 Eylül 2026",
+  },
   rating: {
     score: 4.2,
     maxScore: 5,

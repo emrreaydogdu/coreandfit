@@ -192,6 +192,9 @@ export const Footer: React.FC = () => {
             <Link href="/kvkk" className="hover:text-white transition-colors">
               KVKK Aydınlatma Metni
             </Link>
+            <Link href="/acik-riza-metni" className="hover:text-white transition-colors">
+              Açık Rıza Metni
+            </Link>
             <Link href="/gizlilik-politikasi" className="hover:text-white transition-colors">
               Gizlilik Politikası
             </Link>

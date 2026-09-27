@@ -29,6 +29,7 @@ const STUDIO_LINKS = [
 
 const LEGAL_LINKS = [
   { label: "KVKK Aydınlatma Metni", href: "/kvkk" },
+  { label: "Açık Rıza Metni", href: "/acik-riza-metni" },
   { label: "Gizlilik Politikası", href: "/gizlilik-politikasi" },
   { label: "Çerez Politikası", href: "/cerez-politikasi" },
 ];

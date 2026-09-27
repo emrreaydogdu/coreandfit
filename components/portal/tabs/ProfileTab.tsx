@@ -19,10 +19,11 @@ import {
   X,
   KeyRound,
 } from "lucide-react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import { useMember } from "@/context/MemberContext";
 import { formatTL } from "@/lib/pricing";
-import { formatDateMedium } from "@/lib/format";
+import { PAYMENT_STATUS_INFO, formatDateMedium } from "@/lib/format";
 import type { PaymentMethod } from "@/types/portal";
 
 const PAYMENT_LABEL: Record<PaymentMethod, string> = {
@@ -42,6 +43,7 @@ export const ProfileTab: React.FC = () => {
     setDefaultCard,
     updateAddress,
     changePassword,
+    setHealthConsent,
   } = useMember();
 
   const [downloadSuccess, setDownloadSuccess] = useState<string | null>(null);
@@ -75,8 +77,17 @@ export const ProfileTab: React.FC = () => {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [passwordMsg, setPasswordMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [consentMsg, setConsentMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   if (!user) return null;
+  const hasHealthConsent = Boolean(user.healthConsentAt);
+
+  // Rıza geri alınınca sağlık notları, sakatlık uyarısı ve vücut ölçümleri kalıcı olarak silinir.
+  const handleConsentChange = async (give: boolean) => {
+    if (!give && !window.confirm("Açık rızanızı geri alırsanız sağlık notlarınız ve tüm vücut ölçümleriniz kalıcı olarak silinir. Devam edilsin mi?")) return;
+    const res = await setHealthConsent(give);
+    setConsentMsg(res.ok ? { ok: true, text: res.message ?? "Kaydedildi." } : { ok: false, text: res.error });
+  };
 
   const handleDownloadReceipt = (orderNo: string) => {
     setDownloadSuccess(orderNo);
@@ -90,7 +101,7 @@ export const ProfileTab: React.FC = () => {
       phone: editPhone,
       birthDate: editBirthDate,
       emergencyContact: editEmergency,
-      healthNotes: editHealth,
+      ...(hasHealthConsent ? { healthNotes: editHealth } : {}),
     });
     setIsEditProfileOpen(false);
   };
@@ -254,6 +265,44 @@ export const ProfileTab: React.FC = () => {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* KVKK: kişisel veriler ve açık rıza */}
+      <div className="bg-white border border-black/[0.06] rounded-3xl p-6 shadow-[0_4px_24px_rgba(0,0,0,0.02)] space-y-4">
+        <div className="flex items-center gap-2">
+          <Shield className="w-4 h-4 text-[#10B981]" />
+          <h3 className="text-base font-bold font-display uppercase text-[#0F172A]">Kişisel Verilerim</h3>
+        </div>
+        <div className="p-4 bg-[#F8FAFC] border border-black/[0.04] rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="text-xs leading-relaxed">
+            <span className="font-bold text-[#0F172A] block">Sağlık verisi açık rızası</span>
+            <span className="text-[#64748B]">
+              {hasHealthConsent
+                ? `Verildi (${formatDateMedium(user.healthConsentAt ?? "")}). Sağlık notlarınız ve vücut ölçümleriniz antrenman planlaması için işlenir.`
+                : "Verilmedi. Sağlık notu ve vücut ölçümü kaydedilmez."}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => handleConsentChange(!hasHealthConsent)}
+            className={`min-h-10 px-4 rounded-xl text-xs font-bold shrink-0 ${
+              hasHealthConsent ? "bg-rose-50 text-rose-700 border border-rose-200" : "bg-[#0F172A] text-white"
+            }`}
+          >
+            {hasHealthConsent ? "Rızamı Geri Al" : "Açık Rıza Ver"}
+          </button>
+        </div>
+        {consentMsg && (
+          <p className={`p-3 rounded-xl text-xs font-medium ${consentMsg.ok ? "bg-emerald-50 text-emerald-800" : "bg-rose-50 text-rose-700"}`}>{consentMsg.text}</p>
+        )}
+        <p className="text-[11px] text-[#64748B] leading-relaxed">
+          Verilerinizle ilgili bilgi almak, düzeltme veya silme talep etmek için{" "}
+          <a href="mailto:info@coreandfit.com.tr" className="font-semibold text-[#0F172A] underline underline-offset-2">info@coreandfit.com.tr</a>{" "}
+          adresine yazabilirsiniz. Ayrıntılar:{" "}
+          <Link href="/kvkk" className="font-semibold text-[#0F172A] underline underline-offset-2">KVKK Aydınlatma Metni</Link>,{" "}
+          <Link href="/acik-riza-metni" className="font-semibold text-[#0F172A] underline underline-offset-2">Açık Rıza Metni</Link>,{" "}
+          <Link href="/gizlilik-politikasi" className="font-semibold text-[#0F172A] underline underline-offset-2">Gizlilik Politikası</Link>.
+        </p>
       </div>
 
       {/* Cards & Address Two-Column Section */}
@@ -469,17 +518,9 @@ export const ProfileTab: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-[#0F172A]">{ord.packageName}</span>
                   <span
-                    className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                      ord.paymentStatus === "completed"
-                        ? "bg-emerald-100 text-emerald-800"
-                        : "bg-amber-100 text-amber-800"
-                    }`}
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${PAYMENT_STATUS_INFO[ord.paymentStatus].className}`}
                   >
-                    {ord.paymentStatus === "completed"
-                      ? "Ödendi"
-                      : ord.paymentMethod === "cash_register"
-                      ? "Stüdyoda Ödenecek"
-                      : "Havale Bekliyor"}
+                    {PAYMENT_STATUS_INFO[ord.paymentStatus].label}
                   </span>
                 </div>
                 <span className="text-[11px] text-[#64748B] block mt-1">
@@ -588,13 +629,19 @@ export const ProfileTab: React.FC = () => {
                   <label className="text-[10px] font-bold text-[#64748B] uppercase block mb-1">
                     SAĞLIK / SAKATLIK NOTLARI
                   </label>
-                  <textarea
-                    rows={3}
-                    placeholder="Ameliyat, bel fıtığı, diz menisküs veya alerji durumu..."
-                    value={editHealth}
-                    onChange={(e) => setEditHealth(e.target.value)}
-                    className="w-full bg-[#F8FAFC] border border-black/[0.08] rounded-xl p-3 text-xs text-[#0F172A] focus:outline-none focus:border-[#10B981]"
-                  />
+                  {hasHealthConsent ? (
+                    <textarea
+                      rows={3}
+                      placeholder="Ameliyat, bel fıtığı, diz menisküs veya alerji durumu..."
+                      value={editHealth}
+                      onChange={(e) => setEditHealth(e.target.value)}
+                      className="w-full bg-[#F8FAFC] border border-black/[0.08] rounded-xl p-3 text-xs text-[#0F172A] focus:outline-none focus:border-[#10B981]"
+                    />
+                  ) : (
+                    <p className="p-3 bg-[#F8FAFC] rounded-xl text-[11px] text-[#64748B] leading-relaxed">
+                      Sağlık notu girebilmek için Kişisel Verilerim bölümünden sağlık verisi açık rızası vermeniz gerekir.
+                    </p>
+                  )}
                 </div>
 
                 <div className="pt-3 flex items-center justify-end gap-2">

@@ -2,7 +2,15 @@ import type { BookingStatus, ProgramDay, WorkoutType } from "@/lib/training";
 
 export type PaymentMethod = "online_card" | "cash_register" | "bank_transfer";
 
-export type PaymentStatus = "completed" | "pending_cashier" | "pending_transfer" | "cancelled";
+// awaiting_payment: PayTR ödeme sayfası açık · failed: ödeme başarısız · review: admin incelemesi gerekiyor
+export type PaymentStatus =
+  | "completed"
+  | "pending_cashier"
+  | "pending_transfer"
+  | "cancelled"
+  | "awaiting_payment"
+  | "failed"
+  | "review";
 
 export type MemberRole = "member" | "admin";
 
@@ -40,6 +48,9 @@ export interface MemberUser {
   healthNotes?: string;
   address?: UserAddress;
   savedCards?: SavedCard[];
+  // KVKK: aydınlatma metninin gösterildiği ve sağlık verisi açık rızasının verildiği an (yoksa verilmedi)
+  kvkkNoticeAt?: string;
+  healthConsentAt?: string;
 }
 
 export interface BookedSession {
@@ -75,6 +86,9 @@ export interface OrderItem {
   createdAt: string;
   receiptCode: string;
   paidAt?: string;
+  merchantOid?: string;
+  providerTotalAmount?: number;
+  failureReason?: string;
 }
 
 export type PortalTab = "dashboard" | "sessions" | "workout" | "history" | "store" | "profile";
@@ -177,6 +191,7 @@ export interface StudioMemberCRM {
   joinDate: string;
   injuryAlert?: string;
   healthNotes?: string;
+  healthConsent: boolean;
   targetGoal?: string;
   program: ProgramDay[];
   referral: ReferralSummary;
@@ -202,6 +217,8 @@ export interface MemberSnapshot {
   orders: OrderItem[];
   referral: ReferralSummary;
   bankAccounts: StudioBankAccount[];
+  // PayTR sunucuda tanımlı ve admin tarafından açık mı
+  onlinePayment: boolean;
 }
 
 export interface AdminSnapshot {
